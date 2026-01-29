@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER_BREACH // PROTOCOL</title>
+    <title>CYBER_BREACH // PROTOCOL v2.0</title>
     <style>
         /* --- Base & Fonts --- */
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
@@ -37,9 +37,9 @@
             height: 100%;
             max-width: 1200px;
             display: grid;
-            grid-template-columns: 300px 1fr 300px;
-            grid-template-rows: 60px 1fr 60px;
-            gap: 10px;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 80px 1fr 60px;
+            gap: 15px;
             padding: 20px;
             box-sizing: border-box;
             z-index: 10;
@@ -79,10 +79,10 @@
         /* --- UI Components --- */
         .panel {
             border: 1px solid var(--main-color);
-            background: rgba(0, 20, 0, 0.8);
+            background: rgba(0, 20, 0, 0.85);
             padding: 15px;
             box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(4px);
             display: flex;
             flex-direction: column;
         }
@@ -90,9 +90,40 @@
         h1, h2, h3 { margin: 0 0 10px 0; text-transform: uppercase; text-shadow: var(--text-shadow); }
         
         /* Header */
-        header { grid-column: 1 / 4; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main-color); padding: 0 20px; }
+        header { 
+            grid-column: 1 / 4; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--main-color); 
+            padding: 0 20px; 
+            background: rgba(0, 20, 0, 0.6);
+        }
+        .header-left { display: flex; flex-direction: column; }
+        .header-right { text-align: right; }
+        
         .score-display { font-size: 2rem; font-weight: bold; color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color); }
         .mps-display { font-size: 1rem; opacity: 0.8; }
+
+        /* System Controls (New) */
+        .sys-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .sys-btn {
+            background: transparent;
+            border: 1px solid var(--main-color);
+            color: var(--main-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 2px 8px;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+        .sys-btn:hover { opacity: 1; background: rgba(0, 255, 65, 0.2); }
+        .sys-btn.danger:hover { color: var(--danger-color); border-color: var(--danger-color); background: rgba(255, 0, 85, 0.2); }
 
         /* Left Panel (Upgrades) */
         #upgrades-panel { grid-column: 1 / 2; grid-row: 2 / 3; overflow-y: auto; }
@@ -105,6 +136,7 @@
             opacity: 0.7;
             position: relative;
             overflow: hidden;
+            background: rgba(0,0,0,0.5);
         }
         .upgrade-item:hover { border-color: var(--accent-color); opacity: 1; transform: translateX(5px); }
         .upgrade-item.disabled { opacity: 0.3; cursor: not-allowed; border-color: #333; }
@@ -122,11 +154,11 @@
         }
 
         #main-btn {
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
             border: 4px solid var(--main-color);
-            background: rgba(0, 255, 65, 0.1);
+            background: rgba(0, 255, 65, 0.05);
             color: var(--main-color);
             font-size: 1.5rem;
             font-weight: bold;
@@ -139,16 +171,17 @@
             align-items: center;
             z-index: 20;
             position: relative;
+            backdrop-filter: blur(2px);
         }
         
-        #main-btn:hover { box-shadow: 0 0 50px rgba(0, 255, 65, 0.6); background: rgba(0, 255, 65, 0.2); }
+        #main-btn:hover { box-shadow: 0 0 60px rgba(0, 255, 65, 0.5); background: rgba(0, 255, 65, 0.15); }
         #main-btn:active { transform: scale(0.92); box-shadow: 0 0 20px rgba(0, 255, 65, 0.8) inset; }
         
         .heat-container {
             width: 80%;
-            height: 10px;
+            height: 8px;
             background: #111;
-            margin-top: 30px;
+            margin-top: 40px;
             border: 1px solid #333;
             position: relative;
         }
@@ -159,13 +192,14 @@
             transition: width 0.1s linear;
             box-shadow: 0 0 10px var(--main-color);
         }
-        .heat-text { text-align: center; font-size: 0.8rem; margin-top: 5px; letter-spacing: 2px; }
+        .heat-text { text-align: center; font-size: 0.8rem; margin-top: 8px; letter-spacing: 2px; opacity: 0.7; }
 
         /* Right Panel (Log) */
-        #log-panel { grid-column: 3 / 4; grid-row: 2 / 3; font-size: 0.8rem; overflow: hidden; justify-content: flex-end;}
+        #log-panel { grid-column: 3 / 4; grid-row: 2 / 3; font-size: 0.75rem; overflow: hidden; justify-content: flex-end;}
         #log-content { display: flex; flex-direction: column; gap: 4px; }
-        .log-entry { opacity: 0; animation: fadeIn 0.3s forwards; }
+        .log-entry { opacity: 0; animation: fadeIn 0.3s forwards; word-break: break-all; }
         .log-entry::before { content: "> "; color: var(--accent-color); }
+        .log-entry.sys { color: #ffff00; }
         @keyframes fadeIn { to { opacity: 1; } }
 
         /* Canvas Layers */
@@ -180,20 +214,21 @@
         #fx-canvas { z-index: 15; pointer-events: none; }
 
         /* Glitch Animation */
-        .glitch { animation: glitch-anim 2s infinite linear alternate-reverse; }
+        .glitch { animation: glitch-anim 3s infinite linear alternate-reverse; }
         @keyframes glitch-anim {
-            0% { clip-path: inset(10% 0 80% 0); transform: translate(-2px, 1px); }
-            20% { clip-path: inset(80% 0 10% 0); transform: translate(2px, -1px); }
-            40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
-            60% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -2px); }
-            80% { clip-path: inset(30% 0 30% 0); transform: translate(1px, 1px); }
-            100% { clip-path: inset(70% 0 20% 0); transform: translate(-1px, -1px); }
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: var(--main-color); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020202; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--main-color); }
 
     </style>
 </head>
@@ -207,8 +242,15 @@
 
     <div id="game-container">
         <header>
-            <div class="title glitch">CYBER_BREACH // PROTOCOL</div>
-            <div style="text-align: right;">
+            <div class="header-left">
+                <div class="title glitch" style="font-size: 1.5rem; font-weight:bold;">CYBER_BREACH // PROTOCOL</div>
+                <div class="sys-controls">
+                    <button class="sys-btn" onclick="saveGame()">[ SAVE_STATE ]</button>
+                    <button class="sys-btn danger" onclick="resetGame()">[ WIPE_MEM ]</button>
+                    <span id="save-status" style="font-size:0.7rem; margin-left:10px; opacity:0;">SAVED</span>
+                </div>
+            </div>
+            <div class="header-right">
                 <div class="score-display">DATA: <span id="score">0</span> TB</div>
                 <div class="mps-display"><span id="mps">0</span> TB/s</div>
             </div>
@@ -223,7 +265,7 @@
         <div id="main-area">
             <button id="main-btn">
                 <span>EXECUTE</span>
-                <span style="font-size:0.8rem; margin-top:5px;">(CLICK)</span>
+                <span style="font-size:0.8rem; margin-top:5px; opacity:0.6;">(CLICK)</span>
             </button>
             <div class="heat-container">
                 <div class="heat-bar" id="heat-bar"></div>
@@ -239,7 +281,7 @@
 
 <script>
 /**
- * Game Logic & Rendering
+ * Game Logic, Rendering & Persistence
  */
 
 // --- Game State ---
@@ -259,17 +301,18 @@ const UPGRADES = [
     { id: 'bot', name: 'Botnet Node', baseCost: 100, mps: 8, desc: 'Distributed computing.' },
     { id: 'ai', name: 'Neural Network', baseCost: 500, mps: 45, desc: 'Machine learning enabled.' },
     { id: 'quantum', name: 'Quantum Core', baseCost: 2000, mps: 250, desc: 'Breaks encryption instantly.' },
-    { id: 'alien', name: 'Alien Artifact', baseCost: 10000, mps: 1500, desc: 'Unknown technology.' }
+    { id: 'alien', name: 'Alien Artifact', baseCost: 10000, mps: 1500, desc: 'Unknown technology.' },
+    { id: 'satellite', name: 'Orbital Uplink', baseCost: 50000, mps: 5000, desc: 'Global coverage.' }
 ];
 
 const HACKER_LOGS = [
     "Bypassing firewall...", "Injecting payload...", "Decrypting headers...",
     "Access granted.", "Downloading packet...", "Tracing IP...", 
     "Port 8080 open.", "Root access requested...", "Buffer overflow success.",
-    "Updating kernel...", "Scanning network...", "Proxy chain estabilshed."
+    "Updating kernel...", "Scanning network...", "Proxy chain established."
 ];
 
-// --- Audio (Synthesized for portability) ---
+// --- Audio (Synthesized) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -284,7 +327,7 @@ function playSound(type) {
         osc.type = 'square';
         osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
         osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.setValueAtTime(0.05, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
         osc.start(now);
         osc.stop(now + 0.1);
@@ -317,7 +360,6 @@ function resizeCanvas() {
     initMatrix();
 }
 
-// Matrix/Code Rain Effect
 function initMatrix() {
     matrixChars = [];
     const columns = Math.floor(bgCanvas.width / 20);
@@ -326,12 +368,11 @@ function initMatrix() {
             x: i * 20,
             y: Math.random() * bgCanvas.height,
             speed: 2 + Math.random() * 5,
-            chars: "01" // Simple binary for speed
+            chars: "01"
         });
     }
 }
 
-// Particles Class
 class Particle {
     constructor(x, y, color) {
         this.x = x;
@@ -358,7 +399,6 @@ class Particle {
     }
 }
 
-// Floating Text Class
 class Floater {
     constructor(x, y, text, color) {
         this.x = x;
@@ -393,23 +433,23 @@ function spawnFloater(x, y, val) {
     floaters.push(new Floater(x, y, `+${formatNum(val)}`, '#fff'));
 }
 
-function addLog(msg) {
+function addLog(msg, type='') {
     const logDiv = document.getElementById('log-content');
     const entry = document.createElement('div');
-    entry.className = 'log-entry';
+    entry.className = `log-entry ${type}`;
     entry.textContent = msg;
     logDiv.appendChild(entry);
     if (logDiv.childNodes.length > 15) {
         logDiv.removeChild(logDiv.firstChild);
     }
-    // Auto scroll
     const panel = document.getElementById('log-panel');
     panel.scrollTop = panel.scrollHeight;
 }
 
 function formatNum(num) {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'k';
     return Math.floor(num);
 }
 
@@ -417,18 +457,17 @@ function updateUI() {
     document.getElementById('score').innerText = formatNum(gameState.score);
     document.getElementById('mps').innerText = formatNum(gameState.autoPower * gameState.multiplier);
     
-    // Update Heat Bar
+    // Update Heat
     const heatBar = document.getElementById('heat-bar');
     heatBar.style.width = `${Math.min(gameState.heat, 100)}%`;
     
-    // Change UI color based on Heat
     const root = document.documentElement;
     if (gameState.heat > 80) {
-        root.style.setProperty('--main-color', '#ff0055'); // Red alert
+        root.style.setProperty('--main-color', '#ff0055'); 
         heatBar.style.boxShadow = "0 0 20px #ff0055";
-        gameState.multiplier = 2; // Overdrive Bonus
+        gameState.multiplier = 2; 
     } else {
-        root.style.setProperty('--main-color', '#00ff41'); // Normal Green
+        root.style.setProperty('--main-color', '#00ff41'); 
         heatBar.style.boxShadow = "0 0 10px #00ff41";
         gameState.multiplier = 1;
     }
@@ -439,7 +478,6 @@ function updateUI() {
         const costEl = document.getElementById(`cost-${u.id}`);
         const countEl = document.getElementById(`count-${u.id}`);
         
-        // Calculate current cost: Base * 1.15^count
         const count = u.count || 0;
         const currentCost = Math.floor(u.baseCost * Math.pow(1.15, count));
         
@@ -456,8 +494,9 @@ function updateUI() {
 
 function initUpgrades() {
     const list = document.getElementById('upgrades-list');
+    list.innerHTML = ''; // Clear for reload safety
     UPGRADES.forEach(u => {
-        u.count = 0; // Initialize count
+        u.count = 0; 
         const div = document.createElement('div');
         div.className = 'upgrade-item disabled';
         div.id = `upgrade-${u.id}`;
@@ -481,29 +520,87 @@ function buyUpgrade(u) {
         gameState.autoPower += u.mps;
         u.count++;
         playSound('buy');
-        spawnParticles(window.innerWidth/2, window.innerHeight/2, 20, '#00f3ff'); // Blue burst
+        spawnParticles(window.innerWidth/2, window.innerHeight/2, 20, '#00f3ff');
         addLog(`Installed ${u.name} v${u.count}.0`);
         updateUI();
+        saveGame(false); // Silent save on purchase
     }
 }
 
+// --- Persistence (Local Storage) ---
+
+function saveGame(showLog = true) {
+    const saveData = {
+        score: gameState.score,
+        autoPower: gameState.autoPower,
+        upgrades: UPGRADES.map(u => ({ id: u.id, count: u.count })),
+        timestamp: Date.now()
+    };
+    localStorage.setItem('cyberBreachSave', JSON.stringify(saveData));
+    
+    if(showLog) {
+        addLog("System state preserved.", "sys");
+        const status = document.getElementById('save-status');
+        status.style.opacity = 1;
+        setTimeout(() => status.style.opacity = 0, 2000);
+    }
+}
+
+function loadGame() {
+    const dataStr = localStorage.getItem('cyberBreachSave');
+    if (!dataStr) {
+        addLog("No previous session found.", "sys");
+        return;
+    }
+    
+    try {
+        const data = JSON.parse(dataStr);
+        gameState.score = data.score || 0;
+        gameState.autoPower = 0; // Recalculate based on upgrades
+
+        if (data.upgrades && Array.isArray(data.upgrades)) {
+            data.upgrades.forEach(savedU => {
+                const upgrade = UPGRADES.find(u => u.id === savedU.id);
+                if (upgrade) {
+                    upgrade.count = savedU.count;
+                    gameState.autoPower += upgrade.mps * savedU.count;
+                }
+            });
+        }
+        addLog("Session restored successfully.", "sys");
+        updateUI();
+    } catch (e) {
+        console.error("Save file corrupted", e);
+        addLog("Save file corrupted.", "sys");
+    }
+}
+
+function resetGame() {
+    if(confirm("WARNING: IRREVERSIBLE ACTION.\nWipe all system memory?")) {
+        localStorage.removeItem('cyberBreachSave');
+        location.reload();
+    }
+}
+
+// Auto Save Interval
+setInterval(() => {
+    saveGame(true);
+}, 10000); // Save every 10s
+
 // --- Main Loop ---
 function mainLoop() {
-    // Canvas Clearing
-    bgCtx.fillStyle = 'rgba(5, 5, 5, 0.3)'; // Trail effect
+    bgCtx.fillStyle = 'rgba(5, 5, 5, 0.3)'; 
     bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
     fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
 
-    // 1. Draw Background Code
     bgCtx.fillStyle = '#0f380f';
     bgCtx.font = '14px monospace';
     matrixChars.forEach(m => {
         bgCtx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), m.x, m.y);
-        m.y += m.speed * (gameState.heat > 50 ? 2 : 1); // Speed up with heat
+        m.y += m.speed * (gameState.heat > 50 ? 2 : 1);
         if (m.y > bgCanvas.height) m.y = 0;
     });
 
-    // 2. Draw Particles
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.update();
@@ -511,7 +608,6 @@ function mainLoop() {
         if (p.life <= 0) particles.splice(i, 1);
     }
 
-    // 3. Draw Floating Text
     for (let i = floaters.length - 1; i >= 0; i--) {
         let f = floaters[i];
         f.update();
@@ -519,18 +615,15 @@ function mainLoop() {
         if (f.life <= 0) floaters.splice(i, 1);
     }
 
-    // 4. Heat Decay
     if (gameState.heat > 0) gameState.heat -= gameState.heatDecay;
     if (gameState.heat < 0) gameState.heat = 0;
 
-    // 5. Auto Generation Logic (Per Second approximation)
     const now = Date.now();
     const dt = (now - gameState.lastTick) / 1000;
-    if (dt >= 0.1) { // Update score every 100ms
+    if (dt >= 0.1) { 
         const gain = (gameState.autoPower * gameState.multiplier) * dt;
         if (gain > 0) {
             gameState.score += gain;
-            // Chance to add log
             if (Math.random() < 0.05) addLog(HACKER_LOGS[Math.floor(Math.random() * HACKER_LOGS.length)]);
         }
         gameState.lastTick = now;
@@ -544,25 +637,17 @@ function mainLoop() {
 const mainBtn = document.getElementById('main-btn');
 
 mainBtn.addEventListener('mousedown', (e) => {
-    // Game Logic
     const gain = gameState.clickPower * gameState.multiplier;
     gameState.score += gain;
-    gameState.heat += 5; // Add heat
-    
-    // Visuals
-    const rect = mainBtn.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    gameState.heat += 4; 
     
     spawnParticles(e.clientX, e.clientY, 15, gameState.heat > 80 ? '#ff0055' : '#00ff41');
     spawnFloater(e.clientX, e.clientY - 20, gain);
     playSound('click');
 
-    // Button Shake/Scale via CSS
     mainBtn.style.transform = `scale(0.95) rotate(${Math.random() * 4 - 2}deg)`;
     setTimeout(() => mainBtn.style.transform = 'scale(1) rotate(0deg)', 50);
 
-    // Screen shake on high heat
     if (gameState.heat > 50) {
         document.body.style.transform = `translate(${Math.random()*4-2}px, ${Math.random()*4-2}px)`;
         setTimeout(() => document.body.style.transform = 'translate(0,0)', 50);
@@ -575,6 +660,7 @@ mainBtn.addEventListener('mousedown', (e) => {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 initUpgrades();
+loadGame(); // Load save on start
 mainLoop();
 
 </script>
