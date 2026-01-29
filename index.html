@@ -2,667 +2,372 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER_BREACH // PROTOCOL v2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cosmic Clicker: Vertical Analytics</title>
     <style>
-        /* --- Base & Fonts --- */
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
-
         :root {
-            --bg-color: #050505;
-            --main-color: #00ff41; /* Hacker Green */
-            --accent-color: #00f3ff; /* Cyber Blue */
-            --danger-color: #ff0055; /* Alert Red */
-            --text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+            --primary: #00d4ff;
+            --secondary: #ff2e63;
+            --accent: #00ff88;
+            --bg: #05060a;
+            --panel: rgba(10, 12, 20, 0.96);
+            --text-dim: rgba(0, 212, 255, 0.18);
         }
 
         body {
+            background-color: var(--bg);
+            color: white;
+            font-family: 'Consolas', 'Courier New', monospace;
             margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--main-color);
-            font-family: 'Fira Code', monospace;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
             user-select: none;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- Layout --- */
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 1200px;
-            display: grid;
-            grid-template-columns: 320px 1fr 320px;
-            grid-template-rows: 80px 1fr 60px;
-            gap: 15px;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 10;
-        }
-
-        /* --- CRT Effect Overlay --- */
-        .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-            z-index: 999;
-        }
-        
-        .glow-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
-            pointer-events: none;
-            z-index: 998;
-            animation: flicker 0.15s infinite;
-        }
-
-        @keyframes flicker {
-            0% { opacity: 0.97; }
-            50% { opacity: 1; }
-            100% { opacity: 0.98; }
-        }
-
-        /* --- UI Components --- */
-        .panel {
-            border: 1px solid var(--main-color);
-            background: rgba(0, 20, 0, 0.85);
-            padding: 15px;
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
-            backdrop-filter: blur(4px);
-            display: flex;
-            flex-direction: column;
-        }
-
-        h1, h2, h3 { margin: 0 0 10px 0; text-transform: uppercase; text-shadow: var(--text-shadow); }
-        
-        /* Header */
-        header { 
-            grid-column: 1 / 4; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 2px solid var(--main-color); 
-            padding: 0 20px; 
-            background: rgba(0, 20, 0, 0.6);
-        }
-        .header-left { display: flex; flex-direction: column; }
-        .header-right { text-align: right; }
-        
-        .score-display { font-size: 2rem; font-weight: bold; color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color); }
-        .mps-display { font-size: 1rem; opacity: 0.8; }
-
-        /* System Controls (New) */
-        .sys-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 5px;
-        }
-        .sys-btn {
-            background: transparent;
-            border: 1px solid var(--main-color);
-            color: var(--main-color);
-            font-family: 'Fira Code', monospace;
-            font-size: 0.7rem;
-            cursor: pointer;
-            padding: 2px 8px;
-            opacity: 0.6;
-            transition: 0.2s;
-        }
-        .sys-btn:hover { opacity: 1; background: rgba(0, 255, 65, 0.2); }
-        .sys-btn.danger:hover { color: var(--danger-color); border-color: var(--danger-color); background: rgba(255, 0, 85, 0.2); }
-
-        /* Left Panel (Upgrades) */
-        #upgrades-panel { grid-column: 1 / 2; grid-row: 2 / 3; overflow-y: auto; }
-        .upgrade-item {
-            border: 1px solid #333;
-            padding: 10px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            opacity: 0.7;
-            position: relative;
-            overflow: hidden;
-            background: rgba(0,0,0,0.5);
-        }
-        .upgrade-item:hover { border-color: var(--accent-color); opacity: 1; transform: translateX(5px); }
-        .upgrade-item.disabled { opacity: 0.3; cursor: not-allowed; border-color: #333; }
-        .upgrade-item:active { transform: scale(0.98); }
-        
-        /* Middle (Click Area) */
-        #main-area { 
-            grid-column: 2 / 3; 
-            grid-row: 2 / 3; 
-            position: relative; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            flex-direction: column;
-        }
-
-        #main-btn {
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            border: 4px solid var(--main-color);
-            background: rgba(0, 255, 65, 0.05);
-            color: var(--main-color);
-            font-size: 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
-            transition: all 0.1s;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            position: relative;
-            backdrop-filter: blur(2px);
-        }
-        
-        #main-btn:hover { box-shadow: 0 0 60px rgba(0, 255, 65, 0.5); background: rgba(0, 255, 65, 0.15); }
-        #main-btn:active { transform: scale(0.92); box-shadow: 0 0 20px rgba(0, 255, 65, 0.8) inset; }
-        
-        .heat-container {
-            width: 80%;
-            height: 8px;
-            background: #111;
-            margin-top: 40px;
-            border: 1px solid #333;
-            position: relative;
-        }
-        .heat-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--main-color), var(--accent-color), var(--danger-color));
-            transition: width 0.1s linear;
-            box-shadow: 0 0 10px var(--main-color);
-        }
-        .heat-text { text-align: center; font-size: 0.8rem; margin-top: 8px; letter-spacing: 2px; opacity: 0.7; }
-
-        /* Right Panel (Log) */
-        #log-panel { grid-column: 3 / 4; grid-row: 2 / 3; font-size: 0.75rem; overflow: hidden; justify-content: flex-end;}
-        #log-content { display: flex; flex-direction: column; gap: 4px; }
-        .log-entry { opacity: 0; animation: fadeIn 0.3s forwards; word-break: break-all; }
-        .log-entry::before { content: "> "; color: var(--accent-color); }
-        .log-entry.sys { color: #ffff00; }
-        @keyframes fadeIn { to { opacity: 1; } }
-
-        /* Canvas Layers */
-        #bg-canvas, #fx-canvas {
+        /* --- 最背面：統計情報 (すべて縦並び) --- */
+        #stats-bg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        #bg-canvas { z-index: 1; opacity: 0.2; }
-        #fx-canvas { z-index: 15; pointer-events: none; }
-
-        /* Glitch Animation */
-        .glitch { animation: glitch-anim 3s infinite linear alternate-reverse; }
-        @keyframes glitch-anim {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
+            top: 0; left: 0; width: 100%; height: 100%;
+            padding: 25px;
+            box-sizing: border-box;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            z-index: -1;
+            pointer-events: none;
+            overflow-y: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #020202; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--main-color); }
+        #stats-bg h2 { 
+            border-bottom: 1px solid var(--text-dim); 
+            margin: 0 0 15px 0; 
+            font-size: 1rem; 
+            letter-spacing: 3px;
+            flex-shrink: 0;
+        }
 
+        .stat-group { 
+            margin-bottom: 20px; 
+            border-left: 1px solid rgba(0, 212, 255, 0.05);
+            padding-left: 10px;
+        }
+        
+        .stat-label { 
+            color: rgba(255, 255, 255, 0.1); 
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .stat-line {
+            margin: 2px 0;
+            white-space: nowrap;
+        }
+
+        /* --- UIパーツ --- */
+        #header { text-align: center; padding: env(safe-area-inset-top) 10px 5px; z-index: 10; }
+        .score-display {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary);
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            margin: 0;
+        }
+
+        #main-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #core {
+            width: 140px; height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff, var(--primary), #000);
+            box-shadow: 0 0 30px var(--primary);
+            cursor: pointer; border: none;
+            transition: transform 0.05s;
+        }
+
+        #upgrade-container {
+            height: 40vh;
+            background: var(--panel);
+            border-top: 1px solid #222;
+            overflow-y: auto;
+            z-index: 20;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .upg-row {
+            display: flex; align-items: center; padding: 12px 20px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .upg-row.disabled { opacity: 0.3; filter: saturate(0); }
+        .upg-info { flex: 1; }
+        .upg-name { font-weight: bold; color: var(--primary); font-size: 0.95rem; }
+        .upg-desc { font-size: 0.75rem; color: #777; }
+        .upg-cost-area { text-align: right; }
+        .upg-cost { color: var(--secondary); font-weight: bold; font-size: 0.9rem; display: block; }
+        .upg-lvl { font-size: 0.7rem; color: #444; }
+
+        #rebirth-btn {
+            background: var(--secondary);
+            border: none; color: white; padding: 12px 25px;
+            border-radius: 4px; font-weight: bold; cursor: pointer;
+            display: none; margin-bottom: 20px; z-index: 30;
+            box-shadow: 0 0 20px var(--secondary);
+        }
+
+        .floating-text {
+            position: absolute; pointer-events: none;
+            font-weight: 900; animation: floatUp 0.6s ease-out forwards;
+            z-index: 100; font-size: 1.2rem;
+        }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div class="scanlines"></div>
-    <div class="glow-overlay"></div>
-    
-    <canvas id="bg-canvas"></canvas>
-    <canvas id="fx-canvas"></canvas>
-
-    <div id="game-container">
-        <header>
-            <div class="header-left">
-                <div class="title glitch" style="font-size: 1.5rem; font-weight:bold;">CYBER_BREACH // PROTOCOL</div>
-                <div class="sys-controls">
-                    <button class="sys-btn" onclick="saveGame()">[ SAVE_STATE ]</button>
-                    <button class="sys-btn danger" onclick="resetGame()">[ WIPE_MEM ]</button>
-                    <span id="save-status" style="font-size:0.7rem; margin-left:10px; opacity:0;">SAVED</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="score-display">DATA: <span id="score">0</span> TB</div>
-                <div class="mps-display"><span id="mps">0</span> TB/s</div>
-            </div>
-        </header>
-
-        <div id="upgrades-panel" class="panel">
-            <h3>System Upgrades</h3>
-            <div id="upgrades-list">
-                </div>
+    <div id="stats-bg">
+        <h2>CORE_ANALYTICS</h2>
+        
+        <div class="stat-group">
+            <span class="stat-label">:: LIFETIME_METRICS</span>
+            <div class="stat-line">TOTAL: <span id="st-total-energy">-</span></div>
+            <div class="stat-line">PEAK : <span id="st-max-energy">-</span></div>
+            <div class="stat-line">CLICKS: <span id="st-total-clicks">-</span></div>
+            <div class="stat-line">MANUAL: <span id="st-manual-total">-</span></div>
+            <div class="stat-line">Uptime: <span id="st-play-time">-</span></div>
         </div>
 
-        <div id="main-area">
-            <button id="main-btn">
-                <span>EXECUTE</span>
-                <span style="font-size:0.8rem; margin-top:5px; opacity:0.6;">(CLICK)</span>
-            </button>
-            <div class="heat-container">
-                <div class="heat-bar" id="heat-bar"></div>
-            </div>
-            <div class="heat-text">CPU TEMP / OVERDRIVE</div>
+        <div class="stat-group">
+            <span class="stat-label">:: PERFORMANCE_RATIO</span>
+            <div class="stat-line">OUTPUT: <span id="st-sps">-</span>/s</div>
+            <div class="stat-line">PUNCH : <span id="st-spc">-</span>/c</div>
+            <div class="stat-line">AUTO  : <span id="st-auto-ratio">-</span>%</div>
+            <div class="stat-line">NEXT_RB: <span id="st-rb-progress">-</span>%</div>
+            <div class="stat-line">GLOBAL: x<span id="st-global-mult">-</span></div>
         </div>
 
-        <div id="log-panel" class="panel">
-            <h3>Terminal Log</h3>
-            <div id="log-content"></div>
+        <div class="stat-group">
+            <span class="stat-label">:: REBIRTH_HISTORY</span>
+            <div class="stat-line">COUNT: <span id="st-rb-count">-</span></div>
+            <div class="stat-line">BEST : <span id="st-best-time">-</span></div>
+            <div class="stat-line">BONUS: x<span id="st-rb-bonus">-</span></div>
+        </div>
+
+        <div class="stat-group">
+            <span class="stat-label">:: CURRENT_RUN_LOG</span>
+            <div class="stat-line">TIME  : <span id="st-run-time">-</span></div>
+            <div class="stat-line">YIELD : <span id="st-run-energy">-</span></div>
+            <div class="stat-line">CLICKS: <span id="st-run-clicks">-</span></div>
         </div>
     </div>
 
-<script>
-/**
- * Game Logic, Rendering & Persistence
- */
+    <div id="header">
+        <div class="score-display" id="score">0</div>
+        <div id="run-timer" style="font-size:0.75rem; color:#444; margin-top:3px;">RUN: 00:00:00.000</div>
+    </div>
 
-// --- Game State ---
-const gameState = {
-    score: 0,
-    clickPower: 1,
-    autoPower: 0,
-    heat: 0, // 0 to 100
-    heatDecay: 0.5,
-    multiplier: 1,
-    lastTick: Date.now()
-};
+    <div id="main-view">
+        <button id="rebirth-btn" onclick="rebirth()">宇宙転生 (Next Multiplier)</button>
+        <button id="core"></button>
+    </div>
 
-// --- Config ---
-const UPGRADES = [
-    { id: 'script', name: 'Shell Script', baseCost: 15, mps: 1, desc: 'Simple automation.' },
-    { id: 'bot', name: 'Botnet Node', baseCost: 100, mps: 8, desc: 'Distributed computing.' },
-    { id: 'ai', name: 'Neural Network', baseCost: 500, mps: 45, desc: 'Machine learning enabled.' },
-    { id: 'quantum', name: 'Quantum Core', baseCost: 2000, mps: 250, desc: 'Breaks encryption instantly.' },
-    { id: 'alien', name: 'Alien Artifact', baseCost: 10000, mps: 1500, desc: 'Unknown technology.' },
-    { id: 'satellite', name: 'Orbital Uplink', baseCost: 50000, mps: 5000, desc: 'Global coverage.' }
-];
+    <div id="upgrade-container"></div>
 
-const HACKER_LOGS = [
-    "Bypassing firewall...", "Injecting payload...", "Decrypting headers...",
-    "Access granted.", "Downloading packet...", "Tracing IP...", 
-    "Port 8080 open.", "Root access requested...", "Buffer overflow success.",
-    "Updating kernel...", "Scanning network...", "Proxy chain established."
-];
+    <script>
+        const UPGRADES = [
+            { id: 't1', name: '手動掘削機', desc: 'クリック威力 +1', baseCost: 10, costMult: 1.5, power: 1, type: 'click' },
+            { id: 'a1', name: '自動ドローン', desc: '毎秒 +2 生産', baseCost: 50, costMult: 1.4, power: 2, type: 'auto' },
+            { id: 't2', name: '強化グローブ', desc: 'クリック威力 +15', baseCost: 800, costMult: 1.6, power: 15, type: 'click' },
+            { id: 'a2', name: '地熱プラント', desc: '毎秒 +40 生産', baseCost: 3000, costMult: 1.45, power: 40, type: 'auto' },
+            { id: 'm1', name: '増幅チップ', desc: '全生産効率 1.5倍', baseCost: 15000, costMult: 4.5, power: 1.5, type: 'mult' },
+            { id: 'a3', name: '衛星基地', desc: '毎秒 +250 生産', baseCost: 100000, costMult: 1.4, power: 250, type: 'auto' },
+            { id: 't3', name: '重力ハンマー', desc: 'クリック威力 +1500', baseCost: 500000, costMult: 1.8, power: 1500, type: 'click' },
+            { id: 'a4', name: '恒星パネル', desc: '毎秒 +10,000 生産', baseCost: 5e6, costMult: 1.4, power: 10000, type: 'auto' }
+        ];
 
-// --- Audio (Synthesized) ---
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playSound(type) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+        let state = {
+            score: 0,
+            totalEarned: 0,
+            totalClicks: 0,
+            manualEarned: 0,
+            maxScore: 0,
+            rebirthCount: 0,
+            rebirthMult: 1.0,
+            levels: {},
+            lastRebirthTimestamp: Date.now(),
+            bestRebirthTime: null,
+            hasRebirthed: false,
+            totalPlayTime: 0,
+            sessionStartTime: Date.now(),
+            runClicks: 0,
+            runEarned: 0
+        };
 
-    const now = audioCtx.currentTime;
-    
-    if (type === 'click') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-    } else if (type === 'buy') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.2);
-        osc.start(now);
-        osc.stop(now + 0.2);
-    }
-}
+        UPGRADES.forEach(u => state.levels[u.id] = 0);
 
-// --- Visual Engine (Canvas) ---
-const bgCanvas = document.getElementById('bg-canvas');
-const bgCtx = bgCanvas.getContext('2d');
-const fxCanvas = document.getElementById('fx-canvas');
-const fxCtx = fxCanvas.getContext('2d');
-
-let particles = [];
-let floaters = [];
-let matrixChars = [];
-
-function resizeCanvas() {
-    bgCanvas.width = window.innerWidth;
-    bgCanvas.height = window.innerHeight;
-    fxCanvas.width = window.innerWidth;
-    fxCanvas.height = window.innerHeight;
-    initMatrix();
-}
-
-function initMatrix() {
-    matrixChars = [];
-    const columns = Math.floor(bgCanvas.width / 20);
-    for (let i = 0; i < columns; i++) {
-        matrixChars.push({
-            x: i * 20,
-            y: Math.random() * bgCanvas.height,
-            speed: 2 + Math.random() * 5,
-            chars: "01"
-        });
-    }
-}
-
-class Particle {
-    constructor(x, y, color) {
-        this.x = x;
-        this.y = y;
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 5 + 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.life = 1.0;
-        this.decay = Math.random() * 0.03 + 0.02;
-        this.color = color || '#00ff41';
-        this.size = Math.random() * 3 + 1;
-    }
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= this.decay;
-    }
-    draw(ctx) {
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.size, this.size);
-        ctx.globalAlpha = 1;
-    }
-}
-
-class Floater {
-    constructor(x, y, text, color) {
-        this.x = x;
-        this.y = y;
-        this.text = text;
-        this.vy = -2;
-        this.life = 1.0;
-        this.color = color || '#fff';
-    }
-    update() {
-        this.y += this.vy;
-        this.life -= 0.02;
-    }
-    draw(ctx) {
-        ctx.globalAlpha = this.life;
-        ctx.font = "bold 20px 'Fira Code'";
-        ctx.fillStyle = this.color;
-        ctx.fillText(this.text, this.x, this.y);
-        ctx.globalAlpha = 1;
-    }
-}
-
-// --- Core Functions ---
-
-function spawnParticles(x, y, count = 10, color) {
-    for(let i=0; i<count; i++) {
-        particles.push(new Particle(x, y, color));
-    }
-}
-
-function spawnFloater(x, y, val) {
-    floaters.push(new Floater(x, y, `+${formatNum(val)}`, '#fff'));
-}
-
-function addLog(msg, type='') {
-    const logDiv = document.getElementById('log-content');
-    const entry = document.createElement('div');
-    entry.className = `log-entry ${type}`;
-    entry.textContent = msg;
-    logDiv.appendChild(entry);
-    if (logDiv.childNodes.length > 15) {
-        logDiv.removeChild(logDiv.firstChild);
-    }
-    const panel = document.getElementById('log-panel');
-    panel.scrollTop = panel.scrollHeight;
-}
-
-function formatNum(num) {
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'k';
-    return Math.floor(num);
-}
-
-function updateUI() {
-    document.getElementById('score').innerText = formatNum(gameState.score);
-    document.getElementById('mps').innerText = formatNum(gameState.autoPower * gameState.multiplier);
-    
-    // Update Heat
-    const heatBar = document.getElementById('heat-bar');
-    heatBar.style.width = `${Math.min(gameState.heat, 100)}%`;
-    
-    const root = document.documentElement;
-    if (gameState.heat > 80) {
-        root.style.setProperty('--main-color', '#ff0055'); 
-        heatBar.style.boxShadow = "0 0 20px #ff0055";
-        gameState.multiplier = 2; 
-    } else {
-        root.style.setProperty('--main-color', '#00ff41'); 
-        heatBar.style.boxShadow = "0 0 10px #00ff41";
-        gameState.multiplier = 1;
-    }
-
-    // Update Upgrades
-    UPGRADES.forEach(u => {
-        const el = document.getElementById(`upgrade-${u.id}`);
-        const costEl = document.getElementById(`cost-${u.id}`);
-        const countEl = document.getElementById(`count-${u.id}`);
-        
-        const count = u.count || 0;
-        const currentCost = Math.floor(u.baseCost * Math.pow(1.15, count));
-        
-        costEl.innerText = formatNum(currentCost);
-        countEl.innerText = count;
-
-        if (gameState.score >= currentCost) {
-            el.classList.remove('disabled');
-        } else {
-            el.classList.add('disabled');
+        function formatVal(num) {
+            if (num < 10000000) return Math.floor(num).toLocaleString();
+            return num.toExponential(3);
         }
-    });
-}
 
-function initUpgrades() {
-    const list = document.getElementById('upgrades-list');
-    list.innerHTML = ''; // Clear for reload safety
-    UPGRADES.forEach(u => {
-        u.count = 0; 
-        const div = document.createElement('div');
-        div.className = 'upgrade-item disabled';
-        div.id = `upgrade-${u.id}`;
-        div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                <span>${u.name}</span>
-                <span>lvl <span id="count-${u.id}">0</span></span>
-            </div>
-            <div style="font-size:0.8rem; margin-top:2px; color:var(--accent-color);">Cost: <span id="cost-${u.id}">${u.baseCost}</span> TB</div>
-            <div style="font-size:0.7rem; color:#888;">+${u.mps} TB/s</div>
-        `;
-        div.onclick = () => buyUpgrade(u);
-        list.appendChild(div);
-    });
-}
+        function formatTime(ms) {
+            if (!ms || ms < 0) return "00:00:00.000";
+            const h = Math.floor(ms / 3600000).toString().padStart(2, '0');
+            const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, '0');
+            const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
+            const mms = Math.floor(ms % 1000).toString().padStart(3, '0');
+            return `${h}:${m}:${s}.${mms}`;
+        }
 
-function buyUpgrade(u) {
-    const currentCost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
-    if (gameState.score >= currentCost) {
-        gameState.score -= currentCost;
-        gameState.autoPower += u.mps;
-        u.count++;
-        playSound('buy');
-        spawnParticles(window.innerWidth/2, window.innerHeight/2, 20, '#00f3ff');
-        addLog(`Installed ${u.name} v${u.count}.0`);
-        updateUI();
-        saveGame(false); // Silent save on purchase
-    }
-}
+        function getCost(u) { return u.baseCost * Math.pow(u.costMult, state.levels[u.id]); }
+        
+        function getGlobalMult() {
+            let mult = state.rebirthMult;
+            UPGRADES.filter(u => u.type === 'mult').forEach(u => mult *= Math.pow(u.power, state.levels[u.id]));
+            return mult;
+        }
 
-// --- Persistence (Local Storage) ---
+        function getSPS() {
+            let base = 0;
+            UPGRADES.filter(u => u.type === 'auto').forEach(u => base += state.levels[u.id] * u.power);
+            return base * getGlobalMult();
+        }
 
-function saveGame(showLog = true) {
-    const saveData = {
-        score: gameState.score,
-        autoPower: gameState.autoPower,
-        upgrades: UPGRADES.map(u => ({ id: u.id, count: u.count })),
-        timestamp: Date.now()
-    };
-    localStorage.setItem('cyberBreachSave', JSON.stringify(saveData));
-    
-    if(showLog) {
-        addLog("System state preserved.", "sys");
-        const status = document.getElementById('save-status');
-        status.style.opacity = 1;
-        setTimeout(() => status.style.opacity = 0, 2000);
-    }
-}
+        function getSPC() {
+            let base = 1;
+            UPGRADES.filter(u => u.type === 'click').forEach(u => base += state.levels[u.id] * u.power);
+            return base * getGlobalMult();
+        }
 
-function loadGame() {
-    const dataStr = localStorage.getItem('cyberBreachSave');
-    if (!dataStr) {
-        addLog("No previous session found.", "sys");
-        return;
-    }
-    
-    try {
-        const data = JSON.parse(dataStr);
-        gameState.score = data.score || 0;
-        gameState.autoPower = 0; // Recalculate based on upgrades
+        function render() {
+            const now = Date.now();
+            const currentRunTime = now - state.lastRebirthTimestamp;
+            const totalPlayed = state.totalPlayTime + (now - state.sessionStartTime);
+            const sps = getSPS();
+            const spc = getSPC();
 
-        if (data.upgrades && Array.isArray(data.upgrades)) {
-            data.upgrades.forEach(savedU => {
-                const upgrade = UPGRADES.find(u => u.id === savedU.id);
-                if (upgrade) {
-                    upgrade.count = savedU.count;
-                    gameState.autoPower += upgrade.mps * savedU.count;
-                }
+            document.getElementById('score').textContent = formatVal(state.score);
+            document.getElementById('run-timer').textContent = `RUN: ${formatTime(currentRunTime)}`;
+
+            const container = document.getElementById('upgrade-container');
+            container.innerHTML = '';
+            UPGRADES.forEach(u => {
+                const cost = getCost(u);
+                const canBuy = state.score >= cost;
+                const row = document.createElement('div');
+                row.className = `upg-row ${canBuy ? '' : 'disabled'}`;
+                row.onclick = () => { if(canBuy) buy(u.id); };
+                row.innerHTML = `<div class="upg-info"><div class="upg-name">${u.name}</div><div class="upg-desc">${u.desc}</div></div><div class="upg-cost-area"><span class="upg-cost">${formatVal(cost)}</span><span class="upg-lvl">Lv.${state.levels[u.id]}</span></div>`;
+                container.appendChild(row);
             });
+
+            // 統計情報の更新
+            document.getElementById('st-total-energy').textContent = formatVal(state.totalEarned);
+            document.getElementById('st-max-energy').textContent = formatVal(state.maxScore);
+            document.getElementById('st-total-clicks').textContent = state.totalClicks.toLocaleString();
+            document.getElementById('st-manual-total').textContent = formatVal(state.manualEarned);
+            document.getElementById('st-play-time').textContent = formatTime(totalPlayed).split('.')[0];
+            
+            document.getElementById('st-sps').textContent = formatVal(sps);
+            document.getElementById('st-spc').textContent = formatVal(spc);
+            const autoRatio = (sps + spc > 0) ? (sps / (sps + spc) * 100).toFixed(1) : "0.0";
+            document.getElementById('st-auto-ratio').textContent = autoRatio;
+            document.getElementById('st-rb-progress').textContent = Math.min(100, (state.score / 1e8 * 100)).toFixed(2);
+            document.getElementById('st-global-mult').textContent = getGlobalMult().toFixed(2);
+
+            document.getElementById('st-rb-count').textContent = state.rebirthCount;
+            document.getElementById('st-best-time').textContent = state.hasRebirthed ? formatTime(state.bestRebirthTime) : "NOT_FOUND";
+            document.getElementById('st-rb-bonus').textContent = state.rebirthMult.toFixed(2);
+
+            document.getElementById('st-run-time').textContent = formatTime(currentRunTime);
+            document.getElementById('st-run-energy').textContent = formatVal(state.runEarned);
+            document.getElementById('st-run-clicks').textContent = state.runClicks.toLocaleString();
+
+            document.getElementById('rebirth-btn').style.display = state.score >= 1e8 ? 'block' : 'none';
         }
-        addLog("Session restored successfully.", "sys");
-        updateUI();
-    } catch (e) {
-        console.error("Save file corrupted", e);
-        addLog("Save file corrupted.", "sys");
-    }
-}
 
-function resetGame() {
-    if(confirm("WARNING: IRREVERSIBLE ACTION.\nWipe all system memory?")) {
-        localStorage.removeItem('cyberBreachSave');
-        location.reload();
-    }
-}
-
-// Auto Save Interval
-setInterval(() => {
-    saveGame(true);
-}, 10000); // Save every 10s
-
-// --- Main Loop ---
-function mainLoop() {
-    bgCtx.fillStyle = 'rgba(5, 5, 5, 0.3)'; 
-    bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
-
-    bgCtx.fillStyle = '#0f380f';
-    bgCtx.font = '14px monospace';
-    matrixChars.forEach(m => {
-        bgCtx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), m.x, m.y);
-        m.y += m.speed * (gameState.heat > 50 ? 2 : 1);
-        if (m.y > bgCanvas.height) m.y = 0;
-    });
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.update();
-        p.draw(fxCtx);
-        if (p.life <= 0) particles.splice(i, 1);
-    }
-
-    for (let i = floaters.length - 1; i >= 0; i--) {
-        let f = floaters[i];
-        f.update();
-        f.draw(fxCtx);
-        if (f.life <= 0) floaters.splice(i, 1);
-    }
-
-    if (gameState.heat > 0) gameState.heat -= gameState.heatDecay;
-    if (gameState.heat < 0) gameState.heat = 0;
-
-    const now = Date.now();
-    const dt = (now - gameState.lastTick) / 1000;
-    if (dt >= 0.1) { 
-        const gain = (gameState.autoPower * gameState.multiplier) * dt;
-        if (gain > 0) {
-            gameState.score += gain;
-            if (Math.random() < 0.05) addLog(HACKER_LOGS[Math.floor(Math.random() * HACKER_LOGS.length)]);
+        function buy(id) {
+            const u = UPGRADES.find(x => x.id === id);
+            const cost = getCost(u);
+            if (state.score >= cost) {
+                state.score -= cost;
+                state.levels[id]++;
+                render();
+            }
         }
-        gameState.lastTick = now;
-        updateUI();
-    }
 
-    requestAnimationFrame(mainLoop);
-}
+        document.getElementById('core').addEventListener('pointerdown', (e) => {
+            const pwr = getSPC();
+            state.score += pwr;
+            state.totalEarned += pwr;
+            state.manualEarned += pwr;
+            state.runEarned += pwr;
+            state.totalClicks++;
+            state.runClicks++;
+            if(state.score > state.maxScore) state.maxScore = state.score;
+            
+            const t = document.createElement('div');
+            t.className = 'floating-text';
+            t.style.left = e.clientX + 'px'; t.style.top = e.clientY + 'px';
+            t.style.color = `hsl(${Math.random()*40 + 180}, 100%, 70%)`;
+            t.textContent = `+${formatVal(pwr)}`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 600);
+            
+            document.getElementById('core').style.transform = 'scale(0.85)';
+            setTimeout(() => document.getElementById('core').style.transform = 'scale(1)', 50);
+            render();
+        });
 
-// --- Event Listeners ---
-const mainBtn = document.getElementById('main-btn');
+        function rebirth() {
+            const now = Date.now();
+            const timeTook = now - state.lastRebirthTimestamp;
+            const bonus = (state.score / 1e8) * 0.15;
+            if (confirm(`転生して永続ボーナス x${bonus.toFixed(2)} を獲得しますか？`)) {
+                if (!state.bestRebirthTime || timeTook < state.bestRebirthTime) state.bestRebirthTime = timeTook;
+                state.hasRebirthed = true;
+                state.rebirthMult += bonus;
+                state.rebirthCount++;
+                state.score = 0;
+                state.runClicks = 0;
+                state.runEarned = 0;
+                state.lastRebirthTimestamp = now;
+                UPGRADES.forEach(u => state.levels[u.id] = 0);
+                save();
+                render();
+            }
+        }
 
-mainBtn.addEventListener('mousedown', (e) => {
-    const gain = gameState.clickPower * gameState.multiplier;
-    gameState.score += gain;
-    gameState.heat += 4; 
-    
-    spawnParticles(e.clientX, e.clientY, 15, gameState.heat > 80 ? '#ff0055' : '#00ff41');
-    spawnFloater(e.clientX, e.clientY - 20, gain);
-    playSound('click');
+        function save() {
+            const now = Date.now();
+            state.totalPlayTime += (now - state.sessionStartTime);
+            state.sessionStartTime = now;
+            localStorage.setItem('cosmic_vertical_save', JSON.stringify(state));
+        }
 
-    mainBtn.style.transform = `scale(0.95) rotate(${Math.random() * 4 - 2}deg)`;
-    setTimeout(() => mainBtn.style.transform = 'scale(1) rotate(0deg)', 50);
+        function load() {
+            const saved = localStorage.getItem('cosmic_vertical_save');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                state = { ...state, ...loaded };
+                UPGRADES.forEach(u => { if (state.levels[u.id] === undefined) state.levels[u.id] = 0; });
+            }
+            state.sessionStartTime = Date.now();
+        }
 
-    if (gameState.heat > 50) {
-        document.body.style.transform = `translate(${Math.random()*4-2}px, ${Math.random()*4-2}px)`;
-        setTimeout(() => document.body.style.transform = 'translate(0,0)', 50);
-    }
-    
-    updateUI();
-});
-
-// Init
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-initUpgrades();
-loadGame(); // Load save on start
-mainLoop();
-
-</script>
+        load();
+        setInterval(() => {
+            const sps = getSPS() / 20;
+            state.score += sps;
+            state.totalEarned += sps;
+            state.runEarned += sps;
+            if(state.score > state.maxScore) state.maxScore = state.score;
+            render();
+        }, 50);
+        setInterval(save, 5000);
+    </script>
 </body>
 </html>
