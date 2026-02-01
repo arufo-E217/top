@@ -2,372 +2,51 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Cosmic Clicker: Vertical Analytics</title>
-    <style>
-        :root {
-            --primary: #00d4ff;
-            --secondary: #ff2e63;
-            --accent: #00ff88;
-            --bg: #05060a;
-            --panel: rgba(10, 12, 20, 0.96);
-            --text-dim: rgba(0, 212, 255, 0.18);
-        }
-
-        body {
-            background-color: var(--bg);
-            color: white;
-            font-family: 'Consolas', 'Courier New', monospace;
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            user-select: none;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* --- 最背面：統計情報 (すべて縦並び) --- */
-        #stats-bg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            padding: 25px;
-            box-sizing: border-box;
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            z-index: -1;
-            pointer-events: none;
-            overflow-y: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #stats-bg h2 { 
-            border-bottom: 1px solid var(--text-dim); 
-            margin: 0 0 15px 0; 
-            font-size: 1rem; 
-            letter-spacing: 3px;
-            flex-shrink: 0;
-        }
-
-        .stat-group { 
-            margin-bottom: 20px; 
-            border-left: 1px solid rgba(0, 212, 255, 0.05);
-            padding-left: 10px;
-        }
-        
-        .stat-label { 
-            color: rgba(255, 255, 255, 0.1); 
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        .stat-line {
-            margin: 2px 0;
-            white-space: nowrap;
-        }
-
-        /* --- UIパーツ --- */
-        #header { text-align: center; padding: env(safe-area-inset-top) 10px 5px; z-index: 10; }
-        .score-display {
-            font-size: 2.2rem;
-            font-weight: 900;
-            color: var(--primary);
-            text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
-            margin: 0;
-        }
-
-        #main-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #core {
-            width: 140px; height: 140px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #fff, var(--primary), #000);
-            box-shadow: 0 0 30px var(--primary);
-            cursor: pointer; border: none;
-            transition: transform 0.05s;
-        }
-
-        #upgrade-container {
-            height: 40vh;
-            background: var(--panel);
-            border-top: 1px solid #222;
-            overflow-y: auto;
-            z-index: 20;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .upg-row {
-            display: flex; align-items: center; padding: 12px 20px;
-            border-bottom: 1px solid #1a1a1a;
-        }
-        .upg-row.disabled { opacity: 0.3; filter: saturate(0); }
-        .upg-info { flex: 1; }
-        .upg-name { font-weight: bold; color: var(--primary); font-size: 0.95rem; }
-        .upg-desc { font-size: 0.75rem; color: #777; }
-        .upg-cost-area { text-align: right; }
-        .upg-cost { color: var(--secondary); font-weight: bold; font-size: 0.9rem; display: block; }
-        .upg-lvl { font-size: 0.7rem; color: #444; }
-
-        #rebirth-btn {
-            background: var(--secondary);
-            border: none; color: white; padding: 12px 25px;
-            border-radius: 4px; font-weight: bold; cursor: pointer;
-            display: none; margin-bottom: 20px; z-index: 30;
-            box-shadow: 0 0 20px var(--secondary);
-        }
-
-        .floating-text {
-            position: absolute; pointer-events: none;
-            font-weight: 900; animation: floatUp 0.6s ease-out forwards;
-            z-index: 100; font-size: 1.2rem;
-        }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>あるふぉーとの素材置き場</title>
 </head>
 <body>
 
-    <div id="stats-bg">
-        <h2>CORE_ANALYTICS</h2>
-        
-        <div class="stat-group">
-            <span class="stat-label">:: LIFETIME_METRICS</span>
-            <div class="stat-line">TOTAL: <span id="st-total-energy">-</span></div>
-            <div class="stat-line">PEAK : <span id="st-max-energy">-</span></div>
-            <div class="stat-line">CLICKS: <span id="st-total-clicks">-</span></div>
-            <div class="stat-line">MANUAL: <span id="st-manual-total">-</span></div>
-            <div class="stat-line">Uptime: <span id="st-play-time">-</span></div>
+    <header class="headerNavigationMenu">
+        <div class="header-inner">
+            <h1 class="logo">あるふぉーとのゲーム置き場</h1>
+            <nav>
+                <ul>
+                    <li><a href="#">Top</a></li>
+                    <li><a href="#">日記</a></li>
+                    <li><a href="#">ゲーム</a></li>
+                </ul>
+            </nav>
         </div>
+    </header>
 
-        <div class="stat-group">
-            <span class="stat-label">:: PERFORMANCE_RATIO</span>
-            <div class="stat-line">OUTPUT: <span id="st-sps">-</span>/s</div>
-            <div class="stat-line">PUNCH : <span id="st-spc">-</span>/c</div>
-            <div class="stat-line">AUTO  : <span id="st-auto-ratio">-</span>%</div>
-            <div class="stat-line">NEXT_RB: <span id="st-rb-progress">-</span>%</div>
-            <div class="stat-line">GLOBAL: x<span id="st-global-mult">-</span></div>
+    <main>
+        <section class="heroSection">
+            <div class="heroContent">
+                <h1>Aruphy.K</h1>
+                <p>-自作ゲームなどの公開サイト-</p>
+            </div>
+        </section>
+
+        <div class="container">
+            <article class="introText">
+                <p>よくぞおいでなすった ゆっくりしていくがよい</p>
+                <a href="rhythmClockGame.html" class="introText">リズム目覚まし</a>
+                <a href="CosmicClicker.html" class="introText">Cosmic Clicker</a>
+            </article>
         </div>
+    </main>
 
-        <div class="stat-group">
-            <span class="stat-label">:: REBIRTH_HISTORY</span>
-            <div class="stat-line">COUNT: <span id="st-rb-count">-</span></div>
-            <div class="stat-line">BEST : <span id="st-best-time">-</span></div>
-            <div class="stat-line">BONUS: x<span id="st-rb-bonus">-</span></div>
-        </div>
+    <footer class="footerNavigationMenu">
+        <p>&copy; 2026 Aruphy.K. All Rights Reserved.</p>
+        <nav>
+            <ul>
+                <li><a href="https://x.com/arufo_E217">Twitter</a></li>
+                <li><a href="#">YouTube</a></li>
+            </ul>
+        </nav>
+    </footer>
 
-        <div class="stat-group">
-            <span class="stat-label">:: CURRENT_RUN_LOG</span>
-            <div class="stat-line">TIME  : <span id="st-run-time">-</span></div>
-            <div class="stat-line">YIELD : <span id="st-run-energy">-</span></div>
-            <div class="stat-line">CLICKS: <span id="st-run-clicks">-</span></div>
-        </div>
-    </div>
-
-    <div id="header">
-        <div class="score-display" id="score">0</div>
-        <div id="run-timer" style="font-size:0.75rem; color:#444; margin-top:3px;">RUN: 00:00:00.000</div>
-    </div>
-
-    <div id="main-view">
-        <button id="rebirth-btn" onclick="rebirth()">宇宙転生 (Next Multiplier)</button>
-        <button id="core"></button>
-    </div>
-
-    <div id="upgrade-container"></div>
-
-    <script>
-        const UPGRADES = [
-            { id: 't1', name: '手動掘削機', desc: 'クリック威力 +1', baseCost: 10, costMult: 1.5, power: 1, type: 'click' },
-            { id: 'a1', name: '自動ドローン', desc: '毎秒 +2 生産', baseCost: 50, costMult: 1.4, power: 2, type: 'auto' },
-            { id: 't2', name: '強化グローブ', desc: 'クリック威力 +15', baseCost: 800, costMult: 1.6, power: 15, type: 'click' },
-            { id: 'a2', name: '地熱プラント', desc: '毎秒 +40 生産', baseCost: 3000, costMult: 1.45, power: 40, type: 'auto' },
-            { id: 'm1', name: '増幅チップ', desc: '全生産効率 1.5倍', baseCost: 15000, costMult: 4.5, power: 1.5, type: 'mult' },
-            { id: 'a3', name: '衛星基地', desc: '毎秒 +250 生産', baseCost: 100000, costMult: 1.4, power: 250, type: 'auto' },
-            { id: 't3', name: '重力ハンマー', desc: 'クリック威力 +1500', baseCost: 500000, costMult: 1.8, power: 1500, type: 'click' },
-            { id: 'a4', name: '恒星パネル', desc: '毎秒 +10,000 生産', baseCost: 5e6, costMult: 1.4, power: 10000, type: 'auto' }
-        ];
-
-        let state = {
-            score: 0,
-            totalEarned: 0,
-            totalClicks: 0,
-            manualEarned: 0,
-            maxScore: 0,
-            rebirthCount: 0,
-            rebirthMult: 1.0,
-            levels: {},
-            lastRebirthTimestamp: Date.now(),
-            bestRebirthTime: null,
-            hasRebirthed: false,
-            totalPlayTime: 0,
-            sessionStartTime: Date.now(),
-            runClicks: 0,
-            runEarned: 0
-        };
-
-        UPGRADES.forEach(u => state.levels[u.id] = 0);
-
-        function formatVal(num) {
-            if (num < 10000000) return Math.floor(num).toLocaleString();
-            return num.toExponential(3);
-        }
-
-        function formatTime(ms) {
-            if (!ms || ms < 0) return "00:00:00.000";
-            const h = Math.floor(ms / 3600000).toString().padStart(2, '0');
-            const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, '0');
-            const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
-            const mms = Math.floor(ms % 1000).toString().padStart(3, '0');
-            return `${h}:${m}:${s}.${mms}`;
-        }
-
-        function getCost(u) { return u.baseCost * Math.pow(u.costMult, state.levels[u.id]); }
-        
-        function getGlobalMult() {
-            let mult = state.rebirthMult;
-            UPGRADES.filter(u => u.type === 'mult').forEach(u => mult *= Math.pow(u.power, state.levels[u.id]));
-            return mult;
-        }
-
-        function getSPS() {
-            let base = 0;
-            UPGRADES.filter(u => u.type === 'auto').forEach(u => base += state.levels[u.id] * u.power);
-            return base * getGlobalMult();
-        }
-
-        function getSPC() {
-            let base = 1;
-            UPGRADES.filter(u => u.type === 'click').forEach(u => base += state.levels[u.id] * u.power);
-            return base * getGlobalMult();
-        }
-
-        function render() {
-            const now = Date.now();
-            const currentRunTime = now - state.lastRebirthTimestamp;
-            const totalPlayed = state.totalPlayTime + (now - state.sessionStartTime);
-            const sps = getSPS();
-            const spc = getSPC();
-
-            document.getElementById('score').textContent = formatVal(state.score);
-            document.getElementById('run-timer').textContent = `RUN: ${formatTime(currentRunTime)}`;
-
-            const container = document.getElementById('upgrade-container');
-            container.innerHTML = '';
-            UPGRADES.forEach(u => {
-                const cost = getCost(u);
-                const canBuy = state.score >= cost;
-                const row = document.createElement('div');
-                row.className = `upg-row ${canBuy ? '' : 'disabled'}`;
-                row.onclick = () => { if(canBuy) buy(u.id); };
-                row.innerHTML = `<div class="upg-info"><div class="upg-name">${u.name}</div><div class="upg-desc">${u.desc}</div></div><div class="upg-cost-area"><span class="upg-cost">${formatVal(cost)}</span><span class="upg-lvl">Lv.${state.levels[u.id]}</span></div>`;
-                container.appendChild(row);
-            });
-
-            // 統計情報の更新
-            document.getElementById('st-total-energy').textContent = formatVal(state.totalEarned);
-            document.getElementById('st-max-energy').textContent = formatVal(state.maxScore);
-            document.getElementById('st-total-clicks').textContent = state.totalClicks.toLocaleString();
-            document.getElementById('st-manual-total').textContent = formatVal(state.manualEarned);
-            document.getElementById('st-play-time').textContent = formatTime(totalPlayed).split('.')[0];
-            
-            document.getElementById('st-sps').textContent = formatVal(sps);
-            document.getElementById('st-spc').textContent = formatVal(spc);
-            const autoRatio = (sps + spc > 0) ? (sps / (sps + spc) * 100).toFixed(1) : "0.0";
-            document.getElementById('st-auto-ratio').textContent = autoRatio;
-            document.getElementById('st-rb-progress').textContent = Math.min(100, (state.score / 1e8 * 100)).toFixed(2);
-            document.getElementById('st-global-mult').textContent = getGlobalMult().toFixed(2);
-
-            document.getElementById('st-rb-count').textContent = state.rebirthCount;
-            document.getElementById('st-best-time').textContent = state.hasRebirthed ? formatTime(state.bestRebirthTime) : "NOT_FOUND";
-            document.getElementById('st-rb-bonus').textContent = state.rebirthMult.toFixed(2);
-
-            document.getElementById('st-run-time').textContent = formatTime(currentRunTime);
-            document.getElementById('st-run-energy').textContent = formatVal(state.runEarned);
-            document.getElementById('st-run-clicks').textContent = state.runClicks.toLocaleString();
-
-            document.getElementById('rebirth-btn').style.display = state.score >= 1e8 ? 'block' : 'none';
-        }
-
-        function buy(id) {
-            const u = UPGRADES.find(x => x.id === id);
-            const cost = getCost(u);
-            if (state.score >= cost) {
-                state.score -= cost;
-                state.levels[id]++;
-                render();
-            }
-        }
-
-        document.getElementById('core').addEventListener('pointerdown', (e) => {
-            const pwr = getSPC();
-            state.score += pwr;
-            state.totalEarned += pwr;
-            state.manualEarned += pwr;
-            state.runEarned += pwr;
-            state.totalClicks++;
-            state.runClicks++;
-            if(state.score > state.maxScore) state.maxScore = state.score;
-            
-            const t = document.createElement('div');
-            t.className = 'floating-text';
-            t.style.left = e.clientX + 'px'; t.style.top = e.clientY + 'px';
-            t.style.color = `hsl(${Math.random()*40 + 180}, 100%, 70%)`;
-            t.textContent = `+${formatVal(pwr)}`;
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 600);
-            
-            document.getElementById('core').style.transform = 'scale(0.85)';
-            setTimeout(() => document.getElementById('core').style.transform = 'scale(1)', 50);
-            render();
-        });
-
-        function rebirth() {
-            const now = Date.now();
-            const timeTook = now - state.lastRebirthTimestamp;
-            const bonus = (state.score / 1e8) * 0.15;
-            if (confirm(`転生して永続ボーナス x${bonus.toFixed(2)} を獲得しますか？`)) {
-                if (!state.bestRebirthTime || timeTook < state.bestRebirthTime) state.bestRebirthTime = timeTook;
-                state.hasRebirthed = true;
-                state.rebirthMult += bonus;
-                state.rebirthCount++;
-                state.score = 0;
-                state.runClicks = 0;
-                state.runEarned = 0;
-                state.lastRebirthTimestamp = now;
-                UPGRADES.forEach(u => state.levels[u.id] = 0);
-                save();
-                render();
-            }
-        }
-
-        function save() {
-            const now = Date.now();
-            state.totalPlayTime += (now - state.sessionStartTime);
-            state.sessionStartTime = now;
-            localStorage.setItem('cosmic_vertical_save', JSON.stringify(state));
-        }
-
-        function load() {
-            const saved = localStorage.getItem('cosmic_vertical_save');
-            if (saved) {
-                const loaded = JSON.parse(saved);
-                state = { ...state, ...loaded };
-                UPGRADES.forEach(u => { if (state.levels[u.id] === undefined) state.levels[u.id] = 0; });
-            }
-            state.sessionStartTime = Date.now();
-        }
-
-        load();
-        setInterval(() => {
-            const sps = getSPS() / 20;
-            state.score += sps;
-            state.totalEarned += sps;
-            state.runEarned += sps;
-            if(state.score > state.maxScore) state.maxScore = state.score;
-            render();
-        }, 50);
-        setInterval(save, 5000);
-    </script>
 </body>
 </html>

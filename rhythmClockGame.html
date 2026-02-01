@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythm Alarm - History Edition</title>
+    <style>
+        :root {
+            --bg-color: #0d0f12;
+            --text-color: #e0e0e0;
+            --accent-color: #00ffcc;
+            --danger-color: #ff4d4d;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+            user-select: none; touch-action: manipulation;
+        }
+
+        #game-container {
+            position: relative; text-align: center; width: 100%; max-width: 500px;
+            height: 100vh; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 15px 0; box-sizing: border-box;
+        }
+
+        #top-header { height: 60px; visibility: hidden; }
+        #target-badge {
+            display: inline-block; background: #1a1a1a; border: 2px solid var(--accent-color);
+            padding: 5px 25px; border-radius: 20px; font-size: 1.4rem;
+            font-weight: bold; color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+
+        #clock-area { position: relative; display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        #clock-canvas { background: #16181d; border-radius: 50%; width: 280px; height: 280px; box-shadow: 0 0 40px rgba(0,0,0,0.7); }
+        #digital-display {
+            position: absolute; top: 65%; font-size: 1.8rem; font-weight: bold;
+            color: var(--accent-color); font-family: 'Consolas', monospace;
+        }
+
+        #center-ui { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; overflow: hidden;}
+        
+        .settings-card {
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;
+            margin-top: 10px; width: 85%;
+        }
+        .setting-row { margin: 10px 0; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;}
+        
+        select {
+            background: #222; color: #fff; border: 1px solid #444;
+            padding: 5px 10px; border-radius: 5px;
+        }
+
+        .screen-text { font-size: 1.1rem; margin: 5px 0; }
+        .large-text { font-size: 2.5rem; font-weight: bold; margin-bottom: 5px; }
+
+        #table-container {
+            width: 100%; max-height: 180px; overflow-y: auto; 
+            margin-top: 10px; border-radius: 0;
+            scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent;
+        }
+        .result-table {
+            width: 100%; border-collapse: collapse; font-size: 0.75rem;
+            background: rgba(255,255,255,0.05);
+        }
+        .result-table th {
+            position: sticky; top: 0; background: #1a1a1a; 
+            color: var(--accent-color); padding: 8px 4px; z-index: 1;
+        }
+        .result-table td {
+            padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .row-new { animation: highlight 1s ease-out; }
+        @keyframes highlight { from { background: rgba(0, 255, 204, 0.3); } to { background: transparent; } }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: black; z-index: 100; display: flex;
+            justify-content: center; align-items: center; pointer-events: none;
+            opacity: 0; transition: opacity 0.5s;
+        }
+        #overlay.active { opacity: 1; }
+
+        button {
+            padding: 12px 50px; font-size: 1.2rem; background: var(--accent-color);
+            border: none; color: #000; border-radius: 30px; cursor: pointer; font-weight: bold;
+        }
+
+        .hidden { display: none !important; }
+        .perfect { color: #fff; text-shadow: 0 0 15px var(--accent-color); }
+        .miss { color: var(--danger-color); }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="top-header">
+            <div style="font-size: 0.75rem; opacity: 0.6;">目標時間</div>
+            <div id="target-badge">00:00</div>
+        </div>
+
+        <div id="clock-area" class="hidden">
+            <canvas id="clock-canvas" width="400" height="400"></canvas>
+            <div id="digital-display">00:00</div>
+        </div>
+
+        <div id="center-ui">
+            <div id="start-screen">
+                <h1 style="margin: 0 0 10px 0;">リズム目覚まし</h1>
+                <button id="start-btn">はじめる！</button>
+                <div class="settings-card">
+                    <div class="setting-row">
+                        <span>むずかしさ:</span>
+                        <select id="difficulty-select">
+                            <option value="easy">ゆるゆる (±30分)</option>
+                            <option value="normal" selected>ふつう (±20分)</option>
+                            <option value="hard">きびしめ (±10分)</option>
+                            <option value="railway">時間ピッタシ (-10〜0分)</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span>ガイド音をならす:</span>
+                        <input type="checkbox" id="guide-toggle">
+                    </div>
+                </div>
+            </div>
+
+            <div id="status-message" class="screen-text"></div>
+            
+            <div id="result-area" class="hidden">
+                <div id="evaluation" class="large-text"></div>
+                <div id="result-diff" class="screen-text" style="font-weight: bold;"></div>
+                <div id="table-container">
+                    <table class="result-table" id="history-table">
+                        <thead>
+                            <tr><th>日</th><th>BPM</th><th>目標</th><th>停止</th><th>ズレ</th></tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+                <div id="game-over-ui" class="hidden" style="margin-top: 15px;">
+                    <button onclick="location.reload()">もういちど</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer-hint" style="font-size: 0.8rem; opacity: 0.4;">タップして止めてね</div>
+    </div>
+
+    <div id="overlay"><div id="overlay-text" class="large-text"></div></div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSnd(freq, vol, decay) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + decay + 0.1);
+        }
+
+        const state = {
+            day: 1, bpm: 120, targetH: 0, targetM: 0,
+            startTime: 0, phase: 'IDLE', timerId: null,
+            currentHours: 0, guideEnabled: false, difficulty: 'normal',
+            history: [] 
+        };
+
+        const canvas = document.getElementById('clock-canvas');
+        const ctx = canvas.getContext('2d');
+        const els = {
+            header: document.getElementById('top-header'),
+            target: document.getElementById('target-badge'),
+            clockArea: document.getElementById('clock-area'),
+            digital: document.getElementById('digital-display'),
+            startScreen: document.getElementById('start-screen'),
+            status: document.getElementById('status-message'),
+            result: document.getElementById('result-area'),
+            evaluation: document.getElementById('evaluation'),
+            diff: document.getElementById('result-diff'),
+            historyBody: document.getElementById('history-body'),
+            tableContainer: document.getElementById('table-container'),
+            gameOver: document.getElementById('game-over-ui'),
+            overlay: document.getElementById('overlay'),
+            overlayText: document.getElementById('overlay-text'),
+            guideToggle: document.getElementById('guide-toggle'),
+            diffSelect: document.getElementById('difficulty-select')
+        };
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            audioCtx.resume();
+            state.guideEnabled = els.guideToggle.checked;
+            state.difficulty = els.diffSelect.value;
+            initDay();
+        });
+
+        const triggerAction = () => { if (state.phase === 'PLAYING') stopClock(); };
+        window.addEventListener('mousedown', triggerAction);
+        window.addEventListener('touchstart', (e) => { e.preventDefault(); triggerAction(); });
+
+        async function initDay() {
+            state.phase = 'INTRO';
+            const levelGroup = Math.floor((state.day - 1) / 3);
+            const minBpm = Math.max(80, 120 - (15 * levelGroup));
+            const maxBpm = 130 + (15 * levelGroup);
+            state.bpm = Math.floor(Math.random() * (maxBpm - minBpm + 1)) + minBpm;
+
+            state.targetH = Math.floor(Math.random() * 12) + 5;
+            const mins = [0, 20, 30, 40];
+            state.targetM = mins[Math.floor(Math.random() * mins.length)];
+            
+            els.startScreen.classList.add('hidden');
+            els.result.classList.add('hidden');
+            els.clockArea.classList.remove('hidden');
+            els.header.style.visibility = 'visible';
+            els.target.textContent = `${String(state.targetH).padStart(2, '0')}:${String(state.targetM).padStart(2, '0')}`;
+            
+            els.overlayText.textContent = `${state.day}日目`;
+            els.overlay.classList.add('active');
+            await wait(1200);
+            
+            els.overlay.classList.remove('active');
+            els.status.textContent = `目覚まし「${state.targetH}時${state.targetM}分に起こしてね」`;
+            drawClock(0);
+            els.digital.textContent = "00:00";
+            
+            await wait(2000);
+            startCountdown();
+        }
+
+        async function startCountdown() {
+            state.phase = 'COUNTDOWN';
+            const beatMs = 60000 / state.bpm;
+            for (let i = 1; i <= 8; i++) {
+                if (i <= 4) playSnd(800, 0.2, 0.08);
+                else if (i <= 7) playSnd(400, 0.2, 0.1);
+                else playSnd(1600, 0.3, 0.15);
+                els.status.textContent = `BPM${state.bpm}... [ ${i} ]`;
+                if (i === 8) startGameplay();
+                await wait(beatMs);
+            }
+        }
+
+        function startGameplay() {
+            state.phase = 'PLAYING';
+            state.startTime = performance.now();
+            els.status.textContent = "おやすみなさい...";
+            els.overlay.classList.add('active');
+            els.overlayText.textContent = "";
+
+            const beatMs = 60000 / state.bpm;
+            let lastTick = -1, lastSub = -1;
+
+            const loop = () => {
+                if (state.phase !== 'PLAYING') return;
+                const elapsed = performance.now() - state.startTime;
+                const totalHours = elapsed / beatMs;
+                state.currentHours = totalHours;
+
+                const currentTick = Math.floor(totalHours + 0.05);
+                if (currentTick > lastTick) {
+                    playSnd(800, 0.15, 0.08);
+                    lastTick = currentTick;
+                }
+
+                if (state.guideEnabled && Math.floor(totalHours) >= 1) {
+                    if (state.targetM === 30) {
+                        const sub = Math.floor(totalHours * 2 + 0.05);
+                        if (sub > lastSub && sub % 2 !== 0) {
+                            playSnd(1200, 0.15, 0.04); lastSub = sub;
+                        }
+                    } else if (state.targetM === 20 || state.targetM === 40) {
+                        const sub = Math.floor(totalHours * 3 + 0.05);
+                        if (sub > lastSub && sub % 3 !== 0) {
+                            playSnd(1400, 0.15, 0.03); lastSub = sub;
+                        }
+                    }
+                }
+
+                drawClock(totalHours);
+                updateDigital(totalHours);
+                state.timerId = requestAnimationFrame(loop);
+            };
+            requestAnimationFrame(loop);
+        }
+
+        async function stopClock() {
+            state.phase = 'WAITING';
+            cancelAnimationFrame(state.timerId);
+            els.status.textContent = "";
+            els.overlayText.textContent = "おはよ！いま何時？";
+            await wait(1800);
+            showResult();
+        }
+
+        function showResult() {
+            state.phase = 'RESULT';
+            els.overlay.classList.remove('active');
+            els.result.classList.remove('hidden');
+
+            const targetVal = state.targetH + (state.targetM / 60);
+            const rawDiff = state.currentHours - targetVal;
+            const diffMin = Math.round(rawDiff * 60);
+            const absDiff = Math.abs(rawDiff);
+            
+            let rank = "ざんねん...";
+            let success = false;
+            
+            const limits = { easy: 30/60, normal: 20/60, hard: 10/60, railway: 10/60 };
+            const limit = limits[state.difficulty];
+
+            if (state.difficulty === 'railway') {
+                if (rawDiff <= 0.016 && rawDiff >= -limit) {
+                    success = true;
+                    const step = limit / 3;
+                    if (absDiff < step) rank = "Perfect!!";
+                    else if (absDiff < step * 2) rank = "Great!";
+                    else rank = "Good.";
+                }
+            } else {
+                if (absDiff <= limit) {
+                    success = true;
+                    const step = limit / 3;
+                    if (absDiff < step) rank = "Perfect!!";
+                    else if (absDiff < step * 2) rank = "Great!";
+                    else rank = "Good.";
+                }
+            }
+
+            let diffText = "";
+            if (state.difficulty !== 'railway' && Math.abs(diffMin) < 5) {
+                diffText = "ピッタリ！";
+            } else {
+                diffText = diffMin === 0 ? "ピッタリ！" : (diffMin > 0 ? `${diffMin}分の寝坊` : `${Math.abs(diffMin)}分早すぎ`);
+            }
+
+            els.evaluation.textContent = rank;
+            els.evaluation.className = "large-text " + (rank === "ざんねん..." ? "miss" : (rank === "Perfect!!" ? "perfect" : ""));
+            els.diff.innerHTML = `結果: ${diffText}`;
+
+            const stopH = Math.floor(state.currentHours);
+            const stopM = Math.floor((state.currentHours % 1) * 60);
+            const record = {
+                day: state.day,
+                bpm: state.bpm,
+                target: `${String(state.targetH).padStart(2,'0')}:${String(state.targetM).padStart(2,'0')}`,
+                stop: `${String(stopH).padStart(2,'0')}:${String(stopM).padStart(2,'0')}`,
+                diff: `${diffMin > 0 ? '+' : ''}${diffMin}分`
+            };
+            state.history.push(record);
+            
+            renderTable();
+
+            if (success) {
+                state.day++;
+                setTimeout(initDay, 3500);
+            } else {
+                els.gameOver.classList.remove('hidden');
+            }
+        }
+
+        function renderTable() {
+            els.historyBody.innerHTML = state.history.map((r, index) => `
+                <tr class="${index === state.history.length - 1 ? 'row-new' : ''}">
+                    <td>${r.day}</td>
+                    <td>${r.bpm}</td>
+                    <td>${r.target}</td>
+                    <td>${r.stop}</td>
+                    <td>${r.diff}</td>
+                </tr>
+            `).join('');
+            
+            els.tableContainer.scrollTop = els.tableContainer.scrollHeight;
+        }
+
+        function updateDigital(val) {
+            const h = Math.floor(val);
+            const m = Math.floor((val % 1) * 60);
+            els.digital.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        function drawClock(hours) {
+            const r = canvas.width / 2;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); ctx.translate(r, r);
+            ctx.strokeStyle = "#333";
+            for (let i = 0; i < 12; i++) {
+                ctx.beginPath(); ctx.moveTo(0, -r+10); ctx.lineTo(0, -r+25);
+                ctx.lineWidth = 4; ctx.stroke(); ctx.rotate(Math.PI/6);
+            }
+            ctx.save(); ctx.rotate(hours * Math.PI / 6);
+            ctx.strokeStyle = "#00ffcc"; ctx.lineWidth = 10; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(0, -r * 0.5); ctx.stroke(); ctx.restore();
+            ctx.save(); ctx.rotate(hours * 2 * Math.PI);
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(0, -r * 0.8); ctx.stroke(); ctx.restore();
+            ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill();
+            ctx.restore();
+        }
+
+        function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+    </script>
+</body>
+</html>
