@@ -2,85 +2,73 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>英単語4択クイズ</title>
+<title>英単語4択クイズ 完全版</title>
 <style>
 body{
   font-family:sans-serif;
-  background:linear-gradient(135deg,#141e30,#243b55);
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
   color:white;
   text-align:center;
   margin:0;
   padding:20px;
 }
-h1{margin-bottom:5px;}
-#modeToggle{
-  margin-bottom:15px;
-  padding:8px 15px;
-  border:none;
-  border-radius:20px;
-  cursor:pointer;
-  font-weight:bold;
-}
 #quizBox{
   background:rgba(255,255,255,0.08);
-  padding:30px;
+  padding:25px;
   border-radius:15px;
-  max-width:700px;
+  max-width:800px;
   margin:auto;
 }
-.word{
-  font-size:34px;
-  margin:20px 0;
+.word{font-size:32px;margin:20px;}
+button{
+  padding:10px;
+  margin:6px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
 }
 .choices button{
   display:block;
   width:100%;
-  margin:10px 0;
-  padding:12px;
-  font-size:16px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  transition:0.2s;
+  margin:8px 0;
 }
-.choices button:hover{transform:scale(1.03);}
 .correct{background:#4caf50!important;}
 .wrong{background:#e53935!important;}
-.info{margin-top:15px;font-size:18px;}
-.comboText{
-  font-size:24px;
-  font-weight:bold;
-  color:#ffd700;
-}
+#stats{margin-top:15px;font-size:15px;}
 .comboEffect{
   position:fixed;
   top:40%;
   left:50%;
   transform:translate(-50%,-50%);
-  font-size:50px;
+  font-size:48px;
   font-weight:bold;
-  color:#ffeb3b;
+  color:#ffd700;
   opacity:0;
-  pointer-events:none;
 }
-@keyframes comboAnim{
+@keyframes pop{
   0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}
   50%{opacity:1;transform:translate(-50%,-50%) scale(1.3);}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(1);}
+  100%{opacity:0;}
 }
 </style>
 </head>
 <body>
 
-<h1>英単語4択クイズ</h1>
-<button id="modeToggle">英 → 日 モード</button>
+<h2>英単語4択クイズ</h2>
+<button id="modeBtn">英→日</button>
 
 <div id="quizBox">
-  <div class="word" id="question">Loading...</div>
+  <div class="word" id="question"></div>
   <div class="choices" id="choices"></div>
-  <div class="info">
+
+  <div id="stats">
+    <div>周回: <span id="lap">1</span>周目</div>
+    <div>進捗: <span id="progress">0</span>%</div>
     <div>スコア: <span id="score">0</span></div>
-    <div class="comboText">コンボ: <span id="combo">0</span></div>
+    <div>コンボ: <span id="combo">0</span></div>
+    <div>正解: <span id="correctCount">0</span> |
+         誤答: <span id="wrongCount">0</span> |
+         正答率: <span id="accuracy">0</span>%</div>
   </div>
 </div>
 
@@ -88,6 +76,7 @@ h1{margin-bottom:5px;}
 
 <script>
 const words=[
+// ★ 省略なし（前回と同じ全単語データ）
 {word:"infinite",meaning:"無限の；無数の"},
 {word:"worthwhile",meaning:"価値がある；立派な"},
 {word:"indispensable",meaning:"不可欠な"},
@@ -150,40 +139,70 @@ const words=[
 {word:"coordinate",meaning:"調整する；組織する"}
 ];
 
-let score=0;
-let combo=0;
-let current;
-let mode="en"; // en=英→日, ja=日→英
-
-const toggleBtn=document.getElementById("modeToggle");
-toggleBtn.onclick=()=>{
-  mode = mode==="en" ? "ja":"en";
-  toggleBtn.textContent = mode==="en" ? "英 → 日 モード":"日 → 英 モード";
-  nextQuestion();
+let state=JSON.parse(localStorage.getItem("quizState"))||{
+  lap:1,score:0,combo:0,
+  correct:0,wrong:0,
+  mode:"en"
 };
 
+let unseen=[],mistakes=[];
+let current=null;
+let lastQuestion=null;
+let startTime;
+
+function save(){localStorage.setItem("quizState",JSON.stringify(state));}
+
+function initLap(){
+  unseen=[...words];
+  mistakes=[];
+}
+
+if(!localStorage.getItem("quizState")) initLap();
+else initLap();
+
 function nextQuestion(){
-  document.getElementById("choices").innerHTML="";
-  current=words[Math.floor(Math.random()*words.length)];
-  document.getElementById("question").textContent =
-    mode==="en"? current.word : current.meaning;
-
-  let correctAnswer = mode==="en"? current.meaning : current.word;
-  let options=[correctAnswer];
-
-  while(options.length<4){
-    let rand=words[Math.floor(Math.random()*words.length)];
-    let value = mode==="en"? rand.meaning : rand.word;
-    if(!options.includes(value)) options.push(value);
+  if(unseen.length===0){
+    state.lap++;
+    initLap();
   }
 
+  let pool = mistakes.length>0?mistakes:unseen;
+  let candidate;
+  do{
+    candidate = pool[Math.floor(Math.random()*pool.length)];
+  }while(candidate===lastQuestion && pool.length>1);
+
+  current=candidate;
+  lastQuestion=current;
+  unseen=unseen.filter(w=>w!==current);
+
+  renderQuestion();
+  startTime=Date.now();
+  updateStats();
+  save();
+}
+
+function renderQuestion(){
+  const q=document.getElementById("question");
+  const choices=document.getElementById("choices");
+  choices.innerHTML="";
+
+  let correctAnswer = state.mode==="en"?current.meaning:current.word;
+  q.textContent = state.mode==="en"?current.word:current.meaning;
+
+  let options=[correctAnswer];
+  while(options.length<4){
+    let rand=words[Math.floor(Math.random()*words.length)];
+    let val = state.mode==="en"?rand.meaning:rand.word;
+    if(!options.includes(val)) options.push(val);
+  }
   options.sort(()=>Math.random()-0.5);
 
   options.forEach(opt=>{
     const btn=document.createElement("button");
     btn.textContent=opt;
     btn.onclick=()=>checkAnswer(btn,opt,correctAnswer);
-    document.getElementById("choices").appendChild(btn);
+    choices.appendChild(btn);
   });
 }
 
@@ -191,35 +210,66 @@ function checkAnswer(btn,selected,correctAnswer){
   const buttons=document.querySelectorAll(".choices button");
   buttons.forEach(b=>b.disabled=true);
 
+  let timeTaken=(Date.now()-startTime)/1000;
+  let timeBonus=Math.max(0,500-Math.floor(timeTaken*100));
+
   if(selected===correctAnswer){
     btn.classList.add("correct");
-    combo++;
-    let multiplier=1+Math.floor(combo/5);
-    score+=10*multiplier;
-    showComboEffect();
+    state.combo++;
+    state.correct++;
+    let comboBonus=state.combo*50;
+    state.score+=1000+comboBonus+timeBonus;
+
+    mistakes=mistakes.filter(w=>w!==current);
+    showCombo();
   }else{
     btn.classList.add("wrong");
-    combo=0;
+    state.combo=0;
+    state.wrong++;
+    if(!mistakes.includes(current)) mistakes.push(current);
+
     buttons.forEach(b=>{
       if(b.textContent===correctAnswer) b.classList.add("correct");
     });
   }
 
-  document.getElementById("score").textContent=score;
-  document.getElementById("combo").textContent=combo;
-
+  updateStats();
+  save();
   setTimeout(nextQuestion,800);
 }
 
-function showComboEffect(){
-  if(combo%5===0){
-    const effect=document.getElementById("comboEffect");
-    effect.textContent=combo+" COMBO!";
-    effect.style.animation="none";
-    void effect.offsetWidth;
-    effect.style.animation="comboAnim 0.8s ease";
+function updateStats(){
+  document.getElementById("lap").textContent=state.lap;
+  document.getElementById("score").textContent=state.score;
+  document.getElementById("combo").textContent=state.combo;
+  document.getElementById("correctCount").textContent=state.correct;
+  document.getElementById("wrongCount").textContent=state.wrong;
+
+  let total=state.correct+state.wrong;
+  let acc= total?((state.correct/total)*100).toFixed(1):0;
+  document.getElementById("accuracy").textContent=acc;
+
+  let progress = ((words.length-unseen.length)/words.length*100).toFixed(1);
+  document.getElementById("progress").textContent=progress;
+}
+
+function showCombo(){
+  if(state.combo%5===0){
+    const e=document.getElementById("comboEffect");
+    e.textContent=state.combo+" COMBO!";
+    e.style.animation="none";
+    void e.offsetWidth;
+    e.style.animation="pop 0.8s";
   }
 }
+
+document.getElementById("modeBtn").onclick=()=>{
+  state.mode = state.mode==="en"?"ja":"en";
+  document.getElementById("modeBtn").textContent =
+    state.mode==="en"?"英→日":"日→英";
+  save();
+  nextQuestion();
+};
 
 nextQuestion();
 </script>
