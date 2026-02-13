@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>英単語4択クイズ</title>
+<style>
+body{
+  font-family:sans-serif;
+  background:linear-gradient(135deg,#141e30,#243b55);
+  color:white;
+  text-align:center;
+  margin:0;
+  padding:20px;
+}
+h1{margin-bottom:5px;}
+#modeToggle{
+  margin-bottom:15px;
+  padding:8px 15px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+  font-weight:bold;
+}
+#quizBox{
+  background:rgba(255,255,255,0.08);
+  padding:30px;
+  border-radius:15px;
+  max-width:700px;
+  margin:auto;
+}
+.word{
+  font-size:34px;
+  margin:20px 0;
+}
+.choices button{
+  display:block;
+  width:100%;
+  margin:10px 0;
+  padding:12px;
+  font-size:16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+}
+.choices button:hover{transform:scale(1.03);}
+.correct{background:#4caf50!important;}
+.wrong{background:#e53935!important;}
+.info{margin-top:15px;font-size:18px;}
+.comboText{
+  font-size:24px;
+  font-weight:bold;
+  color:#ffd700;
+}
+.comboEffect{
+  position:fixed;
+  top:40%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:50px;
+  font-weight:bold;
+  color:#ffeb3b;
+  opacity:0;
+  pointer-events:none;
+}
+@keyframes comboAnim{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.3);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1);}
+}
+</style>
+</head>
+<body>
+
+<h1>英単語4択クイズ</h1>
+<button id="modeToggle">英 → 日 モード</button>
+
+<div id="quizBox">
+  <div class="word" id="question">Loading...</div>
+  <div class="choices" id="choices"></div>
+  <div class="info">
+    <div>スコア: <span id="score">0</span></div>
+    <div class="comboText">コンボ: <span id="combo">0</span></div>
+  </div>
+</div>
+
+<div id="comboEffect" class="comboEffect"></div>
+
+<script>
+const words=[
+{word:"infinite",meaning:"無限の；無数の"},
+{word:"worthwhile",meaning:"価値がある；立派な"},
+{word:"indispensable",meaning:"不可欠な"},
+{word:"compulsory",meaning:"義務的な，強制的な"},
+{word:"probable",meaning:"十分にありそうな"},
+{word:"ambiguous",meaning:"あいまいな；多義的な"},
+{word:"obscure",meaning:"（世に）知られていない；不明瞭な"},
+{word:"skeptical",meaning:"懐疑的な"},
+{word:"fragile",meaning:"壊れやすい；虚弱な"},
+{word:"static",meaning:"静的な；動きのない"},
+{word:"gradual",meaning:"徐々の，緩やかな"},
+{word:"vocal",meaning:"声の；はっきりものを言う"},
+{word:"vivid",meaning:"鮮やかな；生き生きとした"},
+{word:"imperial",meaning:"帝国の；皇帝の"},
+{word:"hostile",meaning:"敵意のある"},
+{word:"superficial",meaning:"表面的な"},
+{word:"scarce",meaning:"乏しい；珍しい"},
+{word:"gross",meaning:"総計の；甚だしい；粗野な"},
+{word:"inherent",meaning:"生来の，本来的に備わっている"},
+{word:"notable",meaning:"注目に値する；著名な"},
+{word:"update",meaning:"を最新のものにする"},
+{word:"refresh",meaning:"さわやかにする；新たにする；最新にする"},
+{word:"bloom",meaning:"花が咲く；栄える"},
+{word:"conquer",meaning:"征服する；克服する"},
+{word:"induce",meaning:"引き起こす；説得する"},
+{word:"attain",meaning:"獲得する；達する"},
+{word:"spray",meaning:"吹きかける"},
+{word:"retrieve",meaning:"検索する；取り戻す"},
+{word:"portray",meaning:"描く；演じる"},
+{word:"scratch",meaning:"引っかく；削除する"},
+{word:"designate",meaning:"指定する；任命する"},
+{word:"contradict",meaning:"矛盾する；反対意見を言う"},
+{word:"sigh",meaning:"ため息をつく"},
+{word:"disrupt",meaning:"混乱させる；分裂させる"},
+{word:"depart",meaning:"出発する；それる"},
+{word:"navigate",meaning:"誘導する；操縦する；航行する"},
+{word:"beg",meaning:"切に頼む；懇願する"},
+{word:"inhabit",meaning:"住んでいる；宿る"},
+{word:"diagnose",meaning:"診断する"},
+{word:"comprehend",meaning:"理解する"},
+{word:"oblige",meaning:"義務づける；恩恵を施す"},
+{word:"cram",meaning:"詰め込む；詰め込み勉強をする"},
+{word:"flock",meaning:"群がる，集まる"},
+{word:"underestimate",meaning:"過小評価する"},
+{word:"clarify",meaning:"明確にする"},
+{word:"spark",meaning:"引き起こす；刺激する"},
+{word:"seize",meaning:"つかむ；奪う；没収する"},
+{word:"soar",meaning:"急上昇する；高く飛ぶ"},
+{word:"glow",meaning:"輝く；赤く燃える"},
+{word:"disguise",meaning:"変装させる；偽る"},
+{word:"distort",meaning:"歪める；歪む"},
+{word:"undermine",meaning:"徐々にむしばむ；侵食する"},
+{word:"abolish",meaning:"廃止する"},
+{word:"strip",meaning:"取り去る；裸にする"},
+{word:"dispose",meaning:"処分する；気にさせる；配置する"},
+{word:"dump",meaning:"投棄する；どさっと落とす"},
+{word:"weave",meaning:"織る；作り上げる"},
+{word:"refine",meaning:"洗練する；精製する"},
+{word:"enrich",meaning:"豊かにする；濃縮する"},
+{word:"coordinate",meaning:"調整する；組織する"}
+];
+
+let score=0;
+let combo=0;
+let current;
+let mode="en"; // en=英→日, ja=日→英
+
+const toggleBtn=document.getElementById("modeToggle");
+toggleBtn.onclick=()=>{
+  mode = mode==="en" ? "ja":"en";
+  toggleBtn.textContent = mode==="en" ? "英 → 日 モード":"日 → 英 モード";
+  nextQuestion();
+};
+
+function nextQuestion(){
+  document.getElementById("choices").innerHTML="";
+  current=words[Math.floor(Math.random()*words.length)];
+  document.getElementById("question").textContent =
+    mode==="en"? current.word : current.meaning;
+
+  let correctAnswer = mode==="en"? current.meaning : current.word;
+  let options=[correctAnswer];
+
+  while(options.length<4){
+    let rand=words[Math.floor(Math.random()*words.length)];
+    let value = mode==="en"? rand.meaning : rand.word;
+    if(!options.includes(value)) options.push(value);
+  }
+
+  options.sort(()=>Math.random()-0.5);
+
+  options.forEach(opt=>{
+    const btn=document.createElement("button");
+    btn.textContent=opt;
+    btn.onclick=()=>checkAnswer(btn,opt,correctAnswer);
+    document.getElementById("choices").appendChild(btn);
+  });
+}
+
+function checkAnswer(btn,selected,correctAnswer){
+  const buttons=document.querySelectorAll(".choices button");
+  buttons.forEach(b=>b.disabled=true);
+
+  if(selected===correctAnswer){
+    btn.classList.add("correct");
+    combo++;
+    let multiplier=1+Math.floor(combo/5);
+    score+=10*multiplier;
+    showComboEffect();
+  }else{
+    btn.classList.add("wrong");
+    combo=0;
+    buttons.forEach(b=>{
+      if(b.textContent===correctAnswer) b.classList.add("correct");
+    });
+  }
+
+  document.getElementById("score").textContent=score;
+  document.getElementById("combo").textContent=combo;
+
+  setTimeout(nextQuestion,800);
+}
+
+function showComboEffect(){
+  if(combo%5===0){
+    const effect=document.getElementById("comboEffect");
+    effect.textContent=combo+" COMBO!";
+    effect.style.animation="none";
+    void effect.offsetWidth;
+    effect.style.animation="comboAnim 0.8s ease";
+  }
+}
+
+nextQuestion();
+</script>
+
+</body>
+</html>
