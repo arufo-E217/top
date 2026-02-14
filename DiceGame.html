@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern 3D Cho-Han - Premium</title>
+    <title>3D Cho-Han: Persistent Edition</title>
     <style>
         :root {
-            --primary: #e74c3c;
-            --accent: #f1c40f;
-            --bg: #1a1a2e;
-            --glass: rgba(255, 255, 255, 0.1);
+            --primary: #c0392b;
+            --gold: #f1c40f;
+            --bg: #0f0f1a;
+            --glass: rgba(255, 255, 255, 0.08);
         }
 
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
             background: var(--bg);
             color: white;
         }
 
+        /* UI Containers */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -30,7 +31,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 30px;
+            padding: 25px;
             box-sizing: border-box;
             z-index: 10;
         }
@@ -39,102 +40,132 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            pointer-events: auto;
         }
 
-        .wallet-card {
+        .wallet {
             background: var(--glass);
-            backdrop-filter: blur(10px);
-            padding: 15px 25px;
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.2);
-            font-size: 1.2rem;
+            backdrop-filter: blur(12px);
+            padding: 12px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.15);
+            font-size: 1.3rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        .controls {
+        .main-controls {
             pointer-events: auto;
             align-self: center;
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            padding: 30px;
-            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            padding: 35px;
+            border-radius: 30px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            max-width: 500px;
-            width: 90%;
+            width: 100%;
+            max-width: 450px;
+            transition: all 0.3s ease;
         }
 
+        /* Buttons & Inputs */
         .btn-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
         }
+
+        .btn-full { grid-column: span 2; }
 
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.2s;
-            text-transform: uppercase;
+            font-size: 1rem;
+            transition: 0.2s;
         }
 
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
+            transform: scale(1.05);
             filter: brightness(1.2);
         }
 
-        button.gold { background: #d4af37; color: #000; }
+        button.gold-btn {
+            background: linear-gradient(45deg, #d4af37, #f1c40f);
+            color: #000;
+        }
 
         input {
-            background: rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.1);
             border: 1px solid #444;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            width: 120px;
+            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            width: 150px;
             text-align: center;
-            font-size: 1.1rem;
         }
 
-        #result-display {
+        /* Result Text */
+        #display-text {
             font-size: 1.8rem;
+            min-height: 2.2rem;
+            margin-bottom: 15px;
             font-weight: bold;
-            margin-bottom: 10px;
-            min-height: 40px;
-            text-shadow: 0 0 10px var(--accent);
         }
 
-        .status-msg { margin-top: 10px; color: var(--accent); font-size: 0.9rem; }
+        /* Game Over Overlay */
+        #game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #game-over h2 { font-size: 3rem; color: var(--primary); margin: 0; }
     </style>
 </head>
 <body>
 
+    <div id="game-over">
+        <h2>無一文（ゲームオーバー）</h2>
+        <p>全ての所持金を失いました...</p>
+        <button onclick="resetGame()" style="margin-top: 20px; padding: 15px 40px;">最初からやり直す</button>
+    </div>
+
     <div id="ui-layer">
         <div class="header">
-            <h1>丁半博打 <small style="font-size: 0.5em; opacity: 0.7;">3D PREMIUM</small></h1>
-            <div class="wallet-card">所持金: <span id="money">1000</span> 円</div>
+            <h2 style="margin:0; letter-spacing: 2px;">丁半博打 <span style="font-size: 0.6em; color: var(--gold);">極</span></h2>
+            <div class="wallet"><span id="money-display">---</span> 円</div>
         </div>
 
-        <div class="controls">
-            <div id="result-display"></div>
+        <div class="main-controls" id="control-panel">
+            <div id="display-text">賭け金を決めてください</div>
             
-            <div id="bet-phase">
-                <input type="number" id="bet-amount" value="100" min="10"> 円
-                <p class="status-msg">賭け方を選んでください（ゾロ目は3倍配当！）</p>
+            <div id="phase-bet">
+                <div style="margin-bottom: 15px;">
+                    <input type="number" id="bet-input" value="100" min="10" step="50"> <span style="font-size: 1.2rem;">円</span>
+                </div>
                 <div class="btn-group">
-                    <button onclick="setChoice('odd')">半 (奇数)</button>
-                    <button onclick="setChoice('even')">丁 (偶数)</button>
-                    <button onclick="setChoice('double')" class="gold">ゾロ目 (3倍)</button>
+                    <button onclick="handleSelect('odd')">半 (奇数) / 2倍</button>
+                    <button onclick="handleSelect('even')">丁 (偶数) / 2倍</button>
+                    <button onclick="handleSelect('double')" class="gold-btn btn-full">ゾロ目 / 3倍</button>
                 </div>
             </div>
 
-            <div id="roll-phase" style="display:none;">
-                <button id="roll-button" onclick="rollDices()" style="width: 100%; background: #27ae60;">壺を振る！</button>
+            <div id="phase-roll" style="display: none;">
+                <button onclick="executeRoll()" style="width: 100%; background: #27ae60; font-size: 1.4rem;">壺を振る！</button>
             </div>
         </div>
     </div>
@@ -142,12 +173,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
+        // --- 1. 定数・グローバル変数 ---
         let scene, camera, renderer, dices = [], money = 1000;
         let currentBet = 0, currentChoice = "";
+        const INITIAL_MONEY = 1000;
 
-        function init() {
+        // --- 2. 3Dシーン構築 ---
+        function init3D() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0a12);
+            scene.background = new THREE.Color(0x0f0f1a);
             
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 6, 8);
@@ -158,161 +192,203 @@
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambient);
-            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-            sun.position.set(5, 10, 5);
-            sun.castShadow = true;
-            scene.add(sun);
+            const spot = new THREE.SpotLight(0xffffff, 1);
+            spot.position.set(5, 12, 5);
+            spot.castShadow = true;
+            scene.add(spot);
 
-            // 畳風の床
-            const floorGeo = new THREE.PlaneGeometry(15, 15);
-            const floorMat = new THREE.MeshPhongMaterial({ color: 0x1d2b1d });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(20, 20),
+                new THREE.MeshPhongMaterial({ color: 0x1a2a1a })
+            );
+            floor.rotation.x = -Math.PI/2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            dices.push(createDice(-1.5));
-            dices.push(createDice(1.5));
+            dices.push(createDice(-1.6));
+            dices.push(createDice(1.6));
 
+            loadGame();
             animate();
         }
 
-        function createDice(xPos) {
-            const group = new THREE.Group();
-            const geo = new THREE.BoxGeometry(1, 1, 1);
+        function createDice(x) {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
             
-            // Three.js BoxGeometry materials index: 
-            // 0:x+, 1:x-, 2:y+, 3:y-, 4:z+, 5:z-
-            // 目を配置。 index 2 (y+) が上面。
-            const textureNums = [4, 3, 1, 6, 5, 2]; // 上面に1が来るように調整するための配列
-            const materials = textureNums.map(n => new THREE.MeshPhongMaterial({ map: createDiceTexture(n) }));
-            
-            const mesh = new THREE.Mesh(geo, materials);
-            mesh.castShadow = true;
-            group.add(mesh);
-            group.position.set(xPos, 0.5, 0);
-            scene.add(group);
-            return group;
+            // 重要：Three.jsのBoxGeometryマテリアル順序
+            // 0: +X(Right), 1: -X(Left), 2: +Y(Top), 3: -Y(Bottom), 4: +Z(Front), 5: -Z(Back)
+            // 上面(+Y)に1が来るように配置
+            const materials = [
+                new THREE.MeshPhongMaterial({ map: generateDiceTexture(3) }), // Right
+                new THREE.MeshPhongMaterial({ map: generateDiceTexture(4) }), // Left
+                new THREE.MeshPhongMaterial({ map: generateDiceTexture(1) }), // Top
+                new THREE.MeshPhongMaterial({ map: generateDiceTexture(6) }), // Bottom
+                new THREE.MeshPhongMaterial({ map: generateDiceTexture(2) }), // Front
+                new THREE.MeshPhongMaterial({ map: generateDiceTexture(5) })  // Back
+            ];
+
+            const dice = new THREE.Mesh(geometry, materials);
+            dice.castShadow = true;
+            dice.position.set(x, 0.5, 0);
+            scene.add(dice);
+            return dice;
         }
 
-        function createDiceTexture(number) {
+        function generateDiceTexture(num) {
             const canvas = document.createElement('canvas');
             canvas.width = 128; canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#fffdfa';
-            ctx.fillRect(0, 0, 128, 128);
-            ctx.fillStyle = number === 1 ? '#cc0000' : '#222';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0,0,128,128);
+            ctx.fillStyle = (num === 1) ? '#e74c3c' : '#2c3e50';
             
-            const dots = {
-                1: [[64, 64]],
-                2: [[32, 32], [96, 96]],
-                3: [[32, 32], [64, 64], [96, 96]],
-                4: [[32, 32], [32, 96], [96, 32], [96, 96]],
-                5: [[32, 32], [32, 96], [64, 64], [96, 32], [96, 96]],
-                6: [[32, 32], [32, 64], [32, 96], [96, 32], [96, 64], [96, 96]]
+            const dotSize = (num === 1) ? 22 : 12;
+            const pts = {
+                1: [[64,64]],
+                2: [[32,32],[96,96]],
+                3: [[32,32],[64,64],[96,96]],
+                4: [[32,32],[32,96],[96,32],[96,96]],
+                5: [[32,32],[32,96],[64,64],[96,32],[96,96]],
+                6: [[32,32],[32,64],[32,96],[96,32],[96,64],[96,96]]
             };
-            dots[number].forEach(d => {
-                ctx.beginPath(); ctx.arc(d[0], d[1], number === 1 ? 20 : 12, 0, Math.PI * 2); ctx.fill();
+            pts[num].forEach(p => {
+                ctx.beginPath(); ctx.arc(p[0], p[1], dotSize, 0, Math.PI*2); ctx.fill();
             });
             return new THREE.CanvasTexture(canvas);
         }
 
-        function setChoice(choice) {
-            const amount = parseInt(document.getElementById('bet-amount').value);
-            if (isNaN(amount) || amount <= 0 || amount > money) {
-                alert("有効な金額を入力してください"); return;
+        // --- 3. ゲームロジック ---
+
+        function handleSelect(choice) {
+            const val = parseInt(document.getElementById('bet-input').value);
+            if (isNaN(val) || val <= 0 || val > money) {
+                alert("所持金の範囲内で有効な数値を入力してください。");
+                return;
             }
-            currentBet = amount;
+            currentBet = val;
             currentChoice = choice;
+
+            const label = {odd:'半', even:'丁', double:'ゾロ目'}[choice];
+            document.getElementById('display-text').innerHTML = `<span style="color:var(--gold)">${label}</span> に ${val}円 賭けました`;
             
-            document.getElementById('bet-phase').style.display = 'none';
-            document.getElementById('roll-phase').style.display = 'block';
-            const label = choice === 'even' ? "丁" : (choice === 'odd' ? "半" : "ゾロ目");
-            document.getElementById('result-display').textContent = `${label} に ${amount} 円`;
-            document.getElementById('result-display').style.color = "white";
+            // UI切り替え
+            document.getElementById('phase-bet').style.display = 'none';
+            document.getElementById('phase-roll').style.display = 'block';
         }
 
-        function rollDices() {
-            document.getElementById('roll-button').disabled = true;
+        function executeRoll() {
+            // ボタンを即座に消す
+            document.getElementById('phase-roll').style.display = 'none';
+            document.getElementById('display-text').textContent = "振っています...";
 
-            const res1 = Math.floor(Math.random() * 6) + 1;
-            const res2 = Math.floor(Math.random() * 6) + 1;
+            const r1 = Math.floor(Math.random() * 6) + 1;
+            const r2 = Math.floor(Math.random() * 6) + 1;
 
-            let counter = 0;
-            const anim = setInterval(() => {
+            let frames = 0;
+            const maxFrames = 60;
+
+            const rollAnim = setInterval(() => {
                 dices.forEach(d => {
-                    d.rotation.x += 0.4; d.rotation.y += 0.3;
-                    d.position.y = 0.5 + Math.abs(Math.sin(counter * 0.2)) * 2;
+                    d.rotation.x += 0.4;
+                    d.rotation.y += 0.3;
+                    d.position.y = 0.5 + Math.abs(Math.sin(frames * 0.15)) * 2;
                 });
-                counter++;
-                if (counter > 50) {
-                    clearInterval(anim);
-                    finalizeRoll(res1, res2);
+                frames++;
+
+                if (frames >= maxFrames) {
+                    clearInterval(rollAnim);
+                    resolveGame(r1, r2);
                 }
-            }, 20);
+            }, 16);
         }
 
-        function finalizeRoll(r1, r2) {
-            // 上面(+Y)に各数字を持ってくるための回転設定
-            // 初期状態で index 2 (+Y) には '1' が描画されている
-            const rotations = {
+        function resolveGame(r1, r2) {
+            // --- 数値と3Dの向きを完全に合わせる回転設定 ---
+            // 初期状態(0,0,0)で1が上。
+            const rotMap = {
                 1: [0, 0, 0],
-                2: [Math.PI / 2, 0, 0],   // 2を上へ
-                3: [0, 0, Math.PI / 2],   // 3を上へ
-                4: [0, 0, -Math.PI / 2],  // 4を上へ
-                5: [-Math.PI / 2, 0, 0],  // 5を上へ
-                6: [Math.PI, 0, 0]        // 6を上へ
+                2: [-Math.PI/2, 0, 0], // Front(+Z)をTop(+Y)へ
+                3: [0, 0, Math.PI/2],  // Right(+X)をTop(+Y)へ
+                4: [0, 0, -Math.PI/2], // Left(-X)をTop(+Y)へ
+                5: [Math.PI/2, 0, 0],  // Back(-Z)をTop(+Y)へ
+                6: [Math.PI, 0, 0]     // Bottom(-Y)をTop(+Y)へ
             };
 
-            [r1, r2].forEach((res, i) => {
-                dices[i].rotation.set(rotations[res][0], rotations[res][1], rotations[res][2]);
+            [r1, r2].forEach((num, i) => {
+                dices[i].rotation.set(rotMap[num][0], rotMap[num][1], rotMap[num][2]);
                 dices[i].position.y = 0.5;
             });
 
             const total = r1 + r2;
-            const isEven = total % 2 === 0;
             const isDouble = (r1 === r2);
-            
+            const isEven = (total % 2 === 0);
+            const resultType = isDouble ? 'double' : (isEven ? 'even' : 'odd');
+
             let win = false;
             let multiplier = 0;
 
-            if (currentChoice === 'double' && isDouble) {
-                win = true; multiplier = 3;
-            } else if (currentChoice === 'even' && isEven && !isDouble) {
-                // 丁半でゾロ目の場合の扱いはルールによりますが、ここでは純粋な丁半として判定
-                win = true; multiplier = 2;
-            } else if (currentChoice === 'odd' && !isEven) {
-                win = true; multiplier = 2;
-            } else if ((currentChoice === 'even' || currentChoice === 'odd') && isDouble) {
-                // 丁半を選んでゾロ目が出た場合も「当たり」とする（配当2倍）
-                win = (currentChoice === 'even' && isEven) || (currentChoice === 'odd' && !isEven);
-                multiplier = 2;
+            // 判定ロジック
+            if (currentChoice === 'double') {
+                if (isDouble) { win = true; multiplier = 3; }
+            } else if (currentChoice === 'even') {
+                if (isEven) { win = true; multiplier = 2; }
+            } else if (currentChoice === 'odd') {
+                if (!isEven) { win = true; multiplier = 2; }
             }
 
-            const resText = `${r1}・${r2} の ${isDouble ? 'ゾロ目' : (isEven ? '丁' : '半')}`;
-            
+            const resName = isDouble ? "ゾロ目" : (isEven ? "丁" : "半");
+            const display = document.getElementById('display-text');
+
             if (win) {
-                const profit = currentBet * (multiplier - 1);
-                money += profit;
-                document.getElementById('result-display').textContent = `${resText}！ 当たり！ +${profit}円`;
-                document.getElementById('result-display').style.color = "#f1c40f";
+                const prize = currentBet * (multiplier - 1);
+                money += prize;
+                display.innerHTML = `<span style="color:var(--gold)">${r1}・${r2} の ${resName}！ 的中！ +${prize}円</span>`;
             } else {
                 money -= currentBet;
-                document.getElementById('result-display').textContent = `${resText}… はずれ -${currentBet}円`;
-                document.getElementById('result-display').style.color = "#e74c3c";
+                display.innerHTML = `<span style="color:#ff4757">${r1}・${r2} の ${resName}... はずれ -${currentBet}円</span>`;
             }
 
-            document.getElementById('money').textContent = money;
+            saveGame();
+            updateMoneyUI();
+
             setTimeout(() => {
                 if (money <= 0) {
-                    alert("一文無しです。お引き取りを。"); location.reload();
+                    document.getElementById('game-over').style.display = 'flex';
+                } else {
+                    document.getElementById('phase-bet').style.display = 'block';
+                    display.textContent = "次の賭け金を決めてください";
                 }
-                document.getElementById('bet-phase').style.display = 'block';
-                document.getElementById('roll-phase').style.display = 'none';
-                document.getElementById('roll-button').disabled = false;
             }, 2500);
+        }
+
+        // --- 4. ユーティリティ (保存・UI) ---
+
+        function updateMoneyUI() {
+            document.getElementById('money-display').textContent = money.toLocaleString();
+        }
+
+        function saveGame() {
+            localStorage.setItem('chohan_money', money);
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('chohan_money');
+            if (saved !== null) {
+                money = parseInt(saved);
+                if (money <= 0) money = INITIAL_MONEY;
+            }
+            updateMoneyUI();
+        }
+
+        function resetGame() {
+            money = INITIAL_MONEY;
+            saveGame();
+            updateMoneyUI();
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('phase-bet').style.display = 'block';
+            document.getElementById('display-text').textContent = "賭け金を決めてください";
         }
 
         function animate() {
@@ -326,7 +402,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        init();
+        init3D();
     </script>
 </body>
 </html>
