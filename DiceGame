@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サイコロゲーム</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .game-container button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .game-over {
+            color: red;
+        }
+        .money {
+            margin: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>サイコロゲーム</h1>
+        <p>所持金: <span id="money">100</span>円</p>
+
+        <div>
+            <button id="set-bet">掛け金を決める</button>
+        </div>
+
+        <div id="bet-container" style="display:none;">
+            <input type="number" id="bet-amount" placeholder="掛け金" min="1">
+            <button id="start-game">ゲーム開始</button>
+        </div>
+
+        <div id="declaration-container" style="display:none;">
+            <p>半か丁かゾロ目を選んでください</p>
+            <button id="declare-half">半</button>
+            <button id="declare-even">丁</button>
+            <button id="declare-double">ゾロ目</button>
+        </div>
+
+        <div class="result" id="game-result"></div>
+        <div class="game-over" id="game-over" style="display:none;">
+            ゲームオーバー！所持金がありません。
+        </div>
+    </div>
+
+    <script>
+        let money = 100;
+        let betAmount = 0;
+        let declaration = "";
+
+        // 掛け金設定ボタン
+        document.getElementById('set-bet').addEventListener('click', () => {
+            document.getElementById('set-bet').style.display = 'none';
+            document.getElementById('bet-container').style.display = 'block';
+        });
+
+        // ゲーム開始ボタン
+        document.getElementById('start-game').addEventListener('click', () => {
+            betAmount = parseInt(document.getElementById('bet-amount').value);
+            if (isNaN(betAmount) || betAmount <= 0 || betAmount > money) {
+                alert('掛け金が無効です。');
+                return;
+            }
+            money -= betAmount;
+            document.getElementById('money').textContent = money;
+            document.getElementById('bet-container').style.display = 'none';
+            document.getElementById('declaration-container').style.display = 'block';
+        });
+
+        // 半か丁かゾロ目の選択
+        document.getElementById('declare-half').addEventListener('click', () => {
+            declaration = 'half';
+            playGame();
+        });
+
+        document.getElementById('declare-even').addEventListener('click', () => {
+            declaration = 'even';
+            playGame();
+        });
+
+        document.getElementById('declare-double').addEventListener('click', () => {
+            declaration = 'double';
+            playGame();
+        });
+
+        // ゲームの進行
+        function playGame() {
+            const dice1 = rollDice();
+            const dice2 = rollDice();
+            const sum = dice1 + dice2;
+            const isDouble = dice1 === dice2;
+            let result = '';
+
+            if (isDouble) {
+                result = 'ゾロ目';
+                if (declaration === 'double') {
+                    money += betAmount * 4;
+                    document.getElementById('game-result').textContent = `ゾロ目! あたり! 所持金: ${money}円`;
+                } else {
+                    money -= betAmount;
+                    document.getElementById('game-result').textContent = `ゾロ目! はずれ! 所持金: ${money}円`;
+                }
+            } else {
+                if (sum % 2 === 0) {
+                    result = '偶数';
+                    if (declaration === 'even') {
+                        money += betAmount * 2;
+                        document.getElementById('game-result').textContent = `偶数! あたり! 所持金: ${money}円`;
+                    } else {
+                        money -= betAmount;
+                        document.getElementById('game-result').textContent = `偶数! はずれ! 所持金: ${money}円`;
+                    }
+                } else {
+                    result = '奇数';
+                    if (declaration === 'half') {
+                        money += betAmount * 2;
+                        document.getElementById('game-result').textContent = `奇数! あたり! 所持金: ${money}円`;
+                    } else {
+                        money -= betAmount;
+                        document.getElementById('game-result').textContent = `奇数! はずれ! 所持金: ${money}円`;
+                    }
+                }
+            }
+
+            if (money <= 0) {
+                document.getElementById('game-over').style.display = 'block';
+                document.getElementById('declaration-container').style.display = 'none';
+                document.getElementById('game-result').style.display = 'none';
+            } else {
+                document.getElementById('declaration-container').style.display = 'none';
+            }
+        }
+
+        // サイコロを振る
+        function rollDice() {
+            return Math.floor(Math.random() * 6) + 1;
+        }
+    </script>
+
+</body>
+</html>
