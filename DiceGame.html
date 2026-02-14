@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern 3D Cho-Han</title>
+    <title>Modern 3D Cho-Han - Premium</title>
     <style>
         :root {
             --primary: #e74c3c;
@@ -20,7 +20,6 @@
             color: white;
         }
 
-        /* UI Layer */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -49,7 +48,6 @@
             border-radius: 15px;
             border: 1px solid rgba(255,255,255,0.2);
             font-size: 1.2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
         .controls {
@@ -61,7 +59,7 @@
             border-radius: 20px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            max-width: 400px;
+            max-width: 500px;
             width: 90%;
         }
 
@@ -70,31 +68,27 @@
             gap: 10px;
             justify-content: center;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
 
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.2s;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         button:hover:not(:disabled) {
             transform: translateY(-2px);
             filter: brightness(1.2);
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
         }
 
-        button:disabled {
-            background: #555;
-            cursor: not-allowed;
-        }
+        button.gold { background: #d4af37; color: #000; }
 
         input {
             background: rgba(0,0,0,0.3);
@@ -102,48 +96,45 @@
             color: white;
             padding: 10px;
             border-radius: 5px;
-            width: 100px;
+            width: 120px;
             text-align: center;
             font-size: 1.1rem;
         }
 
         #result-display {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 10px;
-            height: 40px;
+            min-height: 40px;
             text-shadow: 0 0 10px var(--accent);
         }
 
-        .status-msg {
-            margin-top: 10px;
-            color: var(--accent);
-            font-size: 0.9rem;
-        }
+        .status-msg { margin-top: 10px; color: var(--accent); font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
         <div class="header">
-            <h1>丁半博打 <small style="font-size: 0.5em; opacity: 0.7;">3D</small></h1>
-            <div class="wallet-card">所持金: <span id="money">1000</span></div>
+            <h1>丁半博打 <small style="font-size: 0.5em; opacity: 0.7;">3D PREMIUM</small></h1>
+            <div class="wallet-card">所持金: <span id="money">1000</span> 円</div>
         </div>
 
         <div class="controls">
             <div id="result-display"></div>
             
             <div id="bet-phase">
-                <input type="number" id="bet-amount" value="100" min="10">
-                <p class="status-msg">賭け金を入力して選択してください</p>
+                <input type="number" id="bet-amount" value="100" min="10"> 円
+                <p class="status-msg">賭け方を選んでください（ゾロ目は3倍配当！）</p>
                 <div class="btn-group">
                     <button onclick="setChoice('odd')">半 (奇数)</button>
                     <button onclick="setChoice('even')">丁 (偶数)</button>
+                    <button onclick="setChoice('double')" class="gold">ゾロ目 (3倍)</button>
                 </div>
             </div>
 
             <div id="roll-phase" style="display:none;">
-                <button id="roll-button" onclick="rollDices()" style="width: 100%; background: #27ae60;">さぁ、振れ！</button>
+                <button id="roll-button" onclick="rollDices()" style="width: 100%; background: #27ae60;">壺を振る！</button>
             </div>
         </div>
     </div>
@@ -154,13 +145,12 @@
         let scene, camera, renderer, dices = [], money = 1000;
         let currentBet = 0, currentChoice = "";
 
-        // 3D初期化
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a2e);
+            scene.background = new THREE.Color(0x0a0a12);
             
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 8);
+            camera.position.set(0, 6, 8);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -168,23 +158,21 @@
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            // 照明
-            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambient);
-            const spot = new THREE.PointLight(0xffffff, 1);
-            spot.position.set(5, 10, 5);
-            spot.castShadow = true;
-            scene.add(spot);
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(5, 10, 5);
+            sun.castShadow = true;
+            scene.add(sun);
 
-            // 床
-            const floorGeo = new THREE.PlaneGeometry(20, 20);
-            const floorMat = new THREE.MeshPhongMaterial({ color: 0x0a0a1a });
+            // 畳風の床
+            const floorGeo = new THREE.PlaneGeometry(15, 15);
+            const floorMat = new THREE.MeshPhongMaterial({ color: 0x1d2b1d });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            // サイコロを2個作成
             dices.push(createDice(-1.5));
             dices.push(createDice(1.5));
 
@@ -195,11 +183,11 @@
             const group = new THREE.Group();
             const geo = new THREE.BoxGeometry(1, 1, 1);
             
-            // 各面のテクスチャを生成（簡易的にCanvasで目を描画）
-            const materials = [];
-            for (let i = 1; i <= 6; i++) {
-                materials.push(new THREE.MeshPhongMaterial({ map: createDiceTexture(i) }));
-            }
+            // Three.js BoxGeometry materials index: 
+            // 0:x+, 1:x-, 2:y+, 3:y-, 4:z+, 5:z-
+            // 目を配置。 index 2 (y+) が上面。
+            const textureNums = [4, 3, 1, 6, 5, 2]; // 上面に1が来るように調整するための配列
+            const materials = textureNums.map(n => new THREE.MeshPhongMaterial({ map: createDiceTexture(n) }));
             
             const mesh = new THREE.Mesh(geo, materials);
             mesh.castShadow = true;
@@ -211,12 +199,11 @@
 
         function createDiceTexture(number) {
             const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 128;
+            canvas.width = 128; canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#fffdfa';
             ctx.fillRect(0, 0, 128, 128);
-            ctx.fillStyle = number === 1 ? 'red' : 'black';
+            ctx.fillStyle = number === 1 ? '#cc0000' : '#222';
             
             const dots = {
                 1: [[64, 64]],
@@ -226,104 +213,106 @@
                 5: [[32, 32], [32, 96], [64, 64], [96, 32], [96, 96]],
                 6: [[32, 32], [32, 64], [32, 96], [96, 32], [96, 64], [96, 96]]
             };
-
-            dots[number].forEach(dot => {
-                ctx.beginPath();
-                ctx.arc(dot[0], dot[1], 12, 0, Math.PI * 2);
-                ctx.fill();
+            dots[number].forEach(d => {
+                ctx.beginPath(); ctx.arc(d[0], d[1], number === 1 ? 20 : 12, 0, Math.PI * 2); ctx.fill();
             });
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            return texture;
+            return new THREE.CanvasTexture(canvas);
         }
 
-        // ゲーム制御
         function setChoice(choice) {
             const amount = parseInt(document.getElementById('bet-amount').value);
-            if (amount <= 0 || amount > money) {
-                alert("正当な金額を賭けてください");
-                return;
+            if (isNaN(amount) || amount <= 0 || amount > money) {
+                alert("有効な金額を入力してください"); return;
             }
             currentBet = amount;
             currentChoice = choice;
             
             document.getElementById('bet-phase').style.display = 'none';
             document.getElementById('roll-phase').style.display = 'block';
-            document.getElementById('result-display').textContent = (choice === 'even' ? "丁" : "半") + "に " + amount + " 点";
+            const label = choice === 'even' ? "丁" : (choice === 'odd' ? "半" : "ゾロ目");
+            document.getElementById('result-display').textContent = `${label} に ${amount} 円`;
+            document.getElementById('result-display').style.color = "white";
         }
 
         function rollDices() {
-            const rollBtn = document.getElementById('roll-button');
-            rollBtn.disabled = true;
+            document.getElementById('roll-button').disabled = true;
 
             const res1 = Math.floor(Math.random() * 6) + 1;
             const res2 = Math.floor(Math.random() * 6) + 1;
-            const total = res1 + res2;
-            const isEven = total % 2 === 0;
 
-            // アニメーション
-            let duration = 60;
             let counter = 0;
-
             const anim = setInterval(() => {
                 dices.forEach(d => {
-                    d.rotation.x += 0.3;
-                    d.rotation.y += 0.2;
+                    d.rotation.x += 0.4; d.rotation.y += 0.3;
                     d.position.y = 0.5 + Math.abs(Math.sin(counter * 0.2)) * 2;
                 });
                 counter++;
-
-                if (counter > duration) {
+                if (counter > 50) {
                     clearInterval(anim);
-                    finalizeRoll(res1, res2, isEven);
+                    finalizeRoll(res1, res2);
                 }
             }, 20);
         }
 
-        function finalizeRoll(r1, r2, isEven) {
-            // サイコロを結果の面に固定（簡易版）
-            const faceRotations = {
+        function finalizeRoll(r1, r2) {
+            // 上面(+Y)に各数字を持ってくるための回転設定
+            // 初期状態で index 2 (+Y) には '1' が描画されている
+            const rotations = {
                 1: [0, 0, 0],
-                2: [0, -Math.PI/2, 0],
-                3: [Math.PI/2, 0, 0],
-                4: [-Math.PI/2, 0, 0],
-                5: [0, Math.PI/2, 0],
-                6: [Math.PI, 0, 0]
+                2: [Math.PI / 2, 0, 0],   // 2を上へ
+                3: [0, 0, Math.PI / 2],   // 3を上へ
+                4: [0, 0, -Math.PI / 2],  // 4を上へ
+                5: [-Math.PI / 2, 0, 0],  // 5を上へ
+                6: [Math.PI, 0, 0]        // 6を上へ
             };
 
             [r1, r2].forEach((res, i) => {
-                dices[i].rotation.set(...faceRotations[res]);
+                dices[i].rotation.set(rotations[res][0], rotations[res][1], rotations[res][2]);
                 dices[i].position.y = 0.5;
             });
 
-            const win = (isEven && currentChoice === 'even') || (!isEven && currentChoice === 'odd');
-            const resultLabel = isEven ? "丁 (偶数)" : "半 (奇数)";
+            const total = r1 + r2;
+            const isEven = total % 2 === 0;
+            const isDouble = (r1 === r2);
+            
+            let win = false;
+            let multiplier = 0;
+
+            if (currentChoice === 'double' && isDouble) {
+                win = true; multiplier = 3;
+            } else if (currentChoice === 'even' && isEven && !isDouble) {
+                // 丁半でゾロ目の場合の扱いはルールによりますが、ここでは純粋な丁半として判定
+                win = true; multiplier = 2;
+            } else if (currentChoice === 'odd' && !isEven) {
+                win = true; multiplier = 2;
+            } else if ((currentChoice === 'even' || currentChoice === 'odd') && isDouble) {
+                // 丁半を選んでゾロ目が出た場合も「当たり」とする（配当2倍）
+                win = (currentChoice === 'even' && isEven) || (currentChoice === 'odd' && !isEven);
+                multiplier = 2;
+            }
+
+            const resText = `${r1}・${r2} の ${isDouble ? 'ゾロ目' : (isEven ? '丁' : '半')}`;
             
             if (win) {
-                money += currentBet;
-                document.getElementById('result-display').textContent = `${r1}・${r2} で ${resultLabel}！ 勝ち！`;
+                const profit = currentBet * (multiplier - 1);
+                money += profit;
+                document.getElementById('result-display').textContent = `${resText}！ 当たり！ +${profit}円`;
                 document.getElementById('result-display').style.color = "#f1c40f";
             } else {
                 money -= currentBet;
-                document.getElementById('result-display').textContent = `${r1}・${r2} で ${resultLabel}… 負け`;
+                document.getElementById('result-display').textContent = `${resText}… はずれ -${currentBet}円`;
                 document.getElementById('result-display').style.color = "#e74c3c";
             }
 
-            updateUI();
-        }
-
-        function updateUI() {
             document.getElementById('money').textContent = money;
-            document.getElementById('roll-button').disabled = false;
-            
             setTimeout(() => {
                 if (money <= 0) {
-                    alert("破産しました！リロードして再挑戦してください。");
-                    location.reload();
+                    alert("一文無しです。お引き取りを。"); location.reload();
                 }
                 document.getElementById('bet-phase').style.display = 'block';
                 document.getElementById('roll-phase').style.display = 'none';
-            }, 2000);
+                document.getElementById('roll-button').disabled = false;
+            }, 2500);
         }
 
         function animate() {
