@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>0.3秒の神 - SCORE ATTACK</title>
+<style>
+    body {
+        margin: 0;
+        background: radial-gradient(circle at center, #111 0%, #000 100%);
+        color: white;
+        font-family: sans-serif;
+        text-align: center;
+        overflow: hidden;
+        user-select: none;
+    }
+    h1 { margin-top: 20px; }
+
+    #game {
+        position: relative;
+        width: 90%;
+        max-width: 500px;
+        height: 40px;
+        margin: 40px auto;
+        background: #333;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 0 20px #000 inset;
+    }
+
+    #target {
+        position: absolute;
+        height: 100%;
+        background: linear-gradient(90deg,#00ffcc,#00ff99);
+        border-radius: 20px;
+    }
+
+    #marker {
+        position: absolute;
+        width: 10px;
+        height: 100%;
+        background: #fff;
+        box-shadow: 0 0 10px #fff;
+    }
+
+    #score {
+        font-size: 28px;
+        margin-top: 20px;
+    }
+
+    #message {
+        font-size: 28px;
+        height: 40px;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    .perfectFlash {
+        animation: flash 0.3s ease;
+    }
+
+    @keyframes flash {
+        0% { background: #ffffff; }
+        100% { background: radial-gradient(circle at center, #111 0%, #000 100%); }
+    }
+
+    .perfectText {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        font-size: 48px;
+        font-weight: bold;
+        color: gold;
+        text-shadow: 0 0 20px orange;
+        animation: pop 0.4s ease forwards;
+        pointer-events: none;
+    }
+
+    @keyframes pop {
+        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+        50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+
+    button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<h1>0.3秒の神 - SCORE ATTACK</h1>
+<div id="game">
+    <div id="target"></div>
+    <div id="marker"></div>
+</div>
+<div id="score">Score: 0</div>
+<div id="message"></div>
+<button onclick="startGame()">START</button>
+
+<script>
+const marker = document.getElementById("marker");
+const target = document.getElementById("target");
+const scoreDisplay = document.getElementById("score");
+const message = document.getElementById("message");
+const game = document.getElementById("game");
+const body = document.body;
+
+let position = 0;
+let direction = 1;
+let speed = 2;
+let score = 0;
+let playing = false;
+let animation;
+
+function startGame() {
+    score = 0;
+    speed = 2;
+    scoreDisplay.textContent = "Score: 0";
+    message.textContent = "";
+    playing = true;
+    nextRound();
+}
+
+function nextRound() {
+    position = 0;
+    direction = 1;
+
+    const zoneWidth = Math.max(60 - score * 0.05, 12);
+    const zoneStart = Math.random() * (game.clientWidth - zoneWidth);
+
+    target.style.width = zoneWidth + "px";
+    target.style.left = zoneStart + "px";
+
+    animate();
+}
+
+function animate() {
+    cancelAnimationFrame(animation);
+    function step() {
+        position += speed * direction;
+
+        if (position <= 0 || position >= game.clientWidth - 10) {
+            direction *= -1;
+        }
+
+        marker.style.left = position + "px";
+        animation = requestAnimationFrame(step);
+    }
+    step();
+}
+
+function showPerfectEffect() {
+    body.classList.add("perfectFlash");
+
+    const text = document.createElement("div");
+    text.className = "perfectText";
+    text.textContent = "PERFECT!";
+    document.body.appendChild(text);
+
+    setTimeout(() => {
+        body.classList.remove("perfectFlash");
+        text.remove();
+    }, 400);
+}
+
+game.addEventListener("click", () => {
+    if (!playing) return;
+
+    const markerCenter = position + 5;
+    const zoneStart = target.offsetLeft;
+    const zoneEnd = zoneStart + target.offsetWidth;
+    const zoneCenter = zoneStart + target.offsetWidth / 2;
+
+    let diff = Math.abs(markerCenter - zoneCenter);
+    let points = 0;
+
+    if (markerCenter >= zoneStart && markerCenter <= zoneEnd) {
+        if (diff < 4) {
+            points = 150;
+            showPerfectEffect();
+            message.textContent = "PERFECT +150";
+        }
+        else if (diff < 10) {
+            points = 80;
+            message.textContent = "GREAT +80";
+        }
+        else {
+            points = 30;
+            message.textContent = "HIT +30";
+        }
+
+        score += points;
+        speed += 0.4;
+        scoreDisplay.textContent = "Score: " + score;
+        nextRound();
+    } else {
+        playing = false;
+        cancelAnimationFrame(animation);
+        message.textContent = "MISS... GAME OVER";
+    }
+});
+</script>
+
+</body>
+</html>
