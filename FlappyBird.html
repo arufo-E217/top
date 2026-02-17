@@ -3,179 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>フリッピーバード</title>
+    <title>フリッピーバード - 修正版</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
             background-color: #70c5ce;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
         }
 
         canvas {
-            display: block;
             background-color: #70c5ce;
-            margin: 0 auto;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = 320;
         canvas.height = 480;
 
-        const GRAVITY = 0.6;
-        const FLAP = -12;
-        const SPAWN_RATE = 90; // Pipe spawn rate
-        const PIPE_GAP = 200;  // Pipe gap increased
+        // ゲーム設定
+        const GRAVITY = 0.25;      // 重力を少し緩やかに
+        const FLAP = -4.5;         // ジャンプ力を調整
+        const SPAWN_RATE = 100;    // 土管の間隔
+        const PIPE_GAP = 120;      // 隙間を適切な広さに
+        const PIPE_WIDTH = 50;
 
         let birdY = canvas.height / 2;
         let birdVelocity = 0;
-        let birdWidth = 20;
-        let birdHeight = 20;
-        let birdFlap = false;
+        const birdX = 50;
+        const birdSize = 20;
+        
         let pipes = [];
         let score = 0;
         let gameOver = false;
+        let frameCount = 0;
 
-        // Bird drawing
-        function drawBird() {
-            ctx.fillStyle = 'yellow';
-            ctx.fillRect(50, birdY, birdWidth, birdHeight);
-        }
-
-        // Handle the bird's movement
-        function updateBird() {
-            if (birdFlap) {
-                birdVelocity = FLAP;
-                birdFlap = false;
-            }
-
-            birdY += birdVelocity;
-            birdVelocity += GRAVITY;
-
-            if (birdY > canvas.height - birdHeight) {
-                birdY = canvas.height - birdHeight;
-                birdVelocity = 0;
-            } else if (birdY < 0) {
-                birdY = 0;
-                birdVelocity = 0;
-            }
-        }
-
-        // Pipe object
-        function createPipe() {
-            const pipeHeight = Math.floor(Math.random() * (canvas.height - 100)) + 50;
-            pipes.push({
-                x: canvas.width,
-                top: pipeHeight,
-                bottom: pipeHeight + PIPE_GAP,
-            });
-        }
-
-        // Draw pipes
-        function drawPipes() {
-            pipes.forEach(pipe => {
-                ctx.fillStyle = 'green';
-                ctx.fillRect(pipe.x, 0, 40, pipe.top);
-                ctx.fillRect(pipe.x, pipe.bottom, 40, canvas.height - pipe.bottom);
-            });
-        }
-
-        // Update pipes
-        function updatePipes() {
-            pipes.forEach(pipe => {
-                pipe.x -= 2;
-            });
-
-            if (pipes.length && pipes[0].x < -40) {
-                pipes.shift();
-                score++;
-            }
-
-            if (Math.random() < 1 / SPAWN_RATE && pipes.length < 3) {
-                createPipe();
-            }
-        }
-
-        // Check collisions with pipes
-        function checkCollisions() {
-            pipes.forEach(pipe => {
-                if (50 + birdWidth > pipe.x && 50 < pipe.x + 40) {
-                    if (birdY < pipe.top || birdY + birdHeight > pipe.bottom) {
-                        gameOver = true;
-                    }
-                }
-            });
-        }
-
-        // Draw the score
-        function drawScore() {
-            ctx.fillStyle = 'black';
-            ctx.font = '20px Arial';
-            ctx.fillText(`Score: ${score}`, 10, 30);
-        }
-
-        // Game over screen
-        function drawGameOver() {
-            ctx.fillStyle = 'black';
-            ctx.font = '30px Arial';
-            ctx.fillText('Game Over!', canvas.width / 2 - 85, canvas.height / 2);
-            ctx.font = '20px Arial';
-            ctx.fillText('Press "R" to Restart', canvas.width / 2 - 70, canvas.height / 2 + 30);
-        }
-
-        // Main game loop
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (gameOver) {
-                drawGameOver();
-                return;
-            }
-
-            updateBird();
-            drawBird();
-
-            updatePipes();
-            drawPipes();
-            
-            drawScore();
-            checkCollisions();
-
+        // ゲームリセット関数
+        function resetGame() {
+            birdY = canvas.height / 2;
+            birdVelocity = 0;
+            pipes = [];
+            score = 0;
+            gameOver = false;
+            frameCount = 0;
             requestAnimationFrame(gameLoop);
         }
 
-        // Start game on pressing space or click/tap
-        window.addEventListener('keydown', (event) => {
-            if (event.key === ' ' && !gameOver) {
-                birdFlap = true;
-            } else if (event.key === 'r' && gameOver) {
-                pipes = [];
-                score = 0;
-                birdY = canvas.height / 2;
-                birdVelocity = 0;
-                gameOver = false;
-                gameLoop();
-            }
-        });
+        // 土管の作成
+        function createPipe() {
+            const minHeight = 50;
+            const maxHeight = canvas.height - PIPE_GAP - minHeight;
+            const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+            
+            pipes.push({
+                x: canvas.width,
+                top: topHeight,
+                passed: false // スコア加算済みフラグ
+            });
+        }
 
-        // Handle mouse click or tap
-        canvas.addEventListener('click', () => {
+        function update() {
+            if (gameOver) return;
+
+            // 鳥の移動
+            birdVelocity += GRAVITY;
+            birdY += birdVelocity;
+
+            // 地面と天井の判定
+            if (birdY + birdSize > canvas.height || birdY < 0) {
+                gameOver = true;
+            }
+
+            // 土管の移動と生成
+            if (frameCount % SPAWN_RATE === 0) {
+                createPipe();
+            }
+
+            pipes.forEach((pipe, index) => {
+                pipe.x -= 2;
+
+                // スコア判定（鳥が土管を通り過ぎたら）
+                if (!pipe.passed && pipe.x + PIPE_WIDTH < birdX) {
+                    score++;
+                    pipe.passed = true;
+                }
+
+                // 衝突判定
+                if (
+                    birdX + birdSize > pipe.x && 
+                    birdX < pipe.x + PIPE_WIDTH && 
+                    (birdY < pipe.top || birdY + birdSize > pipe.top + PIPE_GAP)
+                ) {
+                    gameOver = true;
+                }
+
+                // 画面外に出た土管を削除
+                if (pipe.x + PIPE_WIDTH < 0) {
+                    pipes.splice(index, 1);
+                }
+            });
+
+            frameCount++;
+        }
+
+        function draw() {
+            // 背景クリア
+            ctx.fillStyle = '#70c5ce';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 土管の描画
+            pipes.forEach(pipe => {
+                ctx.fillStyle = '#2ecc71';
+                // 上の土管
+                ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.top);
+                // 下の土管
+                ctx.fillRect(pipe.x, pipe.top + PIPE_GAP, PIPE_WIDTH, canvas.height);
+                
+                // 土管の縁取り
+                ctx.strokeStyle = '#27ae60';
+                ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.top);
+                ctx.strokeRect(pipe.x, pipe.top + PIPE_GAP, PIPE_WIDTH, canvas.height);
+            });
+
+            // 鳥の描画
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(birdX, birdY, birdSize, birdSize);
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(birdX, birdY, birdSize, birdSize);
+
+            // スコア表示
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(score, canvas.width / 2, 50);
+
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '30px Arial';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = '16px Arial';
+                ctx.fillText('Click or Press "R" to Restart', canvas.width / 2, canvas.height / 2 + 20);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
             if (!gameOver) {
-                birdFlap = true;
+                requestAnimationFrame(gameLoop);
             }
+        }
+
+        // 操作系
+        function flap() {
+            if (gameOver) {
+                resetGame();
+            } else {
+                birdVelocity = FLAP;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === ' ') flap();
+            if (e.key === 'r' || e.key === 'R') resetGame();
         });
 
-        // Initialize game
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            flap();
+        });
+
+        // 初回起動
         gameLoop();
     </script>
 </body>
