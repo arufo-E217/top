@@ -116,6 +116,8 @@ let score = 0;
 let playing = false;
 let animation;
 
+let lastTap = 0; // デバウンスのためのタイムスタンプ
+
 function startGame() {
     score = 0;
     speed = 2;
@@ -169,6 +171,11 @@ function showPerfectEffect() {
 
 game.addEventListener("click", () => {
     if (!playing) return;
+
+    // タップの連続クリック防止のため、デバウンス処理を追加
+    const now = Date.now();
+    if (now - lastTap < 100) return;  // 100ms以内のクリックは無視
+    lastTap = now;
 
     const markerCenter = position + 5;
     const zoneStart = target.offsetLeft;
