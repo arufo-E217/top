@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>フリッピーバード - 高速・指数スコア版</title>
+    <title>フリッピーバード - エクストリーム統計版</title>
     <style>
         body {
             margin: 0;
@@ -44,7 +44,9 @@
         let bird;
         let pipes = [];
         let clouds = [];
-        let scoreIndex = 0; // 内部的なn
+        let scoreIndex = 0; // 指数n
+        let flapCount = 0;   // ジャンプ回数
+        let retryTapCount = 0; // リトライ用タップ数
         let gameState = 'start';
         let frameCount = 0;
 
@@ -55,12 +57,11 @@
         let animStartTime = 0;
         const ANIM_DURATION = 1000; 
 
-        // 3桁カンマ区切り
         function numberWithCommas(x) {
+            if (x === "infinity") return x;
             return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        // イージング関数: Ease Out Quad (1 - (1 - t)^2)
         function easeOutQuad(t) {
             return 1 - (1 - t) * (1 - t);
         }
@@ -71,14 +72,10 @@
             const now = performance.now();
             const elapsed = now - animStartTime;
             const progress = Math.min(elapsed / ANIM_DURATION, 1);
-            
-            // イージング適用
             const easedProgress = easeOutQuad(progress);
 
-            if (easedProgress >= 1) return numberWithCommas(endValBig);
+            if (gameState === 'gameover' || easedProgress >= 1) return numberWithCommas(endValBig);
 
-            // 巨大数値の補完計算
-            // BigIntは小数点を扱えないため、100万倍して計算してから割ることで精度を保つ
             const precision = 1000000n;
             const currentBig = startValBig + (diffValBig * BigInt(Math.floor(easedProgress * Number(precision))) / precision);
             
@@ -97,9 +94,14 @@
                 this.velocity += GRAVITY;
                 this.y += this.velocity;
                 this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.velocity * 0.1));
-                if (this.y + this.size > canvas.height - 20 || this.y - this.size < 0) gameState = 'gameover';
+                if (this.y + this.size > canvas.height - 20 || this.y - this.size < 0) {
+                    if (gameState !== 'gameover') gameState = 'gameover';
+                }
             }
-            flap() { this.velocity = FLAP_STRENGTH; }
+            flap() {
+                this.velocity = FLAP_STRENGTH;
+                flapCount++;
+            }
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
@@ -168,6 +170,8 @@
             if (scoreIndex < 1024) {
                 endValBig = 2n ** BigInt(scoreIndex);
                 diffValBig = endValBig - startValBig;
+            } else {
+                endValBig = "infinity";
             }
             animStartTime = performance.now();
         }
@@ -176,6 +180,8 @@
             bird = new Bird();
             pipes = [];
             scoreIndex = 0;
+            flapCount = 0;
+            retryTapCount = 0;
             startValBig = 1n;
             endValBig = 1n;
             diffValBig = 0n;
@@ -186,6 +192,7 @@
         }
 
         function drawScore() {
+            if (gameState === 'gameover') return; // ゲームオーバー時は別表示
             const displayValue = getAnimatedScore();
             ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
             let fontSize = displayValue.length > 25 ? 12 : (displayValue.length > 15 ? 20 : 35);
@@ -193,6 +200,48 @@
             ctx.textAlign = 'center';
             ctx.fillText(displayValue, canvas.width / 2, 80);
             ctx.strokeText(displayValue, canvas.width / 2, 80);
+        }
+
+        function drawGameOverScreen() {
+            ctx.fillStyle = 'rgba(0,0,0,0.75)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            
+            // タイトル
+            ctx.font = '30px "Arial Black"';
+            ctx.fillText('GAME OVER', canvas.width / 2, 100);
+
+            // 最終数値（2^n）
+            ctx.font = '18px Arial';
+            ctx.fillStyle = '#fdd835';
+            ctx.fillText(`Power: 2^${scoreIndex}`, canvas.width / 2, 150);
+
+            // 最終数値（カンマ区切り）
+            const finalScoreStr = getAnimatedScore();
+            let scoreFontSize = finalScoreStr.length > 40 ? 8 : (finalScoreStr.length > 20 ? 12 : 16);
+            ctx.font = `${scoreFontSize}px Arial`;
+            ctx.fillStyle = '#fff';
+            // 長すぎる数値は適宜分割して表示したほうが良いが、一旦一行で
+            ctx.fillText(finalScoreStr, canvas.width / 2, 180, canvas.width - 40);
+
+            // 統計
+            ctx.font = '20px Arial';
+            ctx.fillText(`Total Jumps: ${flapCount}`, canvas.width / 2, 240);
+            ctx.fillText(`Score Level: ${scoreIndex}`, canvas.width / 2, 275);
+
+            // リトライカウントダウン
+            ctx.font = '24px "Arial Black"';
+            ctx.fillStyle = '#ff5252';
+            const remaining = 5 - retryTapCount;
+            ctx.fillText(`Tap ${remaining} times to Retry`, canvas.width / 2, 380);
+            
+            // 進捗バー的なもの
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(canvas.width/2 - 50, 400, 100, 10);
+            ctx.fillStyle = '#ff5252';
+            ctx.fillRect(canvas.width/2 - 50, 400, retryTapCount * 20, 10);
         }
 
         function gameLoop() {
@@ -207,14 +256,13 @@
                 frameCount++;
             } else if (gameState === 'gameover') {
                 pipes.forEach(p => p.draw());
-                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#fff'; ctx.font = '30px "Arial Black"'; ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-                ctx.font = '15px Arial'; ctx.fillText('Tap to Restart', canvas.width / 2, canvas.height / 2 + 40);
+                drawGameOverScreen();
             } else {
-                ctx.fillStyle = '#fff'; ctx.font = '20px Arial'; ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / 2);
+                ctx.fillStyle = '#fff'; ctx.font = '20px Arial'; ctx.textAlign = 'center';
+                ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / 2);
             }
 
-            bird.draw();
+            if (gameState !== 'gameover') bird.draw();
             drawScore();
             requestAnimationFrame(gameLoop);
         }
@@ -222,9 +270,18 @@
         function handleInput(e) {
             if (e.type === 'keydown' && e.key !== ' ' && e.key !== 'ArrowUp') return;
             if (e.cancelable) e.preventDefault();
-            if (gameState === 'start') gameState = 'playing';
-            if (gameState === 'playing') bird.flap();
-            if (gameState === 'gameover') initGame();
+            
+            if (gameState === 'start') {
+                gameState = 'playing';
+                bird.flap();
+            } else if (gameState === 'playing') {
+                bird.flap();
+            } else if (gameState === 'gameover') {
+                retryTapCount++;
+                if (retryTapCount >= 5) {
+                    initGame();
+                }
+            }
         }
 
         window.addEventListener('keydown', handleInput);
