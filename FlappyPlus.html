@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>フリッピーバード - 指数スコア版</title>
+    <title>フリッピーバード - 高速・指数スコア版</title>
     <style>
         body {
             margin: 0;
@@ -20,6 +20,7 @@
             border: 4px solid #0277bd;
             border-radius: 10px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
     </style>
 </head>
@@ -43,47 +44,45 @@
         let bird;
         let pipes = [];
         let clouds = [];
-        let score = 0; // 内部的な指数n
+        let scoreIndex = 0; // 内部的なn
         let gameState = 'start';
         let frameCount = 0;
 
-        // --- アニメーション用変数 ---
-        let lastScore = 0; 
+        // --- アニメーション・計算用 ---
+        let startValBig = 1n;
+        let endValBig = 1n;
+        let diffValBig = 0n;
         let animStartTime = 0;
-        const ANIM_DURATION = 500; // 0.5秒
+        const ANIM_DURATION = 500; 
 
-        // --- ユーティリティ: カンマ区切りフォーマット ---
-        function formatScore(n) {
-            // 指数が1024以上になると 2^1024 ≒ 1.79e308 を超える
-            if (n >= 1024) return "infinity";
-            
-            // BigIntで 2^n を計算
-            const bigVal = BigUint64Array; // 未使用だがBigIntの存在確認
-            const val = BigInt(2) ** BigInt(n);
-            
-            // カンマ区切り文字列に変換
-            return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        // 3桁カンマ区切り
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        // 現在のアニメーション中の値を計算
+        // イージング関数: Ease Out Quad (1 - (1 - t)^2)
+        function easeOutQuad(t) {
+            return 1 - (1 - t) * (1 - t);
+        }
+
         function getAnimatedScore() {
-            if (gameState === 'start') return "1";
+            if (scoreIndex >= 1024) return "infinity";
             
             const now = performance.now();
             const elapsed = now - animStartTime;
             const progress = Math.min(elapsed / ANIM_DURATION, 1);
-
-            // 指数が1024を超える場合は即座にinfinity判定へ
-            if (score >= 1024) return "infinity";
-
-            // 0.5秒のアニメーション中は、前回のスコアから今回のスコアまで線形補完した値を表示
-            // (巨大な数値のためBigIntで補完計算)
-            const startVal = BigInt(2) ** BigInt(lastScore);
-            const endVal = BigInt(2) ** BigInt(score);
-            const diff = endVal - startVal;
-            const currentVal = startVal + (diff * BigInt(Math.floor(progress * 100)) / 100n);
             
-            return currentVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            // イージング適用
+            const easedProgress = easeOutQuad(progress);
+
+            if (easedProgress >= 1) return numberWithCommas(endValBig);
+
+            // 巨大数値の補完計算
+            // BigIntは小数点を扱えないため、100万倍して計算してから割ることで精度を保つ
+            const precision = 1000000n;
+            const currentBig = startValBig + (diffValBig * BigInt(Math.floor(easedProgress * Number(precision))) / precision);
+            
+            return numberWithCommas(currentBig);
         }
 
         class Bird {
@@ -100,9 +99,7 @@
                 this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.velocity * 0.1));
                 if (this.y + this.size > canvas.height - 20 || this.y - this.size < 0) gameState = 'gameover';
             }
-            flap() {
-                this.velocity = FLAP_STRENGTH;
-            }
+            flap() { this.velocity = FLAP_STRENGTH; }
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
@@ -121,18 +118,15 @@
             constructor() {
                 this.x = canvas.width;
                 this.passed = false;
-                const gap = Math.max(MIN_PIPE_GAP, INITIAL_PIPE_GAP - Math.floor(score / 5) * GAP_REDUCTION_RATE);
+                const gap = Math.max(MIN_PIPE_GAP, INITIAL_PIPE_GAP - Math.floor(scoreIndex / 5) * GAP_REDUCTION_RATE);
                 this.topHeight = Math.random() * (canvas.height - 100 - gap - 60) + 60;
                 this.bottomY = this.topHeight + gap;
-                this.gap = gap;
             }
             update() {
                 this.x -= 2.5;
                 if (!this.passed && this.x + PIPE_WIDTH < bird.x - bird.size) {
-                    lastScore = score;
-                    score++;
-                    animStartTime = performance.now(); // アニメーション開始
                     this.passed = true;
+                    updateScore();
                 }
                 if (bird.x + bird.size - 2 > this.x && bird.x - bird.size + 2 < this.x + PIPE_WIDTH) {
                     if (bird.y - bird.size + 2 < this.topHeight || bird.y + bird.size - 2 > this.bottomY) gameState = 'gameover';
@@ -168,8 +162,24 @@
             }
         }
 
+        function updateScore() {
+            startValBig = endValBig;
+            scoreIndex++;
+            if (scoreIndex < 1024) {
+                endValBig = 2n ** BigInt(scoreIndex);
+                diffValBig = endValBig - startValBig;
+            }
+            animStartTime = performance.now();
+        }
+
         function initGame() {
-            bird = new Bird(); pipes = []; score = 0; lastScore = 0; frameCount = 0;
+            bird = new Bird();
+            pipes = [];
+            scoreIndex = 0;
+            startValBig = 1n;
+            endValBig = 1n;
+            diffValBig = 0n;
+            frameCount = 0;
             animStartTime = performance.now();
             if (clouds.length === 0) for (let i = 0; i < 5; i++) clouds.push(new Cloud(Math.random() * canvas.width));
             gameState = 'start';
@@ -178,13 +188,9 @@
         function drawScore() {
             const displayValue = getAnimatedScore();
             ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-            
-            // スコアが長くなるのでフォントサイズを自動調整
-            let fontSize = displayValue.length > 20 ? 15 : (displayValue.length > 10 ? 25 : 40);
+            let fontSize = displayValue.length > 25 ? 12 : (displayValue.length > 15 ? 20 : 35);
             ctx.font = `${fontSize}px "Arial Black"`;
             ctx.textAlign = 'center';
-            
-            // 長すぎる場合は折り返しや省略が必要だが、ここでは画面内に収まるよう調整
             ctx.fillText(displayValue, canvas.width / 2, 80);
             ctx.strokeText(displayValue, canvas.width / 2, 80);
         }
@@ -215,13 +221,16 @@
 
         function handleInput(e) {
             if (e.type === 'keydown' && e.key !== ' ' && e.key !== 'ArrowUp') return;
+            if (e.cancelable) e.preventDefault();
             if (gameState === 'start') gameState = 'playing';
             if (gameState === 'playing') bird.flap();
             if (gameState === 'gameover') initGame();
         }
 
-        document.addEventListener('keydown', handleInput);
+        window.addEventListener('keydown', handleInput);
         canvas.addEventListener('mousedown', handleInput);
+        canvas.addEventListener('touchstart', handleInput, { passive: false });
+
         initGame();
         gameLoop();
     </script>
