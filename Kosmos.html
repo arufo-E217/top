@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>KOSMOS - 宇宙再構築シミュレーター</title>
+    <style>
+        body {
+            background: #00020a;
+            color: #d1d9ff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            text-shadow: 0 0 10px rgba(100, 150, 255, 0.5);
+        }
+
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+        }
+
+        #main-ui {
+            text-align: center;
+            background: rgba(10, 15, 30, 0.8);
+            padding: 40px;
+            border-radius: 50%;
+            border: 1px solid #2a3a5a;
+            box-shadow: 0 0 50px rgba(0, 100, 255, 0.2);
+            width: 500px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 { font-weight: 200; letter-spacing: 5px; margin-bottom: 5px; font-size: 1.2rem; }
+        
+        #mass-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fff;
+            margin: 10px 0;
+        }
+
+        #rank-display {
+            color: #4cc9f0;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        /* 重力核（クリックボタン） */
+        #core {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, #fff 0%, #4cc9f0 50%, #4361ee 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px #4361ee;
+            transition: transform 0.1s;
+            border: none;
+            outline: none;
+        }
+        #core:active { transform: scale(0.9); box-shadow: 0 0 40px #4cc9f0; }
+
+        /* アップグレードエリア */
+        #upgrades {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .upgrade-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #2a3a5a;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.3s;
+            display: inline-block;
+            width: 200px;
+        }
+        .upgrade-card:hover { background: rgba(76, 201, 240, 0.2); }
+        .upgrade-card:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        #log { font-size: 0.7rem; color: #666; margin-top: 20px; height: 1.5rem; }
+    </style>
+</head>
+<body>
+
+<div id="starfield"></div>
+
+<div id="main-ui">
+    <h1>TOTAL MASS</h1>
+    <div id="mass-display">0 g</div>
+    <div id="rank-display">【虚無】</div>
+
+    <button id="core" onclick="collectMass()"></button>
+
+    <div id="upgrades">
+        <button id="up1" class="upgrade-card" onclick="buyAuto(1)">
+            重力凝縮 (Cost: 10g)<br>+1g/sec
+        </button>
+        <button id="up2" class="upgrade-card" onclick="buyAuto(2)">
+            小惑星の衝突 (Cost: 500g)<br>+50g/sec
+        </button>
+    </div>
+
+    <div id="log">宇宙は静寂に包まれている。</div>
+</div>
+
+<script>
+    let mass = 0;
+    let autoPower = 0;
+
+    const upgradeData = {
+        up1: { cost: 10, power: 1, base: 10 },
+        up2: { cost: 500, power: 50, base: 500 }
+    };
+
+    function formatMass(g) {
+        if (g < 1000) return g.toFixed(1) + " g";
+        if (g < 1e6) return (g / 1e3).toFixed(2) + " kg";
+        if (g < 1e9) return (g / 1e6).toFixed(2) + " t";
+        if (g < 1e27) return (g / 5.972e27).toFixed(4) + " 地球質量";
+        if (g < 1e33) return (g / 1.989e33).toFixed(4) + " 太陽質量";
+        return (g / 1.989e33).toExponential(2) + " 太陽質量";
+    }
+
+    function getRank(g) {
+        if (g < 1000) return "【宇宙の塵】";
+        if (g < 1e6) return "【小石の塊】";
+        if (g < 1e12) return "【小惑星】";
+        if (g < 1e24) return "【衛星級】";
+        if (g < 1e28) return "【惑星級】";
+        if (g < 1e33) return "【恒星級】";
+        return "【銀河の種】";
+    }
+
+    function collectMass() {
+        mass += 1 + (autoPower * 0.1); // クリックも自動分に少し依存させる
+        updateDisplay();
+    }
+
+    function buyAuto(id) {
+        let up = upgradeData["up" + id];
+        if (mass >= up.cost) {
+            mass -= up.cost;
+            autoPower += up.power;
+            up.cost = Math.floor(up.cost * 1.5);
+            document.getElementById("up" + id).innerHTML = 
+                `${id==1 ? '重力凝縮' : '小惑星の衝突'} (Cost: ${formatMass(up.cost)})<br>+${up.power}g/sec`;
+            updateDisplay();
+        }
+    }
+
+    function updateDisplay() {
+        document.getElementById('mass-display').innerText = formatMass(mass);
+        document.getElementById('rank-display').innerText = getRank(mass);
+        document.getElementById('up1').disabled = mass < upgradeData.up1.cost;
+        document.getElementById('up2').disabled = mass < upgradeData.up2.cost;
+        
+        // 背景の光を質量に合わせて強くする
+        const glow = Math.min(mass / 1000, 50);
+        document.getElementById('core').style.boxShadow = `0 0 ${20 + glow}px #4361ee`;
+    }
+
+    // メインループ
+    setInterval(() => {
+        if (autoPower > 0) {
+            mass += autoPower / 10;
+            updateDisplay();
+        }
+    }, 100);
+
+</script>
+</body>
+</html>
