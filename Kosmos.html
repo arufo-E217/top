@@ -2,186 +2,327 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>KOSMOS - 宇宙再構築シミュレーター</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KOSMOS v2 - 宇宙再構築</title>
     <style>
+        :root {
+            --bg-color: #05070a;
+            --accent-color: #4cc9f0;
+            --text-color: #d1d9ff;
+            --panel-bg: rgba(20, 25, 40, 0.95);
+        }
+
         body {
-            background: #00020a;
-            color: #d1d9ff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
             margin: 0;
-            overflow: hidden;
-            text-shadow: 0 0 10px rgba(100, 150, 255, 0.5);
-        }
-
-        #starfield {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
-        }
-
-        #main-ui {
-            text-align: center;
-            background: rgba(10, 15, 30, 0.8);
-            padding: 40px;
-            border-radius: 50%;
-            border: 1px solid #2a3a5a;
-            box-shadow: 0 0 50px rgba(0, 100, 255, 0.2);
-            width: 500px;
-            height: 500px;
+            overflow: hidden; /* スクロール防止 */
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* タブナビゲーション */
+        nav {
+            display: flex;
+            background: #101525;
+            border-bottom: 1px solid #2a3a5a;
+            z-index: 100;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            color: #666;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            background: rgba(76, 201, 240, 0.1);
+        }
+
+        /* コンテンツエリア */
+        .content {
+            flex: 1;
+            display: none;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .content.active { display: block; }
+
+        /* メインタブ */
+        #main-tab {
+            text-align: center;
+            display: flex; /* active時のみflexに上書き */
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+        }
+        #main-tab.active { display: flex; }
+
+        .mass-container { margin-bottom: 20px; }
+        #mass-display { font-size: 2.2rem; font-weight: bold; color: #fff; }
+        #rank-display { color: var(--accent-color); font-size: 0.9rem; margin-top: 5px; }
+
+        /* 重力核（マルチタップ対応） */
+        #core-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        h1 { font-weight: 200; letter-spacing: 5px; margin-bottom: 5px; font-size: 1.2rem; }
-        
-        #mass-display {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #fff;
-            margin: 10px 0;
-        }
-
-        #rank-display {
-            color: #4cc9f0;
-            font-style: italic;
-            margin-bottom: 20px;
-        }
-
-        /* 重力核（クリックボタン） */
         #core {
-            width: 120px;
-            height: 120px;
-            background: radial-gradient(circle, #fff 0%, #4cc9f0 50%, #4361ee 100%);
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, #fff, #4cc9f0, #4361ee);
             border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 20px #4361ee;
-            transition: transform 0.1s;
+            box-shadow: 0 0 30px #4361ee;
+            touch-action: none; /* スマホのズーム・スクロール無効 */
             border: none;
-            outline: none;
         }
-        #core:active { transform: scale(0.9); box-shadow: 0 0 40px #4cc9f0; }
+        #core:active { transform: scale(0.95); }
 
-        /* アップグレードエリア */
-        #upgrades {
-            margin-top: 30px;
-            width: 100%;
-        }
-
-        .upgrade-card {
-            background: rgba(255, 255, 255, 0.05);
+        /* アップグレードリスト */
+        .upgrade-item {
+            background: var(--panel-bg);
             border: 1px solid #2a3a5a;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: 0.3s;
-            display: inline-block;
-            width: 200px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .upgrade-card:hover { background: rgba(76, 201, 240, 0.2); }
-        .upgrade-card:disabled { opacity: 0.3; cursor: not-allowed; }
+        .upgrade-item:disabled { opacity: 0.4; }
+        .up-info { flex: 1; }
+        .up-name { font-weight: bold; color: #fff; display: block; }
+        .up-desc { font-size: 0.75rem; color: #aaa; }
+        .up-cost { color: #f1c40f; font-size: 0.9rem; font-weight: bold; }
+        .buy-btn {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+        .buy-btn:disabled { background: #333; }
 
-        #log { font-size: 0.7rem; color: #666; margin-top: 20px; height: 1.5rem; }
+        /* 統計 */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #222;
+        }
     </style>
 </head>
 <body>
 
-<div id="starfield"></div>
+<nav>
+    <button class="tab-btn active" onclick="showTab('main-tab')">宇宙</button>
+    <button class="tab-btn" onclick="showTab('upgrade-tab')">進化</button>
+    <button class="tab-btn" onclick="showTab('stat-tab')">記録</button>
+</nav>
 
-<div id="main-ui">
-    <h1>TOTAL MASS</h1>
-    <div id="mass-display">0 g</div>
-    <div id="rank-display">【虚無】</div>
-
-    <button id="core" onclick="collectMass()"></button>
-
-    <div id="upgrades">
-        <button id="up1" class="upgrade-card" onclick="buyAuto(1)">
-            重力凝縮 (Cost: 10g)<br>+1g/sec
-        </button>
-        <button id="up2" class="upgrade-card" onclick="buyAuto(2)">
-            小惑星の衝突 (Cost: 500g)<br>+50g/sec
-        </button>
+<div id="main-tab" class="content active">
+    <div class="mass-container">
+        <div id="mass-display">0 g</div>
+        <div id="rank-display">【特異点】</div>
+    </div>
+    
+    <div id="core-container">
+        <div id="core"></div>
     </div>
 
-    <div id="log">宇宙は静寂に包まれている。</div>
+    <div style="font-size: 0.8rem; color: #666;">
+        秒間増加量: <span id="aps-display">0</span> g/s<br>
+        タップ効率: <span id="tpc-display">1</span> g/tap
+    </div>
+</div>
+
+<div id="upgrade-tab" class="content">
+    <h3 style="color: var(--accent-color);">手動進化（タップ強化）</h3>
+    <div id="tap-upgrades"></div>
+    
+    <h3 style="color: #ff4757; margin-top: 20px;">自動進化（放置強化）</h3>
+    <div id="auto-upgrades"></div>
+</div>
+
+<div id="stat-tab" class="content">
+    <h2>宇宙の観測データ</h2>
+    <div class="stat-row"><span>累計獲得質量</span><span id="stat-total-mass">0 g</span></div>
+    <div class="stat-row"><span>累計クリック数</span><span id="stat-clicks">0</span></div>
+    <div class="stat-row"><span>宇宙の年齢</span><span id="stat-time">0s</span></div>
 </div>
 
 <script>
     let mass = 0;
+    let totalMass = 0;
+    let totalClicks = 0;
+    let startTime = Date.now();
+
+    let tapPower = 1;
     let autoPower = 0;
 
-    const upgradeData = {
-        up1: { cost: 10, power: 1, base: 10 },
-        up2: { cost: 500, power: 50, base: 500 }
+    // アップグレード定義
+    const upgrades = {
+        tap: [
+            { id: 't1', name: '原子の衝突', desc: '1タップあたりの質量 +1', cost: 15, growth: 1.6, value: 1, type: 'add' },
+            { id: 't2', name: '核融合の安定', desc: '1タップあたりの質量 +10', cost: 200, growth: 1.7, value: 10, type: 'add' },
+            { id: 't3', name: 'クォーク分解', desc: 'タップ効率を2倍にする', cost: 5000, growth: 3.5, value: 2, type: 'multi' }
+        ],
+        auto: [
+            { id: 'a1', name: '量子ゆらぎ', desc: '自動で 1g/s 増加', cost: 20, growth: 1.2, value: 1 },
+            { id: 'a2', name: '宇宙塵の収集', desc: '自動で 8g/s 増加', cost: 150, growth: 1.2, value: 8 },
+            { id: 'a3', name: '原始星の形成', desc: '自動で 50g/s 増加', cost: 1000, growth: 1.3, value: 50 },
+            { id: 'a4', name: '超新星の残骸', desc: '自動で 500g/s 増加', cost: 10000, growth: 1.4, value: 500 }
+        ]
     };
+
+    const upgradeLevels = {};
+
+    // 初期化
+    function init() {
+        renderUpgrades();
+        updateDisplay();
+        
+        // マルチタップ対応
+        const core = document.getElementById('core');
+        core.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // ズーム防止
+            const touches = e.changedTouches.length;
+            for(let i=0; i<touches; i++) {
+                collectMass();
+            }
+        }, { passive: false });
+
+        // PC用クリック対応
+        core.addEventListener('mousedown', (e) => {
+            if(window.ontouchstart === undefined) collectMass();
+        });
+
+        loop();
+    }
+
+    function collectMass() {
+        mass += tapPower;
+        totalMass += tapPower;
+        totalClicks++;
+        updateDisplay();
+    }
 
     function formatMass(g) {
         if (g < 1000) return g.toFixed(1) + " g";
         if (g < 1e6) return (g / 1e3).toFixed(2) + " kg";
         if (g < 1e9) return (g / 1e6).toFixed(2) + " t";
-        if (g < 1e27) return (g / 5.972e27).toFixed(4) + " 地球質量";
-        if (g < 1e33) return (g / 1.989e33).toFixed(4) + " 太陽質量";
-        return (g / 1.989e33).toExponential(2) + " 太陽質量";
+        if (g < 1e15) return (g / 1e12).toFixed(2) + " kt";
+        // 以降、地球質量 $5.97 \times 10^{27} g$
+        if (g < 1e27) return (g / 1e12).toExponential(2) + " t";
+        return (g / 5.972e27).toFixed(3) + " 地球質量";
     }
 
-    function getRank(g) {
-        if (g < 1000) return "【宇宙の塵】";
-        if (g < 1e6) return "【小石の塊】";
-        if (g < 1e12) return "【小惑星】";
-        if (g < 1e24) return "【衛星級】";
-        if (g < 1e28) return "【惑星級】";
-        if (g < 1e33) return "【恒星級】";
-        return "【銀河の種】";
+    function showTab(tabId) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
     }
 
-    function collectMass() {
-        mass += 1 + (autoPower * 0.1); // クリックも自動分に少し依存させる
-        updateDisplay();
+    function renderUpgrades() {
+        const tContainer = document.getElementById('tap-upgrades');
+        const aContainer = document.getElementById('auto-upgrades');
+        
+        [...upgrades.tap, ...upgrades.auto].forEach(up => {
+            upgradeLevels[up.id] = 0;
+            const html = `
+                <div class="upgrade-item" id="item-${up.id}">
+                    <div class="up-info">
+                        <span class="up-name">${up.name} <small>(Lv.<span id="lv-${up.id}">0</span>)</small></span>
+                        <span class="up-desc">${up.desc}</span><br>
+                        <span class="up-cost">コスト: <span id="cost-${up.id}">${up.cost}</span> g</span>
+                    </div>
+                    <button class="buy-btn" id="btn-${up.id}" onclick="buyUpgrade('${up.id}')">進化</button>
+                </div>
+            `;
+            if (up.id.startsWith('t')) tContainer.innerHTML += html;
+            else aContainer.innerHTML += html;
+        });
     }
 
-    function buyAuto(id) {
-        let up = upgradeData["up" + id];
-        if (mass >= up.cost) {
-            mass -= up.cost;
-            autoPower += up.power;
-            up.cost = Math.floor(up.cost * 1.5);
-            document.getElementById("up" + id).innerHTML = 
-                `${id==1 ? '重力凝縮' : '小惑星の衝突'} (Cost: ${formatMass(up.cost)})<br>+${up.power}g/sec`;
+    function buyUpgrade(id) {
+        const allUp = [...upgrades.tap, ...upgrades.auto];
+        const up = allUp.find(u => u.id === id);
+        const currentCost = Math.floor(up.cost * Math.pow(up.growth, upgradeLevels[id]));
+
+        if (mass >= currentCost) {
+            mass -= currentCost;
+            upgradeLevels[id]++;
+            
+            // 効果適用
+            if (up.type === 'add') {
+                if(id.startsWith('t')) tapPower += up.value;
+                else autoPower += up.value;
+            } else if (up.type === 'multi') {
+                if(id.startsWith('t')) tapPower *= up.value;
+                else autoPower *= up.value;
+            }
+
+            // 表示更新
+            document.getElementById(`lv-${id}`).innerText = upgradeLevels[id];
+            const nextCost = Math.floor(up.cost * Math.pow(up.growth, upgradeLevels[id]));
+            document.getElementById(`cost-${id}`).innerText = nextCost;
+            
             updateDisplay();
         }
     }
 
     function updateDisplay() {
         document.getElementById('mass-display').innerText = formatMass(mass);
-        document.getElementById('rank-display').innerText = getRank(mass);
-        document.getElementById('up1').disabled = mass < upgradeData.up1.cost;
-        document.getElementById('up2').disabled = mass < upgradeData.up2.cost;
+        document.getElementById('aps-display').innerText = autoPower.toLocaleString();
+        document.getElementById('tpc-display').innerText = tapPower.toLocaleString();
         
-        // 背景の光を質量に合わせて強くする
-        const glow = Math.min(mass / 1000, 50);
-        document.getElementById('core').style.boxShadow = `0 0 ${20 + glow}px #4361ee`;
+        // 統計
+        document.getElementById('stat-total-mass').innerText = formatMass(totalMass);
+        document.getElementById('stat-clicks').innerText = totalClicks;
+        document.getElementById('stat-time').innerText = Math.floor((Date.now() - startTime)/1000) + "s";
+
+        // ボタンの活性化状態
+        const allUp = [...upgrades.tap, ...upgrades.auto];
+        allUp.forEach(up => {
+            const cost = Math.floor(up.cost * Math.pow(up.growth, upgradeLevels[up.id]));
+            document.getElementById(`btn-${up.id}`).disabled = mass < cost;
+        });
+
+        // ランク
+        let rank = "【特異点】";
+        if (mass > 1000) rank = "【宇宙の塵】";
+        if (mass > 1e6) rank = "【衛星の核】";
+        if (mass > 1e12) rank = "【小惑星帯】";
+        if (mass > 1e20) rank = "【惑星の幼生】";
+        document.getElementById('rank-display').innerText = rank;
     }
 
-    // メインループ
-    setInterval(() => {
+    function loop() {
         if (autoPower > 0) {
-            mass += autoPower / 10;
+            const add = autoPower / 10;
+            mass += add;
+            totalMass += add;
             updateDisplay();
         }
-    }, 100);
+        setTimeout(loop, 100);
+    }
 
+    window.onload = init;
 </script>
 </body>
 </html>
