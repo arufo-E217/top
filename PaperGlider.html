@@ -3,71 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ぶっ飛び紙飛行機DX</title>
+    <title>ポップ・グライダー！ 16:9 完結版</title>
     <style>
         :root {
-            --pop-yellow: #ffeb3b;
-            --pop-blue: #03a9f4;
-            --pop-red: #ff5252;
-            --pop-green: #4caf50;
-            --pop-purple: #9c27b0;
+            --pop-yellow: #ffeb3b; --pop-blue: #03a9f4; --pop-red: #ff5252;
         }
-        body {
-            margin: 0; overflow: hidden; background: #222;
-            display: flex; align-items: center; justify-content: center;
-            height: 100vh; font-family: 'Arial Rounded MT Bold', sans-serif;
-        }
-        #game-container {
-            position: relative; width: 100vw; height: 56.25vw; /* 16:9 */
-            max-width: 177.78vh; max-height: 100vh;
-            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
-            overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
+        body { margin: 0; overflow: hidden; background: #222; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Arial Rounded MT Bold', sans-serif; }
+        #game-container { position: relative; width: 100vw; height: 56.25vw; max-width: 177.78vh; max-height: 100vh; background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%); overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
-
-        /* UI */
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         #ui-top { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-around; }
-        .stat-card {
-            background: rgba(255,255,255,0.25); backdrop-filter: blur(5px);
-            padding: 5px 15px; border-radius: 20px; border: 2px solid white;
-            color: white; font-weight: bold; font-size: 1.5vw;
-        }
-        .gauge-container {
-            position: absolute; bottom: 20px; color: #fff; background: rgba(0, 0, 0, 0.6);
-            padding: 10px 20px; border-radius: 50px; font-size: 1.8vw; border: 3px solid white;
-        }
+        .stat-card { background: rgba(255,255,255,0.25); backdrop-filter: blur(5px); padding: 5px 15px; border-radius: 20px; border: 2px solid white; color: white; font-weight: bold; font-size: 1.5vw; }
+        .gauge-container { position: absolute; bottom: 20px; color: #fff; background: rgba(0, 0, 0, 0.6); padding: 10px 20px; border-radius: 50px; font-size: 1.8vw; border: 3px solid white; }
         #speed-display { left: 20px; border-color: var(--pop-yellow); }
         #alt-display { left: 220px; border-color: var(--pop-blue); }
-
-        /* 操作 */
         #controls { position: absolute; right: 20px; bottom: 30px; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
-        .ctrl-btn {
-            width: 7vw; height: 7vw; background: rgba(255, 255, 255, 0.4);
-            border: 4px solid white; border-radius: 50%; color: white;
-            font-size: 3.5vw; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.1s;
-        }
-        .ctrl-btn:active { transform: scale(0.9); background: rgba(255, 255, 255, 0.6); }
-
-        /* オーバーレイ */
-        .overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.5); color: white; text-align: center; pointer-events: auto;
-        }
-        #start-screen { background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); }
-        button {
-            padding: 15px 40px; font-size: 2vw; background: var(--pop-red);
-            color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 0 #c62828;
-        }
+        .ctrl-btn { width: 7vw; height: 7vw; background: rgba(255, 255, 255, 0.4); border: 4px solid white; border-radius: 50%; color: white; font-size: 3.5vw; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        #skip-btn { position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: var(--pop-yellow); border: 3px solid white; border-radius: 10px; font-weight: bold; cursor: pointer; display: none; pointer-events: auto; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.6; } }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); color: white; text-align: center; pointer-events: auto; }
+        button.main-btn { padding: 15px 40px; font-size: 2vw; background: var(--pop-red); color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 0 #c62828; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        
         <div class="ui-layer">
             <div id="ui-top">
                 <div class="stat-card" id="distance">距離: 0m</div>
@@ -77,224 +38,149 @@
             <div id="speed-display" class="gauge-container">SPD: <span id="v-val">0</span> kn</div>
             <div id="alt-display" class="gauge-container">ALT: <span id="a-val">0</span> ft</div>
         </div>
-
-        <div id="controls">
-            <div class="ctrl-btn" id="btn-up">↑</div>
-            <div class="ctrl-btn" id="btn-down">↓</div>
-        </div>
-
-        <div id="start-screen" class="overlay">
-            <h1 style="font-size: 4vw;">POP GLIDER</h1>
-            <p style="font-size: 1.5vw;">右側のボタンで機首を操作！<br>アイテムを集めて遠くまで飛ばそう</p>
-            <button onclick="startGame()">START FLIGHT</button>
-        </div>
-
-        <div id="msg" class="overlay" style="display: none;">
-            <h1 style="color:var(--pop-yellow); font-size: 4vw;">FINISH!</h1>
-            <p id="msg-stats" style="font-size: 2vw;"></p>
-            <button onclick="location.reload()">TRY AGAIN</button>
-        </div>
+        <div id="controls"><div class="ctrl-btn" id="btn-up">↑</div><div class="ctrl-btn" id="btn-down">↓</div></div>
+        <div id="skip-btn" onclick="skipToFinish()">着地までスキップ ⏩</div>
+        <div id="start-screen" class="overlay"><h1 style="font-size: 4vw;">POP GLIDER</h1><button class="main-btn" onclick="startGame()">START</button></div>
+        <div id="msg" class="overlay" style="display: none;"><h1 id="res-title">FINISH!</h1><p id="msg-stats" style="font-size: 2vw;"></p><button class="main-btn" onclick="location.reload()">RETRY</button></div>
     </div>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const startScreen = document.getElementById('start-screen');
-const msgBox = document.getElementById('msg');
+const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+const V_WIDTH = 1920, V_HEIGHT = 1080;
+canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
 
-// 仮想解像度（16:9）
-const V_WIDTH = 1920;
-const V_HEIGHT = 1080;
-canvas.width = V_WIDTH;
-canvas.height = V_HEIGHT;
+let gameState = 'WAITING', clouds = [], buildings = [], items = [], timeOverTick = 0;
+const plane = { x: 250, y: 300, vx: 12, vy: 0, angle: 0, hp: 100, time: 30, distance: 0 };
+const GRAVITY = 0.15, AIR_RES = 0.0025, FRICTION = 0.97;
 
-let gameState = 'WAITING';
-const plane = {
-    x: 250, y: 300, vx: 12, vy: 0, angle: 0, 
-    hp: 100, time: 30, distance: 0
-};
-
-let clouds = [], buildings = [], items = [];
-const GRAVITY = 0.15;
-const AIR_RESISTANCE = 0.0025; // 毎フレームの減衰（約 -0.3kt/s 相当）
-const CONV_KN = 1.94;
-const CONV_FT = 3.28;
-
-// 初期背景生成
-for(let i=0; i<10; i++) clouds.push({x: Math.random()*V_WIDTH, y: Math.random()*V_HEIGHT*0.5, s: 0.3+Math.random()});
-for(let i=0; i<8; i++) spawnBuilding(i * (V_WIDTH/6));
-
-function spawnBuilding(x) {
-    buildings.push({
-        x: x, w: 100+Math.random()*150, h: 200+Math.random()*400,
-        color: `hsl(${200+Math.random()*20}, 40%, ${30+Math.random()*20}%)`
-    });
+function spawnItem() {
+    const types = ['HP', 'TIME', 'SPEED', 'UP', 'SPIKE'];
+    items.push({ x: V_WIDTH + 200, y: 150 + Math.random() * (V_HEIGHT - 400), type: types[Math.floor(Math.random()*types.length)], active: true });
 }
 
-function startGame() {
-    startScreen.style.display = 'none';
-    gameState = 'PLAYING';
-    requestAnimationFrame(update);
-}
+function startGame() { document.getElementById('start-screen').style.display = 'none'; gameState = 'PLAYING'; requestAnimationFrame(update); }
 
-// 入力
 let isUp = false, isDown = false;
-const setupBtn = (id, set) => {
-    const el = document.getElementById(id);
-    el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); set(true); };
-    el.onmouseup = el.ontouchend = () => set(false);
-};
-setupBtn('btn-up', v => isUp = v);
-setupBtn('btn-down', v => isDown = v);
+document.getElementById('btn-up').onmousedown = document.getElementById('btn-up').ontouchstart = (e) => { e.preventDefault(); isUp = true; };
+document.getElementById('btn-up').onmouseup = document.getElementById('btn-up').ontouchend = () => isUp = false;
+document.getElementById('btn-down').onmousedown = document.getElementById('btn-down').ontouchstart = (e) => { e.preventDefault(); isDown = true; };
+document.getElementById('btn-down').onmouseup = document.getElementById('btn-down').ontouchend = () => isDown = false;
 
 function update() {
-    if (gameState === 'WAITING') return;
-
     ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
     drawWorld();
     
     if (gameState === 'PLAYING') {
-        handlePhysics();
+        plane.time -= 1/60;
+        if (plane.time <= 0) { plane.time = 0; gameState = 'TIMEUP'; }
+        if (isUp) { plane.angle -= 0.04; plane.vx -= 0.04; }
+        else if (isDown) { plane.angle += 0.04; plane.vx += 0.05; }
+        else { plane.angle *= 0.96; }
+        plane.vx = Math.max(0, plane.vx - AIR_RES);
+        plane.angle = Math.max(-0.7, Math.min(0.7, plane.angle));
+        plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
+        plane.y += plane.vy;
+        plane.distance += plane.vx / 10;
+        if (plane.y >= V_HEIGHT - 100) { plane.y = V_HEIGHT - 100; gameState = 'FINISHED'; }
+        if (plane.y < 0) plane.y = 0;
+        
+        // アイテム生成管理：常に画面内に一定数あるように
+        if (items.length < 10) spawnItem();
         handleItems();
-    } else {
-        // 地面摩擦
-        if (plane.y >= V_HEIGHT - 100) {
-            plane.vx *= 0.97;
-            if (plane.vx < 0.1) plane.vx = 0;
-        }
+    } else if (gameState === 'TIMEUP') {
+        timeOverTick++;
+        if (timeOverTick > 300) document.getElementById('skip-btn').style.display = 'block';
+        plane.angle *= 0.95;
+        plane.vx = Math.max(0, plane.vx - AIR_RES);
+        plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
+        plane.y += plane.vy;
+        plane.distance += plane.vx / 10;
+        if (plane.y >= V_HEIGHT - 100) { plane.y = V_HEIGHT - 100; gameState = 'FINISHED'; }
+    } else if (gameState === 'FINISHED') {
+        plane.vx *= FRICTION;
+        plane.distance += plane.vx / 10;
+        if (plane.vx < 0.1) { plane.vx = 0; showResult(); }
     }
 
     drawPlane();
     updateUI();
-
-    if (plane.vx > 0 || plane.y < V_HEIGHT - 100) {
-        requestAnimationFrame(update);
-    } else {
-        showResult();
-    }
-}
-
-function handlePhysics() {
-    // 時間と操作
-    if (plane.time > 0) {
-        plane.time -= 1/60;
-        if (isUp) { plane.angle -= 0.04; plane.vx -= 0.04; }
-        else if (isDown) { plane.angle += 0.04; plane.vx += 0.05; }
-        else { plane.angle *= 0.96; }
-    } else {
-        plane.angle *= 0.9;
-    }
-
-    // 空気抵抗（常時減衰）
-    plane.vx = Math.max(0, plane.vx - AIR_RESISTANCE);
-
-    plane.angle = Math.max(-0.7, Math.min(0.7, plane.angle));
-    plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
-    plane.y += plane.vy;
-    plane.distance += plane.vx / 10;
-
-    // 地面
-    if (plane.y >= V_HEIGHT - 100) {
-        plane.y = V_HEIGHT - 100;
-        gameState = 'FINISHED';
-    }
-    if (plane.y < 0) plane.y = 0;
+    if (plane.vx > 0 || plane.y < V_HEIGHT - 100) requestAnimationFrame(update);
 }
 
 function handleItems() {
-    // アイテムが少ない場合、常に前方に補充（距離に関わらず）
-    if (items.length < 8) {
-        const types = ['HP', 'TIME', 'SPEED', 'UP', 'SPIKE'];
-        items.push({
-            x: V_WIDTH + 100 + Math.random() * V_WIDTH,
-            y: 100 + Math.random() * (V_HEIGHT - 300),
-            type: types[Math.floor(Math.random()*types.length)],
-            active: true
-        });
-    }
-
-    items.forEach((item, index) => {
-        item.x -= plane.vx;
-        if (!item.active) return;
-
-        // 当たり判定
-        const dx = item.x - plane.x, dy = item.y - plane.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 45) {
-            item.active = false;
-            applyItem(item.type);
+    for (let i = items.length - 1; i >= 0; i--) {
+        let it = items[i];
+        it.x -= plane.vx;
+        if (it.active && Math.hypot(it.x - plane.x, it.y - plane.y) < 40) {
+            it.active = false;
+            const t = it.type;
+            if (t==='HP') plane.hp = Math.min(100, plane.hp+20);
+            if (t==='TIME') plane.time += 7;
+            if (t==='SPEED') plane.vx += 6;
+            if (t==='UP') plane.y -= 200;
+            if (t==='SPIKE') { plane.hp -= 30; plane.vx *= 0.5; if(plane.hp<=0) gameState='FINISHED'; }
         }
-
-        // 描画 (80%サイズ = 半径約28)
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, 28, 0, Math.PI*2);
-        ctx.fillStyle = "white";
-        ctx.fill();
-        ctx.strokeStyle = getIconColor(item.type);
-        ctx.lineWidth = 5;
-        ctx.stroke();
-        ctx.font = "32px Arial";
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(getIcon(item.type), item.x, item.y + 2);
-        ctx.restore();
-
-        // 画面外削除
-        if (item.x < -100) items.splice(index, 1);
-    });
+        if (it.x < -100) items.splice(i, 1);
+        else if (it.active) drawItem(it);
+    }
 }
 
-function applyItem(type) {
-    if (type === 'HP') plane.hp = Math.min(100, plane.hp + 20);
-    if (type === 'TIME') plane.time += 7;
-    if (type === 'SPEED') plane.vx += 6;
-    if (type === 'UP') plane.y -= 200;
-    if (type === 'SPIKE') { plane.hp -= 30; plane.vx *= 0.5; if(plane.hp <= 0) gameState = 'FINISHED'; }
+function drawItem(it) {
+    const color = {HP:'#4caf50', TIME:'#2196f3', SPEED:'#ffeb3b', UP:'#e91e63', SPIKE:'#f44336'}[it.type];
+    const icon = {HP:'🩹', TIME:'⏳', SPEED:'⚡', UP:'🎈', SPIKE:'🌵'}[it.type];
+    ctx.save();
+    ctx.beginPath(); ctx.arc(it.x, it.y, 25, 0, 7); ctx.fillStyle = "white"; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.stroke();
+    ctx.font = "28px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(icon, it.x, it.y + 2); ctx.restore();
 }
 
-function getIcon(type) { return {HP:'🩹', TIME:'⏳', SPEED:'⚡', UP:'🎈', SPIKE:'🌵'}[type]; }
-function getIconColor(type) { return {HP:'#4caf50', TIME:'#2196f3', SPEED:'#ffeb3b', UP:'#e91e63', SPIKE:'#f44336'}[type]; }
+function skipToFinish() {
+    // 物理シミュレーションを回して最終地点を計算
+    let s_y = plane.y, s_vx = plane.vx, s_vy = plane.vy, s_dist = plane.distance, s_ang = plane.angle;
+    while (s_y < V_HEIGHT - 100 && s_vx > 0) {
+        s_ang *= 0.95; s_vx = Math.max(0, s_vx - AIR_RES);
+        s_vy = Math.sin(s_ang) * s_vx + GRAVITY;
+        s_y += s_vy; s_dist += s_vx / 10;
+    }
+    s_y = V_HEIGHT - 100;
+    while (s_vx > 0.1) { s_vx *= FRICTION; s_dist += s_vx / 10; }
+    
+    // 復活演出（高度10ft相当の位置へワープ）
+    plane.y = V_HEIGHT - 120; plane.vx = 0; plane.distance = s_dist;
+    gameState = 'FINISHED';
+    document.getElementById('skip-btn').style.display = 'none';
+}
 
 function drawWorld() {
-    // 雲
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    clouds.forEach(c => {
-        c.x -= plane.vx * 0.3;
-        if (c.x < -200) c.x = V_WIDTH + 200;
-        ctx.beginPath(); ctx.ellipse(c.x, c.y, 60*c.s, 30*c.s, 0, 0, Math.PI*2); ctx.fill();
-    });
-    // ビル
-    buildings.forEach(b => {
-        b.x -= plane.vx;
-        if (b.x < -300) b.x = V_WIDTH + Math.random()*200;
-        ctx.fillStyle = b.color;
-        ctx.fillRect(b.x, V_HEIGHT - b.h - 80, b.w, b.h);
-    });
-    // 地面
     ctx.fillStyle = "#388E3C"; ctx.fillRect(0, V_HEIGHT - 80, V_WIDTH, 80);
+    if (clouds.length < 8) clouds.push({x: V_WIDTH+100, y: Math.random()*400, s: 0.5+Math.random()});
+    clouds.forEach((c, i) => {
+        c.x -= plane.vx * 0.3; ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.beginPath(); ctx.ellipse(c.x, c.y, 60*c.s, 30*c.s, 0, 0, 7); ctx.fill();
+        if (c.x < -200) clouds.splice(i, 1);
+    });
 }
 
 function drawPlane() {
-    ctx.save();
-    ctx.translate(plane.x, plane.y);
-    ctx.rotate(plane.angle);
-    ctx.beginPath();
-    ctx.moveTo(40, 0); ctx.lineTo(-30, -20); ctx.lineTo(-15, 0); ctx.lineTo(-30, 20); ctx.closePath();
-    ctx.fillStyle = "white"; ctx.fill();
-    ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke();
+    ctx.save(); ctx.translate(plane.x, plane.y); ctx.rotate(plane.angle);
+    ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(-30, -20); ctx.lineTo(-15, 0); ctx.lineTo(-30, 20); ctx.closePath();
+    ctx.fillStyle = "white"; ctx.fill(); ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke();
     ctx.restore();
 }
 
 function updateUI() {
     document.getElementById('distance').innerText = `距離: ${Math.floor(plane.distance)}m`;
     document.getElementById('hp').innerText = `HP: ${Math.max(0, Math.round(plane.hp))}`;
-    document.getElementById('time').innerText = `残り時間: ${Math.max(0, plane.time).toFixed(1)}s`;
-    document.getElementById('v-val').innerText = (plane.vx * CONV_KN).toFixed(1);
-    document.getElementById('a-val').innerText = Math.max(0, (V_HEIGHT - 100 - plane.y) * CONV_FT / 10).toFixed(0);
+    document.getElementById('time').innerText = `残り時間: ${plane.time.toFixed(1)}s`;
+    document.getElementById('v-val').innerText = (plane.vx * 1.94).toFixed(1);
+    document.getElementById('a-val').innerText = Math.max(0, (V_HEIGHT - 100 - plane.y) * 0.328).toFixed(0);
 }
 
 function showResult() {
-    msgBox.style.display = 'flex';
+    document.getElementById('msg').style.display = 'flex';
     document.getElementById('msg-stats').innerHTML = `飛行距離: <strong>${Math.floor(plane.distance)} m</strong>`;
+    document.getElementById('skip-btn').style.display = 'none';
 }
 </script>
 </body>
