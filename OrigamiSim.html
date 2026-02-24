@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Drag & Fold Paper Airplane</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; width: 250px; pointer-events: auto; }
+        select, button { width: 100%; padding: 10px; margin-top: 10px; cursor: pointer; border-radius: 5px; border: none; }
+        .hint { font-size: 0.8em; color: #aaa; margin-top: 10px; }
+        .highlight { color: #4CAF50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>紙飛行機工房</h2>
+        <label>機体タイプを選択:</label>
+        <select id="modelType">
+            <option value="dart">スタンダード (ヘソ飛行機)</option>
+            <option value="glider">イカ飛行機 (広翼型)</option>
+        </select>
+        <button id="resetBtn">最初から折る</button>
+        <div class="hint">
+            <p>1. <span class="highlight">マウスで上下にドラッグ</span>して折る</p>
+            <p>2. 完全に折れると次の工程へ</p>
+            <p>※ 右ドラッグで視点回転</p>
+        </div>
+        <div id="stepCounter">工程: 0 / 2</div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 基本設定 ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }; // 左クリックをドラッグ操作に空ける
+        camera.position.set(0, 8, 10);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 10, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x606060));
+
+        // --- 変数管理 ---
+        let currentStep = 0;
+        let isDragging = false;
+        let startY = 0;
+        let currentAngle = 0;
+        const matOuter = new THREE.MeshPhongMaterial({ color: 0x3498db, side: THREE.DoubleSide });
+        const matInner = new THREE.MeshPhongMaterial({ color: 0xecf0f1, side: THREE.DoubleSide });
+
+        let leftHinge, rightHinge;
+
+        // --- モデル生成関数 ---
+        function setupModel(type) {
+            // シーンのクリア
+            while(scene.children.length > 2) scene.remove(scene.children[scene.children.length-1]);
+            currentStep = 0;
+            updateUI();
+
+            const group = new THREE.Group();
+            scene.add(group);
+
+            // 中央（ベース）
+            const baseGeom = (type === 'dart') ? new THREE.PlaneGeometry(2, 6) : new THREE.PlaneGeometry(4, 5);
+            const base = new THREE.Mesh(baseGeom, matInner);
+            base.rotation.x = -Math.PI / 2;
+            group.add(base);
+
+            // 翼（ヒンジ構造）
+            leftHinge = new THREE.Group();
+            rightHinge = new THREE.Group();
+            
+            leftHinge.position.x = (type === 'dart') ? -1 : -2;
+            rightHinge.position.x = (type === 'dart') ? 1 : 2;
+            group.add(leftHinge, rightHinge);
+
+            const wingGeom = (type === 'dart') ? new THREE.PlaneGeometry(3, 6) : new THREE.PlaneGeometry(3, 5);
+            const lWing = new THREE.Mesh(wingGeom, matOuter);
+            lWing.position.x = -1.5;
+            lWing.rotation.x = -Math.PI / 2;
+            leftHinge.add(lWing);
+
+            const rWing = new THREE.Mesh(wingGeom, matOuter);
+            rWing.position.x = 1.5;
+            rWing.rotation.x = -Math.PI / 2;
+            rightHinge.add(rWing);
+        }
+
+        // --- インタラクション ---
+        window.addEventListener('pointerdown', (e) => {
+            if (e.button === 0) { // 左クリック
+                isDragging = true;
+                startY = e.clientY;
+            }
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaY = (startY - e.clientY) * 0.01;
+            let targetAngle = Math.max(0, Math.min(Math.PI * 0.9, deltaY));
+            
+            // ヒンジに角度を適用
+            leftHinge.rotation.z = targetAngle;
+            rightHinge.rotation.z = -targetAngle;
+            currentAngle = targetAngle;
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+            // 一定以上折れたら「完了」とみなして固定
+            if (currentAngle > Math.PI * 0.6) {
+                if (currentStep < 1) {
+                    currentStep++;
+                    updateUI();
+                    alert("ナイス！次の工程へ（さらに深く折ってみよう）");
+                } else {
+                    alert("完成！飛ばせそうです！");
+                }
+            } else {
+                // 折るのが足りなければ戻る（バネのような演出）
+                leftHinge.rotation.z = 0;
+                rightHinge.rotation.z = 0;
+            }
+        });
+
+        function updateUI() {
+            document.getElementById('stepCounter').innerText = `工程: ${currentStep} / 2`;
+        }
+
+        document.getElementById('modelType').onchange = (e) => setupModel(e.target.value);
+        document.getElementById('resetBtn').onclick = () => setupModel(document.getElementById('modelType').value);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        setupModel('dart');
+        animate();
+    </script>
+</body>
+</html>
