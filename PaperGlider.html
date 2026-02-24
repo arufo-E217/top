@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ポップ・グライダー！ 16:9 完結版</title>
+    <title>ぶっ飛び紙飛行機DX</title>
     <style>
         :root {
             --pop-yellow: #ffeb3b; --pop-blue: #03a9f4; --pop-red: #ff5252;
@@ -18,17 +18,19 @@
         #speed-display { left: 20px; border-color: var(--pop-yellow); }
         #alt-display { left: 220px; border-color: var(--pop-blue); }
         #controls { position: absolute; right: 20px; bottom: 30px; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
-        .ctrl-btn { width: 7vw; height: 7vw; background: rgba(255, 255, 255, 0.4); border: 4px solid white; border-radius: 50%; color: white; font-size: 3.5vw; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .ctrl-btn { width: 7vw; height: 7vw; background: rgba(255, 255, 255, 0.4); border: 4px solid white; border-radius: 50%; color: white; font-size: 3.5vw; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
         #skip-btn { position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: var(--pop-yellow); border: 3px solid white; border-radius: 10px; font-weight: bold; cursor: pointer; display: none; pointer-events: auto; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.6; } }
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); color: white; text-align: center; pointer-events: auto; }
         button.main-btn { padding: 15px 40px; font-size: 2vw; background: var(--pop-red); color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 0 #c62828; }
+        #ff-indicator { position: absolute; bottom: 100px; left: 20px; color: var(--pop-yellow); font-size: 2vw; font-weight: bold; text-shadow: 2px 2px 4px black; display: none; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
+        <div id="ff-indicator">⏩ 早送り中...</div>
         <div class="ui-layer">
             <div id="ui-top">
                 <div class="stat-card" id="distance">距離: 0m</div>
@@ -39,7 +41,7 @@
             <div id="alt-display" class="gauge-container">ALT: <span id="a-val">0</span> ft</div>
         </div>
         <div id="controls"><div class="ctrl-btn" id="btn-up">↑</div><div class="ctrl-btn" id="btn-down">↓</div></div>
-        <div id="skip-btn" onclick="skipToFinish()">着地までスキップ ⏩</div>
+        <div id="skip-btn" onclick="startFastForward()">着地まで早送り ⏩</div>
         <div id="start-screen" class="overlay"><h1 style="font-size: 4vw;">POP GLIDER</h1><button class="main-btn" onclick="startGame()">START</button></div>
         <div id="msg" class="overlay" style="display: none;"><h1 id="res-title">FINISH!</h1><p id="msg-stats" style="font-size: 2vw;"></p><button class="main-btn" onclick="location.reload()">RETRY</button></div>
     </div>
@@ -50,122 +52,188 @@ const V_WIDTH = 1920, V_HEIGHT = 1080;
 canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
 
 let gameState = 'WAITING', clouds = [], buildings = [], items = [], timeOverTick = 0;
+let isFastForwarding = false, ffElapsedFrames = 0;
+
 const plane = { x: 250, y: 300, vx: 12, vy: 0, angle: 0, hp: 100, time: 30, distance: 0 };
 const GRAVITY = 0.15, AIR_RES = 0.0025, FRICTION = 0.97;
 
+for(let i=0; i<6; i++) spawnBuilding(i * (V_WIDTH/5));
+
 function spawnItem() {
+    if (gameState !== 'PLAYING') return; 
     const types = ['HP', 'TIME', 'SPEED', 'UP', 'SPIKE'];
-    items.push({ x: V_WIDTH + 200, y: 150 + Math.random() * (V_HEIGHT - 400), type: types[Math.floor(Math.random()*types.length)], active: true });
+    items.push({ 
+        x: V_WIDTH + 200, 
+        y: 150 + Math.random() * (V_HEIGHT - 400), 
+        type: types[Math.floor(Math.random()*types.length)], 
+        active: true
+    });
+}
+
+function spawnBuilding(xPos = V_WIDTH + 200) {
+    buildings.push({
+        x: xPos, w: 150 + Math.random() * 200, h: 200 + Math.random() * 400,
+        color: `hsl(${200 + Math.random()*20}, 30%, ${30 + Math.random()*20}%)`
+    });
 }
 
 function startGame() { document.getElementById('start-screen').style.display = 'none'; gameState = 'PLAYING'; requestAnimationFrame(update); }
 
 let isUp = false, isDown = false;
-document.getElementById('btn-up').onmousedown = document.getElementById('btn-up').ontouchstart = (e) => { e.preventDefault(); isUp = true; };
-document.getElementById('btn-up').onmouseup = document.getElementById('btn-up').ontouchend = () => isUp = false;
-document.getElementById('btn-down').onmousedown = document.getElementById('btn-down').ontouchstart = (e) => { e.preventDefault(); isDown = true; };
-document.getElementById('btn-down').onmouseup = document.getElementById('btn-down').ontouchend = () => isDown = false;
+const setUp = (e) => { e.preventDefault(); if(gameState === 'PLAYING') isUp = true; };
+const setDown = (e) => { e.preventDefault(); if(gameState === 'PLAYING') isDown = true; };
+const release = () => { isUp = false; isDown = false; };
+
+document.getElementById('btn-up').onmousedown = document.getElementById('btn-up').ontouchstart = setUp;
+document.getElementById('btn-down').onmousedown = document.getElementById('btn-down').ontouchstart = setDown;
+window.onmouseup = window.ontouchend = release;
 
 function update() {
     ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
-    drawWorld();
     
+    // 倍速計算
+    let timeScale = 1;
+    if (isFastForwarding) {
+        ffElapsedFrames++;
+        timeScale = Math.min(5, 1 + (ffElapsedFrames / 60) * 0.5);
+        // 高度15ft(約45.7px)以下になったら早送り終了
+        if ((V_HEIGHT - 100 - plane.y) * 0.328 < 15) {
+            isFastForwarding = false;
+            document.getElementById('ff-indicator').style.display = 'none';
+        }
+    }
+
+    // timeScale分だけ物理演算を回す
+    for (let t = 0; t < timeScale; t++) {
+        runPhysics();
+    }
+
+    drawWorld();
+    drawPlane();
+    updateUI();
+
+    if (plane.vx > 0.01 || plane.y < V_HEIGHT - 100 || gameState === 'PLAYING') {
+        requestAnimationFrame(update);
+    }
+}
+
+function runPhysics() {
     if (gameState === 'PLAYING') {
         plane.time -= 1/60;
-        if (plane.time <= 0) { plane.time = 0; gameState = 'TIMEUP'; }
+        if (plane.time <= 0) {
+            plane.time = 0;
+            gameState = 'TIMEUP';
+            isUp = false; isDown = false; // 操作不能にする
+            items = []; // アイテム消去
+        }
+
         if (isUp) { plane.angle -= 0.04; plane.vx -= 0.04; }
         else if (isDown) { plane.angle += 0.04; plane.vx += 0.05; }
         else { plane.angle *= 0.96; }
+
         plane.vx = Math.max(0, plane.vx - AIR_RES);
         plane.angle = Math.max(-0.7, Math.min(0.7, plane.angle));
         plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
         plane.y += plane.vy;
         plane.distance += plane.vx / 10;
+
         if (plane.y >= V_HEIGHT - 100) { plane.y = V_HEIGHT - 100; gameState = 'FINISHED'; }
         if (plane.y < 0) plane.y = 0;
         
-        // アイテム生成管理：常に画面内に一定数あるように
-        if (items.length < 10) spawnItem();
+        if (items.length < 6 && Math.random() < 0.02) spawnItem();
         handleItems();
+
     } else if (gameState === 'TIMEUP') {
         timeOverTick++;
-        if (timeOverTick > 300) document.getElementById('skip-btn').style.display = 'block';
-        plane.angle *= 0.95;
-        plane.vx = Math.max(0, plane.vx - AIR_RES);
+        if (timeOverTick > 180 && !isFastForwarding) document.getElementById('skip-btn').style.display = 'block';
+        
+        // タイムアップ後は操作不能・アイテム無し
+        plane.angle *= 0.98;
+        plane.vx = Math.max(0, plane.vx - AIR_RES); // 空中では通常減速
         plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
         plane.y += plane.vy;
         plane.distance += plane.vx / 10;
-        if (plane.y >= V_HEIGHT - 100) { plane.y = V_HEIGHT - 100; gameState = 'FINISHED'; }
+        
+        if (plane.y >= V_HEIGHT - 100) {
+            plane.y = V_HEIGHT - 100;
+            gameState = 'FINISHED';
+        }
     } else if (gameState === 'FINISHED') {
+        // 着地後のみ摩擦による急減速
         plane.vx *= FRICTION;
         plane.distance += plane.vx / 10;
         if (plane.vx < 0.1) { plane.vx = 0; showResult(); }
     }
-
-    drawPlane();
-    updateUI();
-    if (plane.vx > 0 || plane.y < V_HEIGHT - 100) requestAnimationFrame(update);
 }
 
 function handleItems() {
     for (let i = items.length - 1; i >= 0; i--) {
         let it = items[i];
-        it.x -= plane.vx;
-        if (it.active && Math.hypot(it.x - plane.x, it.y - plane.y) < 40) {
+        it.x -= (plane.vx + 5); 
+        if (it.active && Math.hypot(it.x - plane.x, it.y - plane.y) < 50) {
             it.active = false;
             const t = it.type;
             if (t==='HP') plane.hp = Math.min(100, plane.hp+20);
             if (t==='TIME') plane.time += 7;
-            if (t==='SPEED') plane.vx += 6;
-            if (t==='UP') plane.y -= 200;
+            if (t==='SPEED') plane.vx += 8;
+            if (t==='UP') plane.y -= 250;
             if (t==='SPIKE') { plane.hp -= 30; plane.vx *= 0.5; if(plane.hp<=0) gameState='FINISHED'; }
         }
         if (it.x < -100) items.splice(i, 1);
-        else if (it.active) drawItem(it);
     }
+}
+
+function startFastForward() {
+    isFastForwarding = true;
+    ffElapsedFrames = 0;
+    document.getElementById('skip-btn').style.display = 'none';
+    document.getElementById('ff-indicator').style.display = 'block';
 }
 
 function drawItem(it) {
     const color = {HP:'#4caf50', TIME:'#2196f3', SPEED:'#ffeb3b', UP:'#e91e63', SPIKE:'#f44336'}[it.type];
     const icon = {HP:'🩹', TIME:'⏳', SPEED:'⚡', UP:'🎈', SPIKE:'🌵'}[it.type];
     ctx.save();
-    ctx.beginPath(); ctx.arc(it.x, it.y, 25, 0, 7); ctx.fillStyle = "white"; ctx.fill();
-    ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.stroke();
-    ctx.font = "28px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(icon, it.x, it.y + 2); ctx.restore();
-}
-
-function skipToFinish() {
-    // 物理シミュレーションを回して最終地点を計算
-    let s_y = plane.y, s_vx = plane.vx, s_vy = plane.vy, s_dist = plane.distance, s_ang = plane.angle;
-    while (s_y < V_HEIGHT - 100 && s_vx > 0) {
-        s_ang *= 0.95; s_vx = Math.max(0, s_vx - AIR_RES);
-        s_vy = Math.sin(s_ang) * s_vx + GRAVITY;
-        s_y += s_vy; s_dist += s_vx / 10;
-    }
-    s_y = V_HEIGHT - 100;
-    while (s_vx > 0.1) { s_vx *= FRICTION; s_dist += s_vx / 10; }
-    
-    // 復活演出（高度10ft相当の位置へワープ）
-    plane.y = V_HEIGHT - 120; plane.vx = 0; plane.distance = s_dist;
-    gameState = 'FINISHED';
-    document.getElementById('skip-btn').style.display = 'none';
+    ctx.beginPath(); ctx.arc(it.x, it.y, 35, 0, Math.PI*2); ctx.fillStyle = "white"; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.stroke();
+    ctx.font = "40px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(icon, it.x, it.y + 4); ctx.restore();
 }
 
 function drawWorld() {
-    ctx.fillStyle = "#388E3C"; ctx.fillRect(0, V_HEIGHT - 80, V_WIDTH, 80);
-    if (clouds.length < 8) clouds.push({x: V_WIDTH+100, y: Math.random()*400, s: 0.5+Math.random()});
+    if (clouds.length < 8) clouds.push({x: V_WIDTH+200, y: Math.random()*300, s: 0.5+Math.random()});
     clouds.forEach((c, i) => {
-        c.x -= plane.vx * 0.3; ctx.fillStyle = "rgba(255,255,255,0.6)";
-        ctx.beginPath(); ctx.ellipse(c.x, c.y, 60*c.s, 30*c.s, 0, 0, 7); ctx.fill();
-        if (c.x < -200) clouds.splice(i, 1);
+        c.x -= (plane.vx * 0.2 + 1);
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.beginPath(); ctx.ellipse(c.x, c.y, 80*c.s, 40*c.s, 0, 0, 7); ctx.fill();
+        if (c.x < -300) clouds.splice(i, 1);
     });
+
+    if (buildings.length < 8) spawnBuilding();
+    buildings.forEach((b, i) => {
+        b.x -= (plane.vx * 0.6 + 2);
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, V_HEIGHT - b.h - 80, b.w, b.h);
+        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        for(let j=0; j<3; j++) ctx.fillRect(b.x + 20 + j*40, V_HEIGHT - b.h + 20, 20, 100);
+        if (b.x + b.w < -200) buildings.splice(i, 1);
+    });
+
+    ctx.fillStyle = "#388E3C"; ctx.fillRect(0, V_HEIGHT - 80, V_WIDTH, 80);
+    ctx.fillStyle = "#2E7D32";
+    for(let i=0; i<V_WIDTH+100; i+=100) {
+        let offset = (plane.distance * 10) % 100;
+        ctx.fillRect(i - offset, V_HEIGHT - 80, 50, 10);
+    }
+    items.forEach(it => { if(it.active) drawItem(it); });
 }
 
 function drawPlane() {
     ctx.save(); ctx.translate(plane.x, plane.y); ctx.rotate(plane.angle);
-    ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(-30, -20); ctx.lineTo(-15, 0); ctx.lineTo(-30, 20); ctx.closePath();
-    ctx.fillStyle = "white"; ctx.fill(); ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.beginPath(); ctx.ellipse(0, (V_HEIGHT - 100 - plane.y), 40, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(50, 0); ctx.lineTo(-40, -25); ctx.lineTo(-20, 0); ctx.lineTo(-40, 25); ctx.closePath();
+    ctx.fillStyle = "white"; ctx.fill(); ctx.strokeStyle = "#333"; ctx.lineWidth = 4; ctx.stroke();
     ctx.restore();
 }
 
@@ -178,6 +246,7 @@ function updateUI() {
 }
 
 function showResult() {
+    if(document.getElementById('msg').style.display === 'flex') return;
     document.getElementById('msg').style.display = 'flex';
     document.getElementById('msg-stats').innerHTML = `飛行距離: <strong>${Math.floor(plane.distance)} m</strong>`;
     document.getElementById('skip-btn').style.display = 'none';
