@@ -3,206 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ポップ・グライダー！</title>
+    <title>ぶっ飛び紙飛行機DX</title>
     <style>
         :root {
             --pop-yellow: #ffeb3b;
             --pop-blue: #03a9f4;
             --pop-red: #ff5252;
-            --ui-bg: rgba(255, 255, 255, 0.2);
+            --pop-green: #4caf50;
+            --pop-purple: #9c27b0;
         }
         body {
-            margin: 0; overflow: hidden;
-            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
-            font-family: 'Arial Rounded MT Bold', 'Helvetica', sans-serif;
-            user-select: none; touch-action: none;
-        }
-        canvas { display: block; }
-
-        /* UI 上部 */
-        #ui-top {
-            position: absolute; top: 20px; width: 100%;
-            display: flex; justify-content: space-around;
-            pointer-events: none;
-        }
-        .stat-card {
-            background: var(--ui-bg); backdrop-filter: blur(5px);
-            padding: 8px 15px; border-radius: 20px; border: 2px solid white;
-            color: white; font-weight: bold; font-size: 18px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        /* 速度・高度計（下部） */
-        .gauge-container {
-            position: absolute; bottom: 30px;
-            color: #fff; background: rgba(0, 0, 0, 0.6);
-            padding: 15px 25px; border-radius: 50px;
-            font-size: 22px; pointer-events: none;
-            border: 3px solid white;
-        }
-        #speed-display { left: 30px; border-color: var(--pop-yellow); }
-        #alt-display { left: 240px; border-color: var(--pop-blue); }
-
-        /* 操作ボタン（右側） */
-        #controls {
-            position: absolute; right: 30px; bottom: 50px;
-            display: flex; flex-direction: column; gap: 20px;
-        }
-        .ctrl-btn {
-            width: 80px; height: 80px;
-            background: rgba(255, 255, 255, 0.4);
-            border: 4px solid white; border-radius: 50%;
-            color: white; font-size: 40px; font-weight: bold;
+            margin: 0; overflow: hidden; background: #222;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: transform 0.1s;
+            height: 100vh; font-family: 'Arial Rounded MT Bold', sans-serif;
+        }
+        #game-container {
+            position: relative; width: 100vw; height: 56.25vw; /* 16:9 */
+            max-width: 177.78vh; max-height: 100vh;
+            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+            overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* UI */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #ui-top { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-around; }
+        .stat-card {
+            background: rgba(255,255,255,0.25); backdrop-filter: blur(5px);
+            padding: 5px 15px; border-radius: 20px; border: 2px solid white;
+            color: white; font-weight: bold; font-size: 1.5vw;
+        }
+        .gauge-container {
+            position: absolute; bottom: 20px; color: #fff; background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px; border-radius: 50px; font-size: 1.8vw; border: 3px solid white;
+        }
+        #speed-display { left: 20px; border-color: var(--pop-yellow); }
+        #alt-display { left: 220px; border-color: var(--pop-blue); }
+
+        /* 操作 */
+        #controls { position: absolute; right: 20px; bottom: 30px; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
+        .ctrl-btn {
+            width: 7vw; height: 7vw; background: rgba(255, 255, 255, 0.4);
+            border: 4px solid white; border-radius: 50%; color: white;
+            font-size: 3.5vw; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.1s;
         }
         .ctrl-btn:active { transform: scale(0.9); background: rgba(255, 255, 255, 0.6); }
 
-        /* リザルト */
-        #msg {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; background: white; padding: 40px;
-            border-radius: 30px; border: 8px solid var(--pop-blue); display: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        /* オーバーレイ */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); color: white; text-align: center; pointer-events: auto;
         }
-        #msg h1 { color: var(--pop-blue); margin-top: 0; }
+        #start-screen { background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); }
         button {
-            margin-top: 20px; padding: 15px 40px; font-size: 22px;
-            background: var(--pop-red); color: white; border: none;
-            border-radius: 50px; cursor: pointer; box-shadow: 0 5px 0 #c62828;
+            padding: 15px 40px; font-size: 2vw; background: var(--pop-red);
+            color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 0 #c62828;
         }
-        button:active { transform: translateY(3px); box-shadow: none; }
     </style>
 </head>
 <body>
 
-    <div id="ui-top">
-        <div class="stat-card" id="distance">距離: 0m</div>
-        <div class="stat-card" id="hp">HP: 100</div>
-        <div class="stat-card" id="time">残り時間: 30s</div>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="ui-layer">
+            <div id="ui-top">
+                <div class="stat-card" id="distance">距離: 0m</div>
+                <div class="stat-card" id="hp">HP: 100</div>
+                <div class="stat-card" id="time">残り時間: 30s</div>
+            </div>
+            <div id="speed-display" class="gauge-container">SPD: <span id="v-val">0</span> kn</div>
+            <div id="alt-display" class="gauge-container">ALT: <span id="a-val">0</span> ft</div>
+        </div>
+
+        <div id="controls">
+            <div class="ctrl-btn" id="btn-up">↑</div>
+            <div class="ctrl-btn" id="btn-down">↓</div>
+        </div>
+
+        <div id="start-screen" class="overlay">
+            <h1 style="font-size: 4vw;">POP GLIDER</h1>
+            <p style="font-size: 1.5vw;">右側のボタンで機首を操作！<br>アイテムを集めて遠くまで飛ばそう</p>
+            <button onclick="startGame()">START FLIGHT</button>
+        </div>
+
+        <div id="msg" class="overlay" style="display: none;">
+            <h1 style="color:var(--pop-yellow); font-size: 4vw;">FINISH!</h1>
+            <p id="msg-stats" style="font-size: 2vw;"></p>
+            <button onclick="location.reload()">TRY AGAIN</button>
+        </div>
     </div>
-
-    <div id="speed-display" class="gauge-container">SPEED: <span id="v-val">0</span> kn</div>
-    <div id="alt-display" class="gauge-container">ALT: <span id="a-val">0</span> ft</div>
-
-    <div id="controls">
-        <div class="ctrl-btn" id="btn-up">↑</div>
-        <div class="ctrl-btn" id="btn-down">↓</div>
-    </div>
-
-    <div id="msg">
-        <h1>GOAL!</h1>
-        <p id="msg-stats" style="font-size: 20px;"></p>
-        <button onclick="location.reload()">もう一度遊ぶ</button>
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('start-screen');
 const msgBox = document.getElementById('msg');
 
-let width, height;
-let gameState = 'PLAYING';
+// 仮想解像度（16:9）
+const V_WIDTH = 1920;
+const V_HEIGHT = 1080;
+canvas.width = V_WIDTH;
+canvas.height = V_HEIGHT;
 
-// 紙飛行機データ
+let gameState = 'WAITING';
 const plane = {
-    x: 150, y: 0,
-    vx: 10, vy: 0,
-    angle: 0, hp: 100,
-    time: 30, distance: 0,
-    width: 50, height: 25
+    x: 250, y: 300, vx: 12, vy: 0, angle: 0, 
+    hp: 100, time: 30, distance: 0
 };
 
-// 背景レイヤー
-let clouds = [];
-let buildings = [];
-let items = [];
-
-const GRAVITY = 0.12;
-const FRICTION_GROUND = 0.97;
+let clouds = [], buildings = [], items = [];
+const GRAVITY = 0.15;
+const AIR_RESISTANCE = 0.0025; // 毎フレームの減衰（約 -0.3kt/s 相当）
 const CONV_KN = 1.94;
 const CONV_FT = 3.28;
 
-/** 初期化 **/
-function init() {
-    resize();
-    plane.y = height * 0.4;
-    
-    // 雲の初期化
-    for(let i=0; i<8; i++) clouds.push({x: Math.random()*width, y: Math.random()*height*0.5, s: 0.2 + Math.random()*0.5});
-    // ビルの初期化
-    for(let i=0; i<10; i++) spawnBuilding(i * (width/5));
-    // アイテム初期化
-    spawnItems();
-    
-    requestAnimationFrame(update);
-}
+// 初期背景生成
+for(let i=0; i<10; i++) clouds.push({x: Math.random()*V_WIDTH, y: Math.random()*V_HEIGHT*0.5, s: 0.3+Math.random()});
+for(let i=0; i<8; i++) spawnBuilding(i * (V_WIDTH/6));
 
-function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-
-/** 入力管理 **/
-let isUp = false;
-let isDown = false;
-
-document.getElementById('btn-up').addEventListener('touchstart', (e) => { e.preventDefault(); isUp = true; });
-document.getElementById('btn-up').addEventListener('touchend', () => isUp = false);
-document.getElementById('btn-up').addEventListener('mousedown', () => isUp = true);
-document.getElementById('btn-up').addEventListener('mouseup', () => isUp = false);
-
-document.getElementById('btn-down').addEventListener('touchstart', (e) => { e.preventDefault(); isDown = true; });
-document.getElementById('btn-down').addEventListener('touchend', () => isDown = false);
-document.getElementById('btn-down').addEventListener('mousedown', () => isDown = true);
-document.getElementById('btn-down').addEventListener('mouseup', () => isDown = false);
-
-/** オブジェクト生成 **/
-function spawnBuilding(xPos) {
+function spawnBuilding(x) {
     buildings.push({
-        x: xPos,
-        w: 60 + Math.random() * 100,
-        h: 100 + Math.random() * 300,
-        color: `hsl(${200 + Math.random()*20}, 50%, ${40 + Math.random()*20}%)`
+        x: x, w: 100+Math.random()*150, h: 200+Math.random()*400,
+        color: `hsl(${200+Math.random()*20}, 40%, ${30+Math.random()*20}%)`
     });
 }
 
-function spawnItems() {
-    const types = ['HP', 'TIME', 'SPEED', 'UP', 'SPIKE'];
-    for(let i=0; i<10; i++) {
-        items.push({
-            x: width + Math.random() * 2000,
-            y: 100 + Math.random() * (height - 300),
-            type: types[Math.floor(Math.random() * types.length)],
-            active: true
-        });
-    }
+function startGame() {
+    startScreen.style.display = 'none';
+    gameState = 'PLAYING';
+    requestAnimationFrame(update);
 }
 
-/** メインループ **/
+// 入力
+let isUp = false, isDown = false;
+const setupBtn = (id, set) => {
+    const el = document.getElementById(id);
+    el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); set(true); };
+    el.onmouseup = el.ontouchend = () => set(false);
+};
+setupBtn('btn-up', v => isUp = v);
+setupBtn('btn-down', v => isDown = v);
+
 function update() {
-    ctx.clearRect(0, 0, width, height);
-    
-    drawBackground();
+    if (gameState === 'WAITING') return;
+
+    ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
+    drawWorld();
     
     if (gameState === 'PLAYING') {
         handlePhysics();
         handleItems();
     } else {
-        if (plane.y >= height - 60) {
-            plane.vx *= FRICTION_GROUND;
+        // 地面摩擦
+        if (plane.y >= V_HEIGHT - 100) {
+            plane.vx *= 0.97;
             if (plane.vx < 0.1) plane.vx = 0;
         }
-        plane.angle *= 0.9; // 着地時は水平に
     }
 
     drawPlane();
     updateUI();
 
-    if (plane.vx > 0 || plane.y < height - 60) {
+    if (plane.vx > 0 || plane.y < V_HEIGHT - 100) {
         requestAnimationFrame(update);
     } else {
         showResult();
@@ -210,170 +175,127 @@ function update() {
 }
 
 function handlePhysics() {
+    // 時間と操作
     if (plane.time > 0) {
         plane.time -= 1/60;
-        if (isUp) { plane.angle -= 0.04; plane.vx -= 0.03; }
-        else if (isDown) { plane.angle += 0.04; plane.vx += 0.04; }
-        else { plane.angle *= 0.95; }
+        if (isUp) { plane.angle -= 0.04; plane.vx -= 0.04; }
+        else if (isDown) { plane.angle += 0.04; plane.vx += 0.05; }
+        else { plane.angle *= 0.96; }
     } else {
         plane.angle *= 0.9;
-        items = [];
     }
+
+    // 空気抵抗（常時減衰）
+    plane.vx = Math.max(0, plane.vx - AIR_RESISTANCE);
 
     plane.angle = Math.max(-0.7, Math.min(0.7, plane.angle));
     plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
     plane.y += plane.vy;
     plane.distance += plane.vx / 10;
 
-    if (plane.y >= height - 60) {
-        plane.y = height - 60;
+    // 地面
+    if (plane.y >= V_HEIGHT - 100) {
+        plane.y = V_HEIGHT - 100;
         gameState = 'FINISHED';
     }
-    if (plane.y < 0) { plane.y = 0; plane.vy = 0; }
-}
-
-/** 描画系 **/
-function drawBackground() {
-    // 雲（遠景）
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    clouds.forEach(c => {
-        c.x -= plane.vx * 0.2;
-        if(c.x < -100) c.x = width + 100;
-        ctx.beginPath();
-        ctx.ellipse(c.x, c.y, 40*c.s, 20*c.s, 0, 0, Math.PI*2);
-        ctx.fill();
-    });
-
-    // ビル（中景）
-    buildings.forEach(b => {
-        b.x -= plane.vx;
-        if(b.x < -200) { b.x = width + Math.random()*100; b.h = 100 + Math.random()*300; }
-        ctx.fillStyle = b.color;
-        ctx.fillRect(b.x, height - b.h - 40, b.w, b.h);
-        // 窓
-        ctx.fillStyle = "rgba(255,255,255,0.3)";
-        for(let i=1; i<3; i++) for(let j=1; j<5; j++) {
-            ctx.fillRect(b.x + i*20, height - b.h + j*40, 10, 10);
-        }
-    });
-
-    // 地面
-    ctx.fillStyle = "#4CAF50";
-    ctx.fillRect(0, height - 40, width, 40);
-    ctx.fillStyle = "#388E3C";
-    ctx.fillRect(0, height - 10, width, 10);
+    if (plane.y < 0) plane.y = 0;
 }
 
 function handleItems() {
-    items.forEach(item => {
-        if (!item.active) return;
-        item.x -= plane.vx;
+    // アイテムが少ない場合、常に前方に補充（距離に関わらず）
+    if (items.length < 8) {
+        const types = ['HP', 'TIME', 'SPEED', 'UP', 'SPIKE'];
+        items.push({
+            x: V_WIDTH + 100 + Math.random() * V_WIDTH,
+            y: 100 + Math.random() * (V_HEIGHT - 300),
+            type: types[Math.floor(Math.random()*types.length)],
+            active: true
+        });
+    }
 
-        // 衝突
-        const dx = item.x - plane.x;
-        const dy = item.y - plane.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 40) {
+    items.forEach((item, index) => {
+        item.x -= plane.vx;
+        if (!item.active) return;
+
+        // 当たり判定
+        const dx = item.x - plane.x, dy = item.y - plane.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 45) {
             item.active = false;
             applyItem(item.type);
         }
 
-        if (item.x < -100) {
-            item.x = width + Math.random() * 1000;
-            item.y = 100 + Math.random() * (height - 300);
-            item.active = true;
-        }
-        
-        // アイテム描画（ポップな枠付き）
+        // 描画 (80%サイズ = 半径約28)
         ctx.save();
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "rgba(0,0,0,0.2)";
         ctx.beginPath();
-        ctx.arc(item.x, item.y, 35, 0, Math.PI*2);
+        ctx.arc(item.x, item.y, 28, 0, Math.PI*2);
         ctx.fillStyle = "white";
         ctx.fill();
         ctx.strokeStyle = getIconColor(item.type);
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 5;
         ctx.stroke();
-        
-        ctx.font = "30px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.shadowBlur = 0;
+        ctx.font = "32px Arial";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(getIcon(item.type), item.x, item.y + 2);
         ctx.restore();
+
+        // 画面外削除
+        if (item.x < -100) items.splice(index, 1);
     });
 }
 
-function getIcon(type) {
-    const icons = {HP:'🩹', TIME:'⏳', SPEED:'⚡', UP:'🎈', SPIKE:'🌵'};
-    return icons[type];
-}
-function getIconColor(type) {
-    const colors = {HP:'#4caf50', TIME:'#2196f3', SPEED:'#ffeb3b', UP:'#e91e63', SPIKE:'#f44336'};
-    return colors[type];
+function applyItem(type) {
+    if (type === 'HP') plane.hp = Math.min(100, plane.hp + 20);
+    if (type === 'TIME') plane.time += 7;
+    if (type === 'SPEED') plane.vx += 6;
+    if (type === 'UP') plane.y -= 200;
+    if (type === 'SPIKE') { plane.hp -= 30; plane.vx *= 0.5; if(plane.hp <= 0) gameState = 'FINISHED'; }
 }
 
-function applyItem(type) {
-    switch(type) {
-        case 'HP': plane.hp = Math.min(100, plane.hp + 20); break;
-        case 'TIME': plane.time += 8; break;
-        case 'SPEED': plane.vx += 6; break;
-        case 'UP': plane.y -= 150; break;
-        case 'SPIKE': plane.hp -= 25; plane.vx *= 0.6; if(plane.hp <= 0) gameState = 'FINISHED'; break;
-    }
+function getIcon(type) { return {HP:'🩹', TIME:'⏳', SPEED:'⚡', UP:'🎈', SPIKE:'🌵'}[type]; }
+function getIconColor(type) { return {HP:'#4caf50', TIME:'#2196f3', SPEED:'#ffeb3b', UP:'#e91e63', SPIKE:'#f44336'}[type]; }
+
+function drawWorld() {
+    // 雲
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    clouds.forEach(c => {
+        c.x -= plane.vx * 0.3;
+        if (c.x < -200) c.x = V_WIDTH + 200;
+        ctx.beginPath(); ctx.ellipse(c.x, c.y, 60*c.s, 30*c.s, 0, 0, Math.PI*2); ctx.fill();
+    });
+    // ビル
+    buildings.forEach(b => {
+        b.x -= plane.vx;
+        if (b.x < -300) b.x = V_WIDTH + Math.random()*200;
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, V_HEIGHT - b.h - 80, b.w, b.h);
+    });
+    // 地面
+    ctx.fillStyle = "#388E3C"; ctx.fillRect(0, V_HEIGHT - 80, V_WIDTH, 80);
 }
 
 function drawPlane() {
     ctx.save();
     ctx.translate(plane.x, plane.y);
     ctx.rotate(plane.angle);
-    
-    // 紙飛行機影
-    ctx.fillStyle = "rgba(0,0,0,0.1)";
     ctx.beginPath();
-    ctx.moveTo(30, 5); ctx.lineTo(-25, -5); ctx.lineTo(-10, 5); ctx.lineTo(-25, 15);
-    ctx.fill();
-
-    // 本体
-    ctx.beginPath();
-    ctx.moveTo(30, 0);
-    ctx.lineTo(-25, -15);
-    ctx.lineTo(-10, 0);
-    ctx.lineTo(-25, 15);
-    ctx.closePath();
-    ctx.fillStyle = (plane.hp > 30) ? "white" : "#ffcdd2";
-    ctx.fill();
-    ctx.strokeStyle = "#333";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // 翼のライン
-    ctx.beginPath();
-    ctx.moveTo(-10, 0); ctx.lineTo(30, 0);
-    ctx.stroke();
-    
+    ctx.moveTo(40, 0); ctx.lineTo(-30, -20); ctx.lineTo(-15, 0); ctx.lineTo(-30, 20); ctx.closePath();
+    ctx.fillStyle = "white"; ctx.fill();
+    ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke();
     ctx.restore();
 }
 
 function updateUI() {
     document.getElementById('distance').innerText = `距離: ${Math.floor(plane.distance)}m`;
     document.getElementById('hp').innerText = `HP: ${Math.max(0, Math.round(plane.hp))}`;
-    document.getElementById('time').innerText = `残り時間: ${Math.max(0, plane.time).toFixed(0)}s`;
-    
+    document.getElementById('time').innerText = `残り時間: ${Math.max(0, plane.time).toFixed(1)}s`;
     document.getElementById('v-val').innerText = (plane.vx * CONV_KN).toFixed(1);
-    const alt = Math.max(0, (height - 60 - plane.y) * CONV_FT / 10).toFixed(0);
-    document.getElementById('a-val').innerText = alt;
+    document.getElementById('a-val').innerText = Math.max(0, (V_HEIGHT - 100 - plane.y) * CONV_FT / 10).toFixed(0);
 }
 
 function showResult() {
-    msgBox.style.display = 'block';
-    document.getElementById('msg-stats').innerHTML = `
-        総飛行距離: <strong>${Math.floor(plane.distance)} m</strong><br>
-        最終高度: ${Math.floor((height - 60 - plane.y) * CONV_FT / 10)} ft
-    `;
+    msgBox.style.display = 'flex';
+    document.getElementById('msg-stats').innerHTML = `飛行距離: <strong>${Math.floor(plane.distance)} m</strong>`;
 }
-
-init();
 </script>
 </body>
 </html>
