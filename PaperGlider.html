@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ぶっ飛び紙飛行機DX</title>
+    <title>ぶっ飛び紙飛行機DX - 調整版</title>
     <style>
         :root {
             --pop-yellow: #ffeb3b; --pop-blue: #03a9f4; --pop-red: #ff5252;
@@ -57,10 +57,10 @@ let isFastForwarding = false, ffElapsedFrames = 0;
 const plane = { x: 250, y: 300, vx: 12, vy: 0, angle: 0, hp: 100, time: 30, distance: 0 };
 const GRAVITY = 0.15, FRICTION = 0.97;
 
-// --- 変更2: アイテムの効果設定 ---
+// --- 【変更2】アイテムの効果設定を一括管理 ---
 const ITEM_CONFIG = {
     HP:    { hpGain: 20, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 1 },
-    TIME:  { hpGain: 0,  timeGain: 7, vxGain: 0, yGain: 0, vxMult: 1 },
+    TIME:  { hpGain: 0,  timeGain: 6, vxGain: 0, yGain: 0, vxMult: 1 },
     SPEED: { hpGain: 0,  timeGain: 0, vxGain: 8, yGain: 0, vxMult: 1.2 },
     UP:    { hpGain: 0,  timeGain: 0, vxGain: 0, yGain: -250, vxMult: 1 },
     SPIKE: { hpGain: -30, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 0.75 }
@@ -70,7 +70,7 @@ for(let i=0; i<6; i++) spawnBuilding(i * (V_WIDTH/5));
 
 function spawnItem() {
     if (gameState !== 'PLAYING') return; 
-    const types = Object.keys(ITEM_CONFIG); // 設定から種類を取得
+    const types = Object.keys(ITEM_CONFIG); 
     items.push({ 
         x: V_WIDTH + 200, 
         y: 150 + Math.random() * (V_HEIGHT - 400), 
@@ -124,16 +124,15 @@ function update() {
 }
 
 function runPhysics() {
-    // --- 変更1: 動的な空気抵抗の計算 ---
+    // --- 【変更1】動的な空気抵抗の計算 (5kt〜60kt) ---
     const speedKt = plane.vx * 1.94;
     let currentAirRes = 0;
     if (speedKt <= 5) {
         currentAirRes = 0;
     } else if (speedKt >= 60) {
-        currentAirRes = 0.3;
+        currentAirRes = 0.003;
     } else {
-        // 5kt〜60ktの間で 0〜0.3 に線形補間
-        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.035;
+        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.003;
     }
 
     if (gameState === 'PLAYING') {
@@ -149,7 +148,7 @@ function runPhysics() {
         else if (isDown) { plane.angle += 0.04; plane.vx += 0.05; }
         else { plane.angle *= 0.96; }
 
-        plane.vx = Math.max(0, plane.vx - currentAirRes); // 動的な抵抗を適用
+        plane.vx = Math.max(0, plane.vx - currentAirRes);
         plane.angle = Math.max(-0.7, Math.min(0.7, plane.angle));
         plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
         plane.y += plane.vy;
@@ -166,7 +165,7 @@ function runPhysics() {
         if (timeOverTick > 180 && !isFastForwarding) document.getElementById('skip-btn').style.display = 'block';
         
         plane.angle *= 0.98;
-        plane.vx = Math.max(0, plane.vx - currentAirRes); // 動的な抵抗を適用
+        plane.vx = Math.max(0, plane.vx - currentAirRes);
         plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
         plane.y += plane.vy;
         plane.distance += plane.vx / 10;
@@ -185,17 +184,17 @@ function runPhysics() {
 function handleItems() {
     for (let i = items.length - 1; i >= 0; i--) {
         let it = items[i];
+        // アイテムは常に左に流れる (+5)
         it.x -= (plane.vx + 5); 
         if (it.active && Math.hypot(it.x - plane.x, it.y - plane.y) < 50) {
             it.active = false;
-            // --- 変更2: 設定値の適用 ---
-            const config = ITEM_CONFIG[it.type];
-            if (config) {
-                plane.hp = Math.max(0, Math.min(100, plane.hp + config.hpGain));
-                plane.time += config.timeGain;
-                plane.vx = (plane.vx + config.vxGain) * config.vxMult;
-                plane.y += config.yGain;
-                
+            // --- 【変更2】アイテム効果の適用 ---
+            const cfg = ITEM_CONFIG[it.type];
+            if (cfg) {
+                plane.hp = Math.max(0, Math.min(100, plane.hp + cfg.hpGain));
+                plane.time += cfg.timeGain;
+                plane.vx = (plane.vx + cfg.vxGain) * cfg.vxMult;
+                plane.y += cfg.yGain;
                 if(plane.hp <= 0) gameState = 'FINISHED';
             }
         }
@@ -221,6 +220,7 @@ function drawItem(it) {
 }
 
 function drawWorld() {
+    // 雲：常に左に流れる (+1)
     if (clouds.length < 8) clouds.push({x: V_WIDTH+200, y: Math.random()*300, s: 0.5+Math.random()});
     clouds.forEach((c, i) => {
         c.x -= (plane.vx * 0.2 + 1);
@@ -229,9 +229,10 @@ function drawWorld() {
         if (c.x < -300) clouds.splice(i, 1);
     });
 
+    // ビル：【修正】飛行機の速度 vx にのみ同期（0ktなら止まる）
     if (buildings.length < 8) spawnBuilding();
     buildings.forEach((b, i) => {
-        b.x -= (plane.vx * 0.6 + 2);
+        b.x -= (plane.vx * 0.8); 
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x, V_HEIGHT - b.h - 80, b.w, b.h);
         ctx.fillStyle = "rgba(255,255,255,0.1)";
