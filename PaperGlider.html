@@ -61,9 +61,9 @@ const GRAVITY = 0.15, FRICTION = 0.97;
 const ITEM_CONFIG = {
     HP:    { hpGain: 20, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 1 },
     TIME:  { hpGain: 0,  timeGain: 7, vxGain: 0, yGain: 0, vxMult: 1 },
-    SPEED: { hpGain: 0,  timeGain: 0, vxGain: 8, yGain: 0, vxMult: 1 },
+    SPEED: { hpGain: 0,  timeGain: 0, vxGain: 8, yGain: 0, vxMult: 1.2 },
     UP:    { hpGain: 0,  timeGain: 0, vxGain: 0, yGain: -250, vxMult: 1 },
-    SPIKE: { hpGain: -30, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 0.5 }
+    SPIKE: { hpGain: -30, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 0.75 }
 };
 
 for(let i=0; i<6; i++) spawnBuilding(i * (V_WIDTH/5));
@@ -133,7 +133,7 @@ function runPhysics() {
         currentAirRes = 0.3;
     } else {
         // 5kt〜60ktの間で 0〜0.3 に線形補間
-        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.3;
+        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.035;
     }
 
     if (gameState === 'PLAYING') {
