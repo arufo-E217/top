@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ぶっ飛び紙飛行機DX - 調整版</title>
+    <title>ぶっ飛び紙飛行機DX</title>
     <style>
         :root {
             --pop-yellow: #ffeb3b; --pop-blue: #03a9f4; --pop-red: #ff5252;
@@ -60,9 +60,9 @@ const GRAVITY = 0.15, FRICTION = 0.97;
 // --- 【変更2】アイテムの効果設定を一括管理 ---
 const ITEM_CONFIG = {
     HP:    { hpGain: 20, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 1 },
-    TIME:  { hpGain: 0,  timeGain: 6, vxGain: 0, yGain: 0, vxMult: 1 },
-    SPEED: { hpGain: 0,  timeGain: 0, vxGain: 8, yGain: 0, vxMult: 1.2 },
-    UP:    { hpGain: 0,  timeGain: 0, vxGain: 0, yGain: -250, vxMult: 1 },
+    TIME:  { hpGain: 0,  timeGain: 7.5, vxGain: 0, yGain: 0, vxMult: 1 },
+    SPEED: { hpGain: 0,  timeGain: 0, vxGain: 8, yGain: 0, vxMult: 1.25 },
+    UP:    { hpGain: 0,  timeGain: 0, vxGain: 0, yGain: -250, vxMult: 1.1 },
     SPIKE: { hpGain: -30, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 0.75 }
 };
 
@@ -129,10 +129,8 @@ function runPhysics() {
     let currentAirRes = 0;
     if (speedKt <= 5) {
         currentAirRes = 0;
-    } else if (speedKt >= 60) {
-        currentAirRes = 0.003;
     } else {
-        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.003;
+        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.004;
     }
 
     if (gameState === 'PLAYING') {
