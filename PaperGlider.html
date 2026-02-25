@@ -55,13 +55,22 @@ let gameState = 'WAITING', clouds = [], buildings = [], items = [], timeOverTick
 let isFastForwarding = false, ffElapsedFrames = 0;
 
 const plane = { x: 250, y: 300, vx: 12, vy: 0, angle: 0, hp: 100, time: 30, distance: 0 };
-const GRAVITY = 0.15, AIR_RES = 0.0025, FRICTION = 0.97;
+const GRAVITY = 0.15, FRICTION = 0.97;
+
+// --- 変更2: アイテムの効果設定 ---
+const ITEM_CONFIG = {
+    HP:    { hpGain: 20, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 1 },
+    TIME:  { hpGain: 0,  timeGain: 7, vxGain: 0, yGain: 0, vxMult: 1 },
+    SPEED: { hpGain: 0,  timeGain: 0, vxGain: 8, yGain: 0, vxMult: 1 },
+    UP:    { hpGain: 0,  timeGain: 0, vxGain: 0, yGain: -250, vxMult: 1 },
+    SPIKE: { hpGain: -30, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 0.5 }
+};
 
 for(let i=0; i<6; i++) spawnBuilding(i * (V_WIDTH/5));
 
 function spawnItem() {
     if (gameState !== 'PLAYING') return; 
-    const types = ['HP', 'TIME', 'SPEED', 'UP', 'SPIKE'];
+    const types = Object.keys(ITEM_CONFIG); // 設定から種類を取得
     items.push({ 
         x: V_WIDTH + 200, 
         y: 150 + Math.random() * (V_HEIGHT - 400), 
@@ -91,19 +100,16 @@ window.onmouseup = window.ontouchend = release;
 function update() {
     ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
     
-    // 倍速計算
     let timeScale = 1;
     if (isFastForwarding) {
         ffElapsedFrames++;
         timeScale = Math.min(5, 1 + (ffElapsedFrames / 60) * 0.5);
-        // 高度15ft(約45.7px)以下になったら早送り終了
         if ((V_HEIGHT - 100 - plane.y) * 0.328 < 15) {
             isFastForwarding = false;
             document.getElementById('ff-indicator').style.display = 'none';
         }
     }
 
-    // timeScale分だけ物理演算を回す
     for (let t = 0; t < timeScale; t++) {
         runPhysics();
     }
@@ -118,20 +124,32 @@ function update() {
 }
 
 function runPhysics() {
+    // --- 変更1: 動的な空気抵抗の計算 ---
+    const speedKt = plane.vx * 1.94;
+    let currentAirRes = 0;
+    if (speedKt <= 5) {
+        currentAirRes = 0;
+    } else if (speedKt >= 60) {
+        currentAirRes = 0.3;
+    } else {
+        // 5kt〜60ktの間で 0〜0.3 に線形補間
+        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.3;
+    }
+
     if (gameState === 'PLAYING') {
         plane.time -= 1/60;
         if (plane.time <= 0) {
             plane.time = 0;
             gameState = 'TIMEUP';
-            isUp = false; isDown = false; // 操作不能にする
-            items = []; // アイテム消去
+            isUp = false; isDown = false;
+            items = [];
         }
 
         if (isUp) { plane.angle -= 0.04; plane.vx -= 0.04; }
         else if (isDown) { plane.angle += 0.04; plane.vx += 0.05; }
         else { plane.angle *= 0.96; }
 
-        plane.vx = Math.max(0, plane.vx - AIR_RES);
+        plane.vx = Math.max(0, plane.vx - currentAirRes); // 動的な抵抗を適用
         plane.angle = Math.max(-0.7, Math.min(0.7, plane.angle));
         plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
         plane.y += plane.vy;
@@ -147,9 +165,8 @@ function runPhysics() {
         timeOverTick++;
         if (timeOverTick > 180 && !isFastForwarding) document.getElementById('skip-btn').style.display = 'block';
         
-        // タイムアップ後は操作不能・アイテム無し
         plane.angle *= 0.98;
-        plane.vx = Math.max(0, plane.vx - AIR_RES); // 空中では通常減速
+        plane.vx = Math.max(0, plane.vx - currentAirRes); // 動的な抵抗を適用
         plane.vy = Math.sin(plane.angle) * plane.vx + GRAVITY;
         plane.y += plane.vy;
         plane.distance += plane.vx / 10;
@@ -159,7 +176,6 @@ function runPhysics() {
             gameState = 'FINISHED';
         }
     } else if (gameState === 'FINISHED') {
-        // 着地後のみ摩擦による急減速
         plane.vx *= FRICTION;
         plane.distance += plane.vx / 10;
         if (plane.vx < 0.1) { plane.vx = 0; showResult(); }
@@ -172,12 +188,16 @@ function handleItems() {
         it.x -= (plane.vx + 5); 
         if (it.active && Math.hypot(it.x - plane.x, it.y - plane.y) < 50) {
             it.active = false;
-            const t = it.type;
-            if (t==='HP') plane.hp = Math.min(100, plane.hp+20);
-            if (t==='TIME') plane.time += 7;
-            if (t==='SPEED') plane.vx += 8;
-            if (t==='UP') plane.y -= 250;
-            if (t==='SPIKE') { plane.hp -= 30; plane.vx *= 0.5; if(plane.hp<=0) gameState='FINISHED'; }
+            // --- 変更2: 設定値の適用 ---
+            const config = ITEM_CONFIG[it.type];
+            if (config) {
+                plane.hp = Math.max(0, Math.min(100, plane.hp + config.hpGain));
+                plane.time += config.timeGain;
+                plane.vx = (plane.vx + config.vxGain) * config.vxMult;
+                plane.y += config.yGain;
+                
+                if(plane.hp <= 0) gameState = 'FINISHED';
+            }
         }
         if (it.x < -100) items.splice(i, 1);
     }
