@@ -130,7 +130,7 @@ function runPhysics() {
     if (speedKt <= 5) {
         currentAirRes = 0;
     } else {
-        currentAirRes = ((speedKt - 5) / (60 - 5)) * 0.004;
+        currentAirRes = ((speedKt - 5) / (80 - 5)) * 0.014;
     }
 
     if (gameState === 'PLAYING') {
