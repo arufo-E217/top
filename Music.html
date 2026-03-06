@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>16分トリルトレーナー</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; overflow: hidden; }
+        #game-container { position: relative; width: 300px; height: 500px; margin: 20px auto; border: 2px solid #444; overflow: hidden; background: #000; }
+        .lane { position: absolute; bottom: 50px; width: 50%; height: 10px; background: #333; }
+        #lane-left { left: 0; } #lane-right { right: 0; }
+        .note { position: absolute; width: 140px; height: 20px; background: cyan; left: 5px; border-radius: 4px; }
+        .note.right { left: 155px; background: ff007f; }
+        #judgment-line { position: absolute; bottom: 50px; width: 100%; height: 2px; background: white; z-index: 10; }
+        #ui { margin-top: 10px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #444; color: white; border: none; }
+        button:hover { background: #666; }
+    </style>
+</head>
+<body>
+
+    <h2>16分トリル特訓 (BPM 150)</h2>
+    <div id="ui">
+        <button id="start-btn">START / STOP</button>
+        <p>Key: <b>D</b> (Left) / <b>K</b> (Right)</p>
+    </div>
+
+    <div id="game-container">
+        <div id="judgment-line"></div>
+        <div id="lane-left" class="lane"></div>
+        <div id="lane-right" class="lane"></div>
+        <div id="notes-layer"></div>
+    </div>
+
+    <script>
+        const bpm = 150;
+        const noteSpeed = 5; // 落下速度
+        const interval = (60 / bpm) / 4 * 1000; // 16分音符の間隔(ms)
+        
+        let isRunning = false;
+        let timer = null;
+        let audioCtx = null;
+        const notesLayer = document.getElementById('notes-layer');
+        const notes = [];
+
+        // メトロノーム音生成
+        function playClick(freq) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        let step = 0;
+        function spawnNote() {
+            const isLeft = step % 2 === 0;
+            const note = document.createElement('div');
+            note.className = isLeft ? 'note' : 'note right';
+            note.style.top = '-20px';
+            notesLayer.appendChild(note);
+            notes.push({ el: note, y: -20 });
+
+            // 4拍（16分音符16個）ごとに高い音を鳴らす（メトロノーム）
+            if (step % 4 === 0) playClick(step % 16 === 0 ? 880 : 440);
+            
+            step++;
+        }
+
+        function update() {
+            if (!isRunning) return;
+            for (let i = notes.length - 1; i >= 0; i--) {
+                notes[i].y += noteSpeed;
+                notes[i].el.style.top = notes[i].y + 'px';
+                if (notes[i].y > 550) {
+                    notesLayer.removeChild(notes[i].el);
+                    notes.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            isRunning = !isRunning;
+            if (isRunning) {
+                step = 0;
+                timer = setInterval(spawnNote, interval);
+                update();
+            } else {
+                clearInterval(timer);
+                notesLayer.innerHTML = '';
+                notes.length = 0;
+            }
+        });
+    </script>
+</body>
+</html>
