@@ -57,6 +57,9 @@ let isFastForwarding = false, ffElapsedFrames = 0;
 const plane = { x: 250, y: 300, vx: 12, vy: 0, angle: 0, hp: 100, time: 30, distance: 0 };
 const GRAVITY = 0.15, FRICTION = 0.97;
 
+// --- 【追加】アイテムの移動速度倍率 (1.0で等速、0.5で半分) ---
+const ITEM_SPEED_MULT = 0.5; 
+
 // --- 【変更2】アイテムの効果設定を一括管理 ---
 const ITEM_CONFIG = {
     HP:    { hpGain: 20, timeGain: 0, vxGain: 0, yGain: 0, vxMult: 1 },
@@ -182,8 +185,8 @@ function runPhysics() {
 function handleItems() {
     for (let i = items.length - 1; i >= 0; i--) {
         let it = items[i];
-        // アイテムは常に左に流れる (+5)
-        it.x -= (plane.vx + 5); 
+        // --- 【修正】自機の速度に倍率を適用して移動速度を調整 ---
+        it.x -= (plane.vx * ITEM_SPEED_MULT + 5); 
         if (it.active && Math.hypot(it.x - plane.x, it.y - plane.y) < 50) {
             it.active = false;
             // --- 【変更2】アイテム効果の適用 ---
@@ -230,7 +233,7 @@ function drawWorld() {
     // ビル：【修正】飛行機の速度 vx にのみ同期（0ktなら止まる）
     if (buildings.length < 8) spawnBuilding();
     buildings.forEach((b, i) => {
-        b.x -= (plane.vx * 0.8); 
+        b.x -= (b.vx || plane.vx * 0.8); 
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x, V_HEIGHT - b.h - 80, b.w, b.h);
         ctx.fillStyle = "rgba(255,255,255,0.1)";
