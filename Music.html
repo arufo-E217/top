@@ -2,99 +2,221 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>16分トリルトレーナー</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trill Trainer - Touch Support</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; overflow: hidden; }
-        #game-container { position: relative; width: 300px; height: 500px; margin: 20px auto; border: 2px solid #444; overflow: hidden; background: #000; }
-        .lane { position: absolute; bottom: 50px; width: 50%; height: 10px; background: #333; }
-        #lane-left { left: 0; } #lane-right { right: 0; }
-        .note { position: absolute; width: 140px; height: 20px; background: cyan; left: 5px; border-radius: 4px; }
-        .note.right { left: 155px; background: ff007f; }
-        #judgment-line { position: absolute; bottom: 50px; width: 100%; height: 2px; background: white; z-index: 10; }
-        #ui { margin-top: 10px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #444; color: white; border: none; }
-        button:hover { background: #666; }
+        /* タッチ時のブラウザ挙動（ズームやスクロール）を防止 */
+        * { touch-action: none; -webkit-user-select: none; }
+        body { background: #1a1a1a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        #game-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        
+        #hud { margin-bottom: 10px; width: 300px; display: flex; justify-content: space-between; font-weight: bold; }
+        #judgment { font-size: 28px; height: 35px; color: #ffeb3b; text-shadow: 0 0 10px rgba(255,235,59,0.5); font-weight: 900; }
+        #combo-container { font-size: 18px; color: #aaa; }
+
+        #game-container { 
+            position: relative; width: 320px; height: 550px; 
+            border: 4px solid #333; background: #000; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            cursor: pointer;
+        }
+        .lane-line { position: absolute; left: 50%; width: 2px; height: 100%; background: #333; }
+        #judgment-line { position: absolute; bottom: 80px; width: 100%; height: 6px; background: rgba(255,255,255,0.9); box-shadow: 0 0 15px #fff; z-index: 10; }
+        
+        .note { position: absolute; width: 145px; height: 18px; border-radius: 4px; pointer-events: none; }
+        .note.left { left: 8px; background: linear-gradient(to right, #00f2fe, #4facfe); }
+        .note.right { right: 8px; background: linear-gradient(to right, #f093fb, #f5576c); }
+
+        #controls { margin-top: 15px; background: #2a2a2a; padding: 15px; border-radius: 12px; width: 300px; }
+        .setting-group { margin: 10px 0; font-size: 14px; }
+        button { padding: 12px 40px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 8px; border: none; background: #4facfe; color: white; transition: 0.1s; }
+        button:active { transform: scale(0.95); opacity: 0.8; }
+        input[type=range] { width: 150px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-    <h2>16分トリル特訓 (BPM 150)</h2>
-    <div id="ui">
-        <button id="start-btn">START / STOP</button>
-        <p>Key: <b>D</b> (Left) / <b>K</b> (Right)</p>
+<div id="game-wrapper">
+    <div id="hud">
+        <div id="score">0</div>
+        <div id="combo-container">Combo: <span id="combo">0</span></div>
     </div>
+    <div id="judgment">TAP TO START</div>
 
-    <div id="game-container">
+    <div id="game-container" id="tap-area">
+        <div class="lane-line"></div>
         <div id="judgment-line"></div>
-        <div id="lane-left" class="lane"></div>
-        <div id="lane-right" class="lane"></div>
         <div id="notes-layer"></div>
     </div>
 
-    <script>
-        const bpm = 150;
-        const noteSpeed = 5; // 落下速度
-        const interval = (60 / bpm) / 4 * 1000; // 16分音符の間隔(ms)
+    <div id="controls">
+        <button id="start-btn">START / STOP</button>
+        <div class="setting-group">
+            Speed: <input type="range" id="speed-range" min="3" max="20" step="0.5" value="10">
+            <span id="speed-val">10</span>
+        </div>
+        <div style="font-size: 11px; color: #888;">
+            Keyboard: [D][K] / Mobile: Tap Left or Right
+        </div>
+    </div>
+</div>
+
+<script>
+    const bpm = 150;
+    const interval = (60 / bpm) / 4 * 1000; 
+    const judgeLineY = 464; // 判定線の中心位置(px)
+    
+    let isRunning = false;
+    let score = 0;
+    let combo = 0;
+    let speed = 10;
+    let notes = [];
+    let audioCtx = null;
+    let nextNoteTime = 0;
+    let step = 0;
+
+    const notesLayer = document.getElementById('notes-layer');
+    const scoreEl = document.getElementById('score');
+    const comboEl = document.getElementById('combo');
+    const judgmentEl = document.getElementById('judgment');
+    const speedRange = document.getElementById('speed-range');
+    const speedVal = document.getElementById('speed-val');
+    const gameContainer = document.getElementById('game-container');
+
+    speedRange.oninput = () => {
+        speed = parseFloat(speedRange.value);
+        speedVal.innerText = speed;
+    };
+
+    function playSound(freq) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function spawnNote() {
+        const lane = (step % 2 === 0) ? 'left' : 'right';
+        const note = {
+            el: document.createElement('div'),
+            lane: lane,
+            y: -20,
+            hit: false
+        };
+        note.el.className = `note ${lane}`;
+        notesLayer.appendChild(note.el);
+        notes.push(note);
         
-        let isRunning = false;
-        let timer = null;
-        let audioCtx = null;
-        const notesLayer = document.getElementById('notes-layer');
-        const notes = [];
+        if (step % 4 === 0) playSound(step % 16 === 0 ? 880 : 440);
+        step++;
+    }
 
-        // メトロノーム音生成
-        function playClick(freq) {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
+    function judge(lane) {
+        if (!isRunning) return;
+        const target = notes.find(n => n.lane === lane && !n.hit);
+        if (!target) return;
+
+        const diff = Math.abs(target.y - judgeLineY);
+        
+        if (diff < 40) {
+            applyJudgment("PERFECT", 1000, "#ffeb3b");
+            removeNote(target);
+        } else if (diff < 70) {
+            applyJudgment("GREAT", 500, "#4caf50");
+            removeNote(target);
+        } else if (diff < 100) {
+            applyJudgment("GOOD", 200, "#2196f3");
+            removeNote(target);
+        }
+    }
+
+    function applyJudgment(text, points, color) {
+        judgmentEl.innerText = text;
+        judgmentEl.style.color = color;
+        score += points;
+        combo++;
+        scoreEl.innerText = score.toLocaleString();
+        comboEl.innerText = combo;
+    }
+
+    function removeNote(note) {
+        note.hit = true;
+        note.el.style.opacity = '0';
+    }
+
+    function update(time) {
+        if (!isRunning) return;
+
+        if (time >= nextNoteTime) {
+            spawnNote();
+            nextNoteTime = time + interval;
         }
 
-        let step = 0;
-        function spawnNote() {
-            const isLeft = step % 2 === 0;
-            const note = document.createElement('div');
-            note.className = isLeft ? 'note' : 'note right';
-            note.style.top = '-20px';
-            notesLayer.appendChild(note);
-            notes.push({ el: note, y: -20 });
+        for (let i = notes.length - 1; i >= 0; i--) {
+            const n = notes[i];
+            if (!n.hit) {
+                n.y += speed;
+                n.el.style.top = n.y + 'px';
 
-            // 4拍（16分音符16個）ごとに高い音を鳴らす（メトロノーム）
-            if (step % 4 === 0) playClick(step % 16 === 0 ? 880 : 440);
-            
-            step++;
-        }
-
-        function update() {
-            if (!isRunning) return;
-            for (let i = notes.length - 1; i >= 0; i--) {
-                notes[i].y += noteSpeed;
-                notes[i].el.style.top = notes[i].y + 'px';
-                if (notes[i].y > 550) {
-                    notesLayer.removeChild(notes[i].el);
-                    notes.splice(i, 1);
+                if (n.y > judgeLineY + 60) {
+                    judgmentEl.innerText = "MISS";
+                    judgmentEl.style.color = "#f44336";
+                    combo = 0;
+                    comboEl.innerText = combo;
+                    n.hit = true;
                 }
-            }
-            requestAnimationFrame(update);
-        }
-
-        document.getElementById('start-btn').addEventListener('click', () => {
-            isRunning = !isRunning;
-            if (isRunning) {
-                step = 0;
-                timer = setInterval(spawnNote, interval);
-                update();
             } else {
-                clearInterval(timer);
-                notesLayer.innerHTML = '';
-                notes.length = 0;
+                if (n.el.parentNode) notesLayer.removeChild(n.el);
+                notes.splice(i, 1);
             }
-        });
-    </script>
+        }
+        requestAnimationFrame(update);
+    }
+
+    // --- 入力処理 (Keyboard & Touch) ---
+
+    // キーボード
+    window.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
+        const key = e.key.toLowerCase();
+        if (key === 'd') judge('left');
+        if (key === 'k') judge('right');
+    });
+
+    // タップ / クリック (PointerEventsを使用)
+    gameContainer.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        // コンテナ内でのクリック座標を取得
+        const rect = gameContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        
+        // 画面の半分より左か右かで判定
+        if (x < rect.width / 2) {
+            judge('left');
+        } else {
+            judge('right');
+        }
+    });
+
+    document.getElementById('start-btn').onclick = () => {
+        isRunning = !isRunning;
+        if (isRunning) {
+            score = 0; combo = 0; step = 0;
+            notes = []; notesLayer.innerHTML = '';
+            scoreEl.innerText = "0";
+            comboEl.innerText = "0";
+            judgmentEl.innerText = "GO!";
+            nextNoteTime = performance.now();
+            update(performance.now());
+        } else {
+            judgmentEl.innerText = "STOPPED";
+        }
+    };
+</script>
 </body>
 </html>
