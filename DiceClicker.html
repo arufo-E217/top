@@ -130,8 +130,8 @@
 <script>
 const TIERS = [
     { id: 0, name: "通常", color: "#ffffff", baseCost: 10, multiplier: 1, unlockAt: 0 },
-    { id: 1, name: "銅", color: "#cd7f32", baseCost: 1000, multiplier: 3, unlockAt: 20 },
-    { id: 2, name: "銀", color: "#c0c0c0", baseCost: 50000, multiplier: 10, unlockAt: 20 },
+    { id: 1, name: "銅", color: "#cd7f32", baseCost: 1000, multiplier: 6, unlockAt: 20 },
+    { id: 2, name: "銀", color: "#c0c0c0", baseCost: 50000, multiplier: 15, unlockAt: 20 },
     { id: 3, name: "金", color: "#ffd700", baseCost: 1000000, multiplier: 50, unlockAt: 20 },
     { id: 4, name: "プラチナ", color: "#e5e4e2", baseCost: 50000000, multiplier: 250, unlockAt: 20 }
 ];
@@ -171,10 +171,10 @@ class Die {
         this.va = (Math.random() - 0.5) * 0.8;
         this.isRolling = true;
         
-        // 時短計算: 1.75s(105F) - Lv * 0.05s(3F). Min 0.75s(45F)
+        // 時短計算: 1.75s(105F) - Lv * 0.05s(3F). Min 0.05s(3F)
         const initialFrames = 105;
         const reductionFrames = t.speedLv * 3;
-        this.timer = Math.max(45, initialFrames - reductionFrames);
+        this.timer = Math.max(3, initialFrames - reductionFrames);
     }
 
     update() {
