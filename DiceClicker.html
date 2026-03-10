@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dice Clicker - Improved</title>
+    <title>Dice Clicker - Pro</title>
     <style>
         :root {
             --bg-color: #1a472a;
@@ -34,7 +34,6 @@
 
         #game-canvas { display: block; }
 
-        /* フッター全体のコンテナ */
         #footer {
             position: absolute;
             bottom: 0; width: 100%;
@@ -45,12 +44,10 @@
             display: flex; flex-direction: column;
         }
 
-        /* 閉じている時の状態 */
         #footer.minimized {
             transform: translateY(calc(var(--footer-height) - var(--footer-minimized)));
         }
 
-        /* トグルボタン */
         #toggle-btn {
             height: var(--footer-minimized);
             background: #333;
@@ -140,9 +137,9 @@ const TIERS = [
 ];
 
 let gameState = {
-    money: 0, totalMoney: 0, playTime: 0, clicks: 0, activeTier: 0, footerOpen: true,
+    money: 0, totalMoney: 0, playTime: 0, clicks: 0, activeTier: 0,
     tiers: TIERS.map(() => ({
-        owned: 0, maxLimit: 20, bonusMult: 1, luck: 0, stats: [0,0,0,0,0,0,0]
+        owned: 0, maxLimit: 20, bonusMult: 1, luck: 0, speedLv: 0, stats: [0,0,0,0,0,0,0]
     }))
 };
 gameState.tiers[0].owned = 1;
@@ -151,6 +148,7 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 let dice = [];
 let footerMinimized = false;
+let isPointerDown = false;
 
 class Die {
     constructor(tierIdx) {
@@ -167,11 +165,16 @@ class Die {
     }
 
     roll(fx, fy) {
-        if (this.isRolling) return; // 振られている最中は無視
+        if (this.isRolling) return;
+        const t = gameState.tiers[this.tierIdx];
         this.vx = fx; this.vy = fy;
         this.va = (Math.random() - 0.5) * 0.8;
         this.isRolling = true;
-        this.timer = 40 + Math.random() * 20;
+        
+        // 時短計算: 1.75s(105F) - Lv * 0.05s(3F). Min 0.75s(45F)
+        const initialFrames = 105;
+        const reductionFrames = t.speedLv * 3;
+        this.timer = Math.max(45, initialFrames - reductionFrames);
     }
 
     update() {
@@ -180,7 +183,6 @@ class Die {
         this.x += this.vx; this.y += this.vy; this.angle += this.va;
         this.vx *= 0.96; this.vy *= 0.96; this.va *= 0.96;
 
-        // 壁判定（メニューの開閉状態に合わせて境界を変える）
         const bottomBoundary = footerMinimized ? canvas.height - 50 : canvas.height - 260;
         
         if (this.x < 0) { this.x = 0; this.vx *= -0.8; }
@@ -189,7 +191,7 @@ class Die {
         if (this.y > bottomBoundary - this.size) { this.y = bottomBoundary - this.size; this.vy *= -0.8; }
 
         this.timer--;
-        if (this.timer <= 0 && Math.abs(this.vx) < 0.2 && Math.abs(this.vy) < 0.2) {
+        if (this.timer <= 0) {
             this.stop();
         }
     }
@@ -238,20 +240,27 @@ class Die {
 function init() {
     resize(); loadGame(); syncDice();
     window.addEventListener('resize', resize);
-    canvas.addEventListener('pointerdown', (e) => {
-        gameState.clicks++;
-        dice.forEach(d => {
-            const dx = d.x + d.size/2 - e.clientX;
-            const dy = d.y + d.size/2 - e.clientY;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 120 && !d.isRolling) {
-                const force = (120 - dist) / 6;
-                d.roll((Math.random()-0.5)*force*2, (Math.random()-0.5)*force*2);
-            }
-        });
-    });
+    
+    // 操作：擦る動きに対応
+    canvas.addEventListener('pointerdown', (e) => { isPointerDown = true; checkRoll(e); });
+    canvas.addEventListener('pointermove', (e) => { if(isPointerDown) checkRoll(e); });
+    window.addEventListener('pointerup', () => { isPointerDown = false; });
+
     requestAnimationFrame(loop);
     setInterval(saveGame, 10000);
+}
+
+function checkRoll(e) {
+    gameState.clicks++;
+    dice.forEach(d => {
+        const dx = d.x + d.size/2 - e.clientX;
+        const dy = d.y + d.size/2 - e.clientY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100 && !d.isRolling) {
+            const force = (100 - dist) / 5;
+            d.roll((Math.random()-0.5)*force*3, (Math.random()-0.5)*force*3);
+        }
+    });
 }
 
 function resize() {
@@ -309,6 +318,9 @@ function renderUpgrades() {
     const tIdx = gameState.activeTier;
     const tData = gameState.tiers[tIdx];
 
+    // タブが表示されていない（設定や統計の）ときは更新しない
+    if(!document.getElementById('upgrades').classList.contains('active')) return;
+
     sel.innerHTML = '';
     TIERS.forEach((t, i) => {
         const b = document.createElement('button');
@@ -323,7 +335,8 @@ function renderUpgrades() {
         { name: "サイコロ購入", key: "owned", base: TIERS[tIdx].baseCost, val: tData.owned, limit: tData.maxLimit },
         { name: "上限解放 (+10)", key: "maxLimit", base: TIERS[tIdx].baseCost * 10, val: tData.maxLimit },
         { name: "獲得倍率UP", key: "bonusMult", base: TIERS[tIdx].baseCost * 2, val: tData.bonusMult, isMult: true },
-        { name: "イカサマ(出目強化)", key: "luck", base: TIERS[tIdx].baseCost * 15, val: tData.luck }
+        { name: "イカサマ(出目強化)", key: "luck", base: TIERS[tIdx].baseCost * 15, val: tData.luck },
+        { name: "時短(停止速度UP)", key: "speedLv", base: TIERS[tIdx].baseCost * 5, val: tData.speedLv, max: 20 }
     ];
 
     list.innerHTML = '';
@@ -331,7 +344,8 @@ function renderUpgrades() {
         const cost = Math.floor(c.base * Math.pow(1.15, (c.key==='owned'?c.val:(c.isMult?c.val*4:c.val*2))));
         const item = document.createElement('div');
         item.className = 'upgrade-item';
-        const isMax = c.key==='owned' && c.val >= c.limit;
+        const isMax = (c.key==='owned' && c.val >= c.limit) || (c.key==='speedLv' && c.val >= c.max);
+        
         item.innerHTML = `
             <div class="upgrade-info">
                 <div class="upgrade-name">${c.name} (Lv.${c.val})</div>
@@ -350,13 +364,16 @@ function buy(key, cost, idx) {
         if (key === 'bonusMult') gameState.tiers[idx][key] += 0.5;
         else if (key === 'maxLimit') gameState.tiers[idx][key] += 10;
         else if (key === 'luck') gameState.tiers[idx][key] += 1;
+        else if (key === 'speedLv') gameState.tiers[idx][key] += 1;
         else { gameState.tiers[idx][key]++; syncDice(); }
-        updateUI(); renderUpgrades();
+        updateUI();
     }
 }
 
 function updateUI() {
     document.getElementById('money-display').innerText = Math.floor(gameState.money).toLocaleString();
+    // お金が変わったのでアップグレードボタンの活性状態を更新
+    renderUpgrades();
 }
 
 function updateStats() {
@@ -371,9 +388,9 @@ function updateStats() {
     `;
 }
 
-function saveGame() { localStorage.setItem('diceSave_v2', JSON.stringify(gameState)); }
+function saveGame() { localStorage.setItem('diceSave_v3', JSON.stringify(gameState)); }
 function loadGame() {
-    const saved = localStorage.getItem('diceSave_v2');
+    const saved = localStorage.getItem('diceSave_v3');
     if (saved) { gameState = Object.assign(gameState, JSON.parse(saved)); updateUI(); }
 }
 function resetGame() { if(confirm("初期化しますか？")) { localStorage.clear(); location.reload(); } }
