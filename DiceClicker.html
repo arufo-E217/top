@@ -3,255 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dice Clicker - Improved</title>
+    <title>Dice Clicker: Casino Tycoon</title>
     <style>
         :root {
-            --bg-color: #1a472a;
+            --bg-color: #1a4d2e;
             --panel-color: rgba(0, 0, 0, 0.85);
-            --text-color: #ffffff;
             --accent-color: #ffd700;
-            --footer-height: 250px;
-            --footer-minimized: 40px;
+            --text-color: #ffffff;
         }
 
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            overflow: hidden;
-            user-select: none;
-            touch-action: none;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none; touch-action: none;
         }
 
-        #header {
-            position: absolute;
-            top: 0; width: 100%; height: 60px;
-            background: var(--panel-color);
-            display: flex; justify-content: center; align-items: center;
-            font-size: 24px; font-weight: bold; z-index: 10;
+        #game-container {
+            position: relative; width: 100%; height: 100%;
+            background: radial-gradient(circle, #2e7d32 0%, #1a4d2e 100%);
         }
 
-        #game-canvas { display: block; }
+        canvas { display: block; }
 
-        /* フッター全体のコンテナ */
-        #footer {
-            position: absolute;
-            bottom: 0; width: 100%;
-            height: var(--footer-height);
-            background: var(--panel-color);
-            z-index: 20;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; flex-direction: column;
+        /* UI Panels */
+        #ui-layer {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            transition: transform 0.3s ease-in-out;
+            z-index: 10;
         }
 
-        /* 閉じている時の状態 */
-        #footer.minimized {
-            transform: translateY(calc(var(--footer-height) - var(--footer-minimized)));
+        #ui-layer.minimized { transform: translateY(calc(100% - 40px)); }
+
+        #toggle-panel {
+            width: 100%; height: 40px; background: var(--panel-color);
+            color: var(--accent-color); border: none; cursor: pointer;
+            font-weight: bold; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            border-top: 2px solid var(--accent-color);
         }
 
-        /* トグルボタン */
-        #toggle-btn {
-            height: var(--footer-minimized);
-            background: #333;
-            color: var(--accent-color);
-            text-align: center;
-            line-height: var(--footer-minimized);
-            cursor: pointer;
-            font-weight: bold;
-            border-top: 1px solid rgba(255,255,255,0.1);
+        #main-panel {
+            background: var(--panel-color); height: 300px;
+            overflow-y: auto; padding: 15px; color: var(--text-color);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
         }
 
-        .tabs { display: flex; background: rgba(255,255,255,0.05); }
-        .tab-btn {
-            flex: 1; padding: 12px; text-align: center; cursor: pointer;
-            border-bottom: 3px solid transparent; font-size: 14px;
-        }
-        .tab-btn.active { border-bottom-color: var(--accent-color); background: rgba(255,255,255,0.1); }
+        .stats-box { grid-column: span 2; display: flex; justify-content: space-around; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; }
 
-        .tab-content { flex: 1; overflow-y: auto; padding: 15px; display: none; }
-        .tab-content.active { display: block; }
-
-        .upgrade-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.05); margin-bottom: 8px;
-            padding: 10px; border-radius: 6px;
+        .upgrade-card {
+            background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        .upgrade-info { flex: 1; }
-        .upgrade-name { font-weight: bold; font-size: 14px; }
-        .upgrade-cost { color: var(--accent-color); font-size: 12px; }
 
-        .buy-btn {
-            background: #4caf50; border: none; color: white;
-            padding: 8px 16px; border-radius: 4px; cursor: pointer;
+        .upgrade-card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--accent-color); }
+        .upgrade-card button {
+            width: 100%; padding: 8px; margin-top: 5px; cursor: pointer;
+            background: var(--accent-color); border: none; border-radius: 4px; font-weight: bold;
         }
-        .buy-btn:disabled { background: #555; opacity: 0.6; }
+        .upgrade-card button:disabled { background: #666; cursor: not-allowed; }
 
-        .tier-selector { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 5px; }
-        .tier-btn { padding: 6px 12px; font-size: 12px; background: #444; border: none; color: #fff; border-radius: 4px; white-space: nowrap; }
-        .tier-btn.active { background: var(--accent-color); color: #000; }
+        #header-ui {
+            position: absolute; top: 10px; left: 10px; color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); pointer-events: none;
+        }
 
-        .float-text {
-            position: absolute; pointer-events: none; font-weight: bold;
-            color: #fff; text-shadow: 1px 1px 2px #000;
-            animation: floatUp 0.8s ease-out forwards; z-index: 15;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-60px); opacity: 0; }
-        }
+        .tier-label { font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-<div id="header">$ <span id="money-display">0</span></div>
-
-<canvas id="game-canvas"></canvas>
-
-<div id="footer">
-    <div id="toggle-btn" onclick="toggleFooter()">▲ UPGRADES / MENU ▲</div>
-    <div class="tabs">
-        <div class="tab-btn active" onclick="showTab('upgrades')">強化</div>
-        <div class="tab-btn" onclick="showTab('stats')">統計</div>
-        <div class="tab-btn" onclick="showTab('settings')">設定</div>
+<div id="game-container">
+    <div id="header-ui">
+        <h2 id="display-money" style="margin:0; color: #ffd700;">$0</h2>
+        <div id="display-tier" style="font-size: 0.9rem;">Tier: Normal</div>
     </div>
 
-    <div id="upgrades" class="tab-content active">
-        <div class="tier-selector" id="tier-selector"></div>
-        <div id="upgrade-list"></div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
 
-    <div id="stats" class="tab-content">
-        <div id="stats-display"></div>
-    </div>
-
-    <div id="settings" class="tab-content">
-        <button onclick="resetGame()" style="background: #f44336; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px;">セーブデータを削除</button>
+    <div id="ui-layer">
+        <button id="toggle-panel">▲ UPGRADES & STATS ▲</button>
+        <div id="main-panel">
+            <div class="stats-box">
+                <div>Total: <span id="stat-total-money">$0</span></div>
+                <div>Dice: <span id="stat-dice-count">0</span></div>
+                <div>Best Roll: <span id="stat-best-roll">0</span></div>
+            </div>
+            
+            <div id="upgrades-container" style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+        </div>
     </div>
 </div>
 
 <script>
-const TIERS = [
-    { id: 0, name: "通常", color: "#ffffff", baseCost: 10, multiplier: 1, unlockAt: 0 },
-    { id: 1, name: "銅", color: "#cd7f32", baseCost: 1000, multiplier: 3, unlockAt: 20 },
-    { id: 2, name: "銀", color: "#c0c0c0", baseCost: 50000, multiplier: 10, unlockAt: 20 },
-    { id: 3, name: "金", color: "#ffd700", baseCost: 1000000, multiplier: 50, unlockAt: 20 },
-    { id: 4, name: "プラチナ", color: "#e5e4e2", baseCost: 50000000, multiplier: 250, unlockAt: 20 }
-];
+/**
+ * Dice Clicker / Roller Incremental
+ * Built with Vanilla JS & Canvas API
+ */
 
-let gameState = {
-    money: 0, totalMoney: 0, playTime: 0, clicks: 0, activeTier: 0, footerOpen: true,
-    tiers: TIERS.map(() => ({
-        owned: 0, maxLimit: 20, bonusMult: 1, luck: 0, stats: [0,0,0,0,0,0,0]
-    }))
-};
-gameState.tiers[0].owned = 1;
-
-const canvas = document.getElementById('game-canvas');
+const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let dice = [];
-let footerMinimized = false;
+const displayMoney = document.getElementById('display-money');
+const displayTier = document.getElementById('display-tier');
+const upgradesContainer = document.getElementById('upgrades-container');
 
-class Die {
-    constructor(tierIdx) {
-        this.tierIdx = tierIdx;
-        this.size = 36;
-        this.spawn();
+// Game State
+let state = {
+    money: 0,
+    totalEarned: 0,
+    dice: [],
+    particles: [],
+    lastSave: Date.now(),
+    tiers: [
+        { name: "Normal", minDice: 0, multiplier: 1, color: "#FFFFFF", dotColor: "#000000" },
+        { name: "Bronze", minDice: 20, multiplier: 2, color: "#cd7f32", dotColor: "#ffffff" },
+        { name: "Silver", minDice: 40, multiplier: 4, color: "#c0c0c0", dotColor: "#000000" },
+        { name: "Gold", minDice: 60, multiplier: 8, color: "#ffd700", dotColor: "#000000" },
+        { name: "Platinum", minDice: 80, multiplier: 16, color: "#e5e4e2", dotColor: "#0055ff" }
+    ],
+    upgrades: {
+        count: { level: 1, baseCost: 10, costMult: 1.5, name: "Add Dice", desc: "Adds 1 dice to the table" },
+        value: { level: 1, baseCost: 50, costMult: 1.8, name: "Reward+", desc: "More money per dot" },
+        luck: { level: 0, baseCost: 200, costMult: 2.5, name: "Rigged Dice", desc: "Higher 5 & 6 chance" },
+        hitbox: { level: 1, baseCost: 100, costMult: 2.0, name: "Swipe Reach", desc: "Easier to hit dice" }
+    },
+    counts: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 }
+};
+
+// Physics Constants
+const FRICTION = 0.98;
+const WALL_BOUNCE = 0.7;
+const DICE_SIZE = 40;
+
+class Particle {
+    constructor(x, y, text, color) {
+        this.x = x; this.y = y; this.text = text; this.color = color;
+        this.life = 1.0; this.vy = -2;
     }
-
-    spawn() {
-        this.x = Math.random() * (canvas.width - this.size);
-        this.y = 100 + Math.random() * (canvas.height - 300);
-        this.vx = 0; this.vy = 0; this.angle = Math.random() * 6; this.va = 0;
-        this.value = 1; this.isRolling = false; this.timer = 0;
-    }
-
-    roll(fx, fy) {
-        if (this.isRolling) return; // 振られている最中は無視
-        this.vx = fx; this.vy = fy;
-        this.va = (Math.random() - 0.5) * 0.8;
-        this.isRolling = true;
-        this.timer = 40 + Math.random() * 20;
-    }
-
-    update() {
-        if (!this.isRolling) return;
-        
-        this.x += this.vx; this.y += this.vy; this.angle += this.va;
-        this.vx *= 0.96; this.vy *= 0.96; this.va *= 0.96;
-
-        // 壁判定（メニューの開閉状態に合わせて境界を変える）
-        const bottomBoundary = footerMinimized ? canvas.height - 50 : canvas.height - 260;
-        
-        if (this.x < 0) { this.x = 0; this.vx *= -0.8; }
-        if (this.x > canvas.width - this.size) { this.x = canvas.width - this.size; this.vx *= -0.8; }
-        if (this.y < 65) { this.y = 65; this.vy *= -0.8; }
-        if (this.y > bottomBoundary - this.size) { this.y = bottomBoundary - this.size; this.vy *= -0.8; }
-
-        this.timer--;
-        if (this.timer <= 0 && Math.abs(this.vx) < 0.2 && Math.abs(this.vy) < 0.2) {
-            this.stop();
-        }
-    }
-
-    stop() {
-        this.isRolling = false; this.vx = 0; this.vy = 0;
-        const t = gameState.tiers[this.tierIdx];
-        const weights = [1, 1, 1, 1, 1 + t.luck, 1 + t.luck * 1.5];
-        let total = weights.reduce((a, b) => a + b, 0);
-        let rand = Math.random() * total;
-        for (let i = 0; i < 6; i++) {
-            if (rand < weights[i]) { this.value = i + 1; break; }
-            rand -= weights[i];
-        }
-        const gain = this.value * TIERS[this.tierIdx].multiplier * t.bonusMult;
-        gameState.money += gain; gameState.totalMoney += gain;
-        t.stats[this.value]++;
-        createFloatText(this.x + this.size/2, this.y, `+$${Math.floor(gain).toLocaleString()}`);
-        updateUI();
-    }
-
+    update() { this.y += this.vy; this.life -= 0.02; }
     draw() {
         ctx.save();
-        ctx.translate(this.x + this.size/2, this.y + this.size/2);
-        ctx.rotate(this.angle);
-        ctx.fillStyle = TIERS[this.tierIdx].color;
-        ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.roundRect(-this.size/2, -this.size/2, this.size, this.size, 6); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = (this.tierIdx % 2 === 0) ? "#000" : "#fff";
-        this.drawDots(this.value);
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.font = "bold 20px Arial";
+        ctx.fillText(this.text, this.x, this.y);
         ctx.restore();
-    }
-
-    drawDots(v) {
-        const p = this.size / 4;
-        const dot = (x, y) => { ctx.beginPath(); ctx.arc(x, y, this.size/10, 0, Math.PI*2); ctx.fill(); };
-        if (v === 1) dot(0, 0);
-        if (v === 2) { dot(-p, p); dot(p, -p); }
-        if (v === 3) { dot(-p, p); dot(0, 0); dot(p, -p); }
-        if (v === 4) { dot(-p, p); dot(p, p); dot(-p, -p); dot(p, -p); }
-        if (v === 5) { dot(-p, p); dot(p, p); dot(0, 0); dot(-p, -p); dot(p, -p); }
-        if (v === 6) { dot(-p, p); dot(p, p); dot(-p, 0); dot(p, 0); dot(-p, -p); dot(p, -p); }
     }
 }
 
-function init() {
-    resize(); loadGame(); syncDice();
-    window.addEventListener('resize', resize);
-    canvas.addEventListener('pointerdown', (e) => {
-        gameState.clicks++;
-        dice.forEach(d => {
-            const dx = d.x + d.size/2 - e.clientX;
-            const dy = d.y + d.size/2 - e.clientY;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 120 && !d.isRolling) {
-                const force = (120 - dist) / 6;
-                d.roll((Math.random()-0.5)*force*2, (Math.random()-0.5)*force*2);
+class Dice {
+    constructor(tierIdx) {
+        this.tierIdx = tierIdx;
+        this.radius = DICE_SIZE / 2;
+        this.resetPosition();
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
+        this.angle = Math.random() * Math.PI * 2;
+        this.rotationSpeed = 0;
+        this.value = Math.floor(Math.random() * 6) + 1;
+        this.isRolling = false;
+        this.stopThreshold = 0.15;
+    }
+
+    resetPosition() {
+        this.x = Math.random() * (canvas.width - DICE_SIZE) + DICE_SIZE/2;
+        this.y = Math.random() * (canvas.height - 350) + DICE_SIZE/2;
+    }
+
+    applyForce(mx, my) {
+        if (this.isRolling) return;
+        const dist = Math.hypot(this.x - mx, this.y - my);
+        const reach = DICE_SIZE * (1 + state.upgrades.hitbox.level * 0.2);
+        
+        if (dist < reach) {
+            const angle = Math.atan2(this.y - my, this.x - mx);
+            const force = 15;
+            this.vx = Math.cos(angle) * force;
+            this.vy = Math.sin(angle) * force;
+            this.rotationSpeed = 0.3;
+            this.isRolling = true;
+        }
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= FRICTION;
+        this.vy *= FRICTION;
+        this.angle += this.rotationSpeed;
+        this.rotationSpeed *= FRICTION;
+
+        // Wall collisions
+        const margin = 300; // UI height approx
+        if (this.x < this.radius) { this.x = this.radius; this.vx *= -WALL_BOUNCE; }
+        if (this.x > canvas.width - this.radius) { this.x = canvas.width - this.radius; this.vx *= -WALL_BOUNCE; }
+        if (this.y < this.radius) { this.y = this.radius; this.vy *= -WALL_BOUNCE; }
+        if (this.y > canvas.height - 40 - this.radius) { // Check UI boundary
+            if (!document.getElementById('ui-layer').classList.contains('minimized')) {
+                if (this.y > canvas.height - 340) { this.y = canvas.height - 340; this.vy *= -WALL_BOUNCE; }
+            } else {
+                if (this.y > canvas.height - 40 - this.radius) { this.y = canvas.height - 40 - this.radius; this.vy *= -WALL_BOUNCE; }
             }
-        });
-    });
-    requestAnimationFrame(loop);
-    setInterval(saveGame, 10000);
+        }
+
+        // Check if stopped
+        if (this.isRolling && Math.abs(this.vx) < this.stopThreshold && Math.abs(this.vy) < this.stopThreshold) {
+            this.stopRolling();
+        }
+    }
+
+    stopRolling() {
+        this.isRolling = false;
+        this.vx = 0; this.vy = 0; this.rotationSpeed = 0;
+        
+        // Luck weighting
+        const luckLevel = state.upgrades.luck.level;
+        if (Math.random() < luckLevel * 0.05) {
+            this.value = Math.random() > 0.5 ? 6 : 5;
+        } else {
+            this.value = Math.floor(Math.random() * 6) + 1;
+        }
+
+        const tier = state.tiers[this.tierIdx];
+        const gain = this.value * tier.multiplier * state.upgrades.value.level;
+        state.money += gain;
+        state.totalEarned += gain;
+        state.counts[this.value]++;
+        
+        state.particles.push(new Particle(this.x, this.y - 20, `+$${gain}`, tier.color));
+    }
+
+    draw() {
+        const tier = state.tiers[this.tierIdx];
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.fillRect(-DICE_SIZE/2+4, -DICE_SIZE/2+4, DICE_SIZE, DICE_SIZE);
+
+        // Dice Body
+        ctx.fillStyle = tier.color;
+        ctx.beginPath();
+        ctx.roundRect(-DICE_SIZE/2, -DICE_SIZE/2, DICE_SIZE, DICE_SIZE, 8);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        ctx.stroke();
+
+        // Dots
+        ctx.fillStyle = tier.dotColor;
+        this.drawDots(this.value);
+
+        ctx.restore();
+    }
+
+    drawDots(val) {
+        const s = DICE_SIZE;
+        const dotR = 3.5;
+        const pos = {
+            center: [0, 0],
+            tl: [-s/4, -s/4], tr: [s/4, -s/4],
+            bl: [-s/4, s/4], br: [s/4, s/4],
+            ml: [-s/4, 0], mr: [s/4, 0]
+        };
+
+        const draw = (p) => {
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], dotR, 0, Math.PI*2);
+            ctx.fill();
+        };
+
+        if (val % 2 === 1) draw(pos.center);
+        if (val >= 2) { draw(pos.tl); draw(pos.br); }
+        if (val >= 4) { draw(pos.tr); draw(pos.bl); }
+        if (val === 6) { draw(pos.ml); draw(pos.mr); }
+    }
+}
+
+// Initialization & Loop
+function init() {
+    resize();
+    loadGame();
+    if (state.dice.length === 0) spawnDice(0);
+    
+    // UI Setup
+    document.getElementById('toggle-panel').onclick = () => {
+        document.getElementById('ui-layer').classList.toggle('minimized');
+    };
+
+    renderUpgrades();
+    requestAnimationFrame(gameLoop);
+
+    // Controls
+    const handleInput = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || e.touches?.[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches?.[0].clientY) - rect.top;
+        state.dice.forEach(d => d.applyForce(x, y));
+    };
+
+    window.addEventListener('pointermove', handleInput);
+    window.addEventListener('pointerdown', handleInput);
+}
+
+function spawnDice(tierIdx) {
+    state.dice.push(new Dice(tierIdx));
 }
 
 function resize() {
@@ -259,126 +316,114 @@ function resize() {
     canvas.height = window.innerHeight;
 }
 
-function toggleFooter() {
-    footerMinimized = !footerMinimized;
-    const f = document.getElementById('footer');
-    const b = document.getElementById('toggle-btn');
-    if (footerMinimized) {
-        f.classList.add('minimized');
-        b.innerText = "▼ OPEN UPGRADES ▼";
-    } else {
-        f.classList.remove('minimized');
-        b.innerText = "▲ CLOSE MENU ▲";
-    }
-}
-
-function syncDice() {
-    dice = [];
-    gameState.tiers.forEach((t, i) => {
-        for (let n = 0; n < t.owned; n++) dice.push(new Die(i));
-    });
-}
-
-function loop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    dice.forEach(d => { d.update(); d.draw(); });
-    requestAnimationFrame(loop);
-}
-
-function createFloatText(x, y, txt) {
-    const div = document.createElement('div');
-    div.className = 'float-text';
-    div.style.left = x + 'px'; div.style.top = y + 'px';
-    div.innerText = txt;
-    document.body.appendChild(div);
-    setTimeout(() => div.remove(), 800);
-}
-
-function showTab(id) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    event.currentTarget.classList.add('active');
-    if(id==='stats') updateStats();
-    renderUpgrades();
-}
-
 function renderUpgrades() {
-    const list = document.getElementById('upgrade-list');
-    const sel = document.getElementById('tier-selector');
-    const tIdx = gameState.activeTier;
-    const tData = gameState.tiers[tIdx];
-
-    sel.innerHTML = '';
-    TIERS.forEach((t, i) => {
-        const b = document.createElement('button');
-        b.className = `tier-btn ${i === tIdx ? 'active' : ''}`;
-        b.innerText = t.name;
-        b.disabled = i > 0 && gameState.tiers[i-1].owned < t.unlockAt;
-        b.onclick = () => { gameState.activeTier = i; renderUpgrades(); };
-        sel.appendChild(b);
-    });
-
-    const configs = [
-        { name: "サイコロ購入", key: "owned", base: TIERS[tIdx].baseCost, val: tData.owned, limit: tData.maxLimit },
-        { name: "上限解放 (+10)", key: "maxLimit", base: TIERS[tIdx].baseCost * 10, val: tData.maxLimit },
-        { name: "獲得倍率UP", key: "bonusMult", base: TIERS[tIdx].baseCost * 2, val: tData.bonusMult, isMult: true },
-        { name: "イカサマ(出目強化)", key: "luck", base: TIERS[tIdx].baseCost * 15, val: tData.luck }
-    ];
-
-    list.innerHTML = '';
-    configs.forEach(c => {
-        const cost = Math.floor(c.base * Math.pow(1.15, (c.key==='owned'?c.val:(c.isMult?c.val*4:c.val*2))));
-        const item = document.createElement('div');
-        item.className = 'upgrade-item';
-        const isMax = c.key==='owned' && c.val >= c.limit;
-        item.innerHTML = `
-            <div class="upgrade-info">
-                <div class="upgrade-name">${c.name} (Lv.${c.val})</div>
-                <div class="upgrade-cost">${isMax ? 'MAX' : '$'+cost.toLocaleString()}</div>
-            </div>
-            <button class="buy-btn" ${gameState.money < cost || isMax ? 'disabled' : ''} 
-                onclick="buy('${c.key}', ${cost}, ${tIdx})">購入</button>
+    upgradesContainer.innerHTML = '';
+    Object.keys(state.upgrades).forEach(key => {
+        const up = state.upgrades[key];
+        const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
+        const card = document.createElement('div');
+        card.className = 'upgrade-card';
+        card.innerHTML = `
+            <h4>${up.name} (Lv.${up.level})</h4>
+            <p style="font-size:0.7rem; margin:0;">${up.desc}</p>
+            <button onclick="buyUpgrade('${key}')" ${state.money < cost ? 'disabled' : ''}>Buy: $${cost}</button>
         `;
-        list.appendChild(item);
+        upgradesContainer.appendChild(card);
     });
 }
 
-function buy(key, cost, idx) {
-    if (gameState.money >= cost) {
-        gameState.money -= cost;
-        if (key === 'bonusMult') gameState.tiers[idx][key] += 0.5;
-        else if (key === 'maxLimit') gameState.tiers[idx][key] += 10;
-        else if (key === 'luck') gameState.tiers[idx][key] += 1;
-        else { gameState.tiers[idx][key]++; syncDice(); }
-        updateUI(); renderUpgrades();
+window.buyUpgrade = (key) => {
+    const up = state.upgrades[key];
+    const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
+    if (state.money >= cost) {
+        state.money -= cost;
+        up.level++;
+        if (key === 'count') {
+            const currentCount = state.dice.length;
+            const tierIdx = Math.min(Math.floor(currentCount / 20), state.tiers.length - 1);
+            spawnDice(tierIdx);
+        }
+        renderUpgrades();
+        updateStats();
     }
-}
-
-function updateUI() {
-    document.getElementById('money-display').innerText = Math.floor(gameState.money).toLocaleString();
-}
+};
 
 function updateStats() {
-    const s = gameState;
-    const t = s.tiers[s.activeTier];
-    document.getElementById('stats-display').innerHTML = `
-        <p>累計: $${Math.floor(s.totalMoney).toLocaleString()}</p>
-        <p>クリック回数: ${s.clicks}</p>
-        <hr>
-        <h4>${TIERS[s.activeTier].name}の出目統計</h4>
-        ${[1,2,3,4,5,6].map(v => `<div>${v}: ${t.stats[v]}回</div>`).join('')}
-    `;
+    displayMoney.innerText = `$${Math.floor(state.money).toLocaleString()}`;
+    document.getElementById('stat-total-money').innerText = `$${Math.floor(state.totalEarned).toLocaleString()}`;
+    document.getElementById('stat-dice-count').innerText = state.dice.length;
+    
+    const tierIdx = Math.min(Math.floor(state.dice.length / 20), state.tiers.length - 1);
+    const currentTier = state.tiers[tierIdx];
+    displayTier.innerHTML = `Tier: <span style="color:${currentTier.color}">${currentTier.name}</span>`;
 }
 
-function saveGame() { localStorage.setItem('diceSave_v2', JSON.stringify(gameState)); }
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dice collision
+    for (let i = 0; i < state.dice.length; i++) {
+        for (let j = i + 1; j < state.dice.length; j++) {
+            const d1 = state.dice[i];
+            const d2 = state.dice[j];
+            const dist = Math.hypot(d1.x - d2.x, d1.y - d2.y);
+            if (dist < DICE_SIZE) {
+                // Simple collision response
+                [d1.vx, d2.vx] = [d2.vx, d1.vx];
+                [d1.vy, d2.vy] = [d2.vy, d1.vy];
+            }
+        }
+    }
+
+    state.dice.forEach(d => {
+        d.update();
+        d.draw();
+    });
+
+    state.particles = state.particles.filter(p => p.life > 0);
+    state.particles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+
+    updateStats();
+    if (Date.now() - state.lastSave > 10000) saveGame();
+    
+    requestAnimationFrame(gameLoop);
+}
+
+// Persistence
+function saveGame() {
+    const saveData = {
+        money: state.money,
+        totalEarned: state.totalEarned,
+        upgrades: state.upgrades,
+        diceCount: state.dice.length,
+        counts: state.counts
+    };
+    localStorage.setItem('diceClickerSave', JSON.stringify(saveData));
+    state.lastSave = Date.now();
+    console.log("Game Saved");
+}
+
 function loadGame() {
-    const saved = localStorage.getItem('diceSave_v2');
-    if (saved) { gameState = Object.assign(gameState, JSON.parse(saved)); updateUI(); }
+    const saved = localStorage.getItem('diceClickerSave');
+    if (saved) {
+        const data = JSON.parse(saved);
+        state.money = data.money;
+        state.totalEarned = data.totalEarned;
+        state.upgrades = data.upgrades;
+        state.counts = data.counts || state.counts;
+        for (let i = 0; i < data.diceCount; i++) {
+            spawnDice(Math.min(Math.floor(i / 20), state.tiers.length - 1));
+        }
+    }
 }
-function resetGame() { if(confirm("初期化しますか？")) { localStorage.clear(); location.reload(); } }
 
+window.onbeforeunload = saveGame;
+window.onresize = resize;
 init();
+
 </script>
 </body>
 </html>
