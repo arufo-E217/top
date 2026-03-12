@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Message!</title>
+    <style>
+        body {
+            background-color: #FFFFFF;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        h1 {
+            color: #000000;
+            font-size: 3rem;
+            margin-top: 60px;
+            letter-spacing: 2px;
+        }
+
+        .secret-box {
+            margin-top: 40px;
+            background-color: #000000;
+            padding: 20px 40px;
+            border-radius: 8px;
+            cursor: text;
+        }
+
+        .secret-content {
+            color: #000000;
+            font-size: 1.1rem;
+            word-break: break-all;
+            transition: background 0.3s;
+        }
+
+        .secret-content::selection {
+            background-color: transparent;
+            color: #FFFFFF;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>シークレットメッセージ！</h1>
+
+    <!---ソースコードからこの謎を解明しようとしていますね？ Hint base64-->
+    <div class="secret-box">
+        <div class="secret-content">
+            VGhhbmsgeW91IHRvIHRoZSB0ZWFjaGVyIHdobyB0YXVnaHQgbWUgY2hlbWlzdHJ5IGZvciB0aGUgcGFzdCB0d28geWVhcnMuIC1TdW1peWE=
+        </div>
+    </div>
+
+</body>
+</html>
