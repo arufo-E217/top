@@ -11,17 +11,18 @@
             --bg: #000;
             --fg: #fff;
             --accent: #fff;
-            --dim: #444;
+            --dim: #333;
+            --glow: rgba(255, 255, 255, 0.2);
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg);
             color: var(--fg);
-            font-family: 'Times New Roman', Times, serif;
+            font-family: 'serif';
             overflow: hidden;
             user-select: none;
+            touch-action: manipulation;
         }
 
         #app {
@@ -31,139 +32,123 @@
             width: 100vw;
             padding: 20px;
             box-sizing: border-box;
-            align-items: center;
         }
 
-        /* --- Header: The Variable --- */
+        /* --- Header: クリック可能なメインエリア --- */
         #header {
             text-align: center;
-            margin-bottom: 20px;
-            z-index: 10;
+            padding: 40px 0;
+            cursor: pointer;
+            transition: transform 0.05s;
+            z-index: 100;
+        }
+
+        #header:active {
+            transform: scale(0.98);
         }
 
         #main-display {
-            font-size: 3.5rem;
-            margin: 10px 0;
+            font-size: clamp(2rem, 8vw, 4rem);
+            margin: 0;
             font-weight: 100;
+            letter-spacing: -1px;
         }
 
         #derivative-display {
             font-size: 1.2rem;
-            color: #888;
+            color: #666;
+            margin-top: 10px;
         }
 
-        /* --- Center: Visualization --- */
+        /* --- Visualizer --- */
         #canvas-container {
             flex-grow: 1;
-            width: 100%;
-            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
+            pointer-events: none;
         }
 
-        canvas {
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        /* --- Footer: Controls --- */
+        /* --- Footer: アップグレード --- */
         #footer {
+            max-width: 900px;
+            margin: 0 auto;
             width: 100%;
-            max-width: 800px;
-            background: rgba(0,0,0,0.8);
             border-top: 1px solid var(--dim);
-            padding-top: 15px;
-            z-index: 10;
+            background: rgba(0,0,0,0.9);
         }
 
         .tabs {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            margin-bottom: 15px;
+            border-bottom: 1px solid var(--dim);
         }
 
         .tab-btn {
-            background: none;
-            border: none;
-            color: var(--dim);
-            cursor: pointer;
-            font-size: 1rem;
+            background: none; border: none;
+            color: #555; padding: 15px 20px;
+            cursor: pointer; font-size: 0.9rem;
             transition: 0.3s;
-            padding: 5px 10px;
-            border-bottom: 1px solid transparent;
         }
 
         .tab-btn.active {
-            color: var(--fg);
-            border-bottom: 1px solid var(--fg);
+            color: #fff;
+            border-bottom: 2px solid #fff;
         }
 
         .upgrade-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            height: 180px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1px;
+            background: var(--dim);
+            height: 220px;
             overflow-y: auto;
-            padding: 10px;
         }
 
         .upgrade-card {
-            border: 1px solid var(--dim);
-            padding: 12px;
+            background: var(--bg);
+            padding: 20px;
             cursor: pointer;
-            transition: all 0.1s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: background 0.2s;
         }
 
-        .upgrade-card:hover {
-            border-color: var(--fg);
+        .upgrade-card:hover:not(.disabled) {
             background: #111;
         }
 
-        .upgrade-card:active {
-            transform: scale(0.97);
-        }
-
         .upgrade-card.disabled {
-            opacity: 0.3;
+            opacity: 0.2;
             cursor: not-allowed;
         }
 
-        .upgrade-name { font-size: 0.9rem; margin-bottom: 5px; }
-        .upgrade-cost { font-size: 0.8rem; color: #888; }
-        .upgrade-level { font-size: 0.7rem; text-align: right; margin-top: 5px; }
+        .upg-info { margin-bottom: 10px; }
+        .upg-name { font-size: 1rem; display: block; margin-bottom: 4px; }
+        .upg-desc { font-size: 0.75rem; color: #666; }
+        .upg-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .upg-cost { font-size: 0.85rem; font-family: monospace; }
+        .upg-level { font-size: 0.7rem; color: #444; }
 
         /* --- Singularity --- */
-        #singularity-container {
+        #prestige-layer {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 20px; right: 20px;
         }
-
         #singularity-btn {
             display: none;
-            background: #fff;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            animation: pulse 2s infinite;
+            background: #fff; color: #000;
+            border: none; padding: 12px 24px;
+            font-weight: bold; cursor: pointer;
+            box-shadow: 0 0 20px var(--glow);
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0px rgba(255,255,255,0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
-            100% { box-shadow: 0 0 0 0px rgba(255,255,255,0); }
-        }
-
-        /* Responsive */
         @media (max-width: 600px) {
-            #main-display { font-size: 2.2rem; }
             .upgrade-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -171,13 +156,14 @@
 <body>
 
 <div id="app">
-    <div id="singularity-container">
+    <div id="prestige-layer">
         <button id="singularity-btn" onclick="prestige()">SINGULARITY</button>
     </div>
 
-    <header id="header">
+    <header id="header" onclick="handleManualClick()">
         <div id="main-display">x = 0</div>
         <div id="derivative-display">dx/dt = 0</div>
+        <div style="font-size: 0.7rem; color: #333; margin-top: 5px;">(Click to Increment)</div>
     </header>
 
     <div id="canvas-container">
@@ -186,9 +172,9 @@
 
     <footer id="footer">
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab(1)">Layer I (Addition)</button>
-            <button class="tab-btn" onclick="showTab(2)" id="tab2-btn" style="display:none">Layer II (Multiplication)</button>
-            <button class="tab-btn" onclick="showTab(3)" id="tab3-btn" style="display:none">Layer III (Power)</button>
+            <button class="tab-btn active" onclick="showTab(1)">Layer I</button>
+            <button class="tab-btn" id="tab2-btn" style="display:none" onclick="showTab(2)">Layer II</button>
+            <button class="tab-btn" id="tab3-btn" style="display:none" onclick="showTab(3)">Layer III</button>
         </div>
 
         <div id="layer1" class="upgrade-grid"></div>
@@ -198,232 +184,266 @@
 </div>
 
 <script>
+    /**
+     * ============================================================
+     * BALANCING_CONFIG: ゲームバランス調整用パラメータ
+     * ============================================================
+     */
+    const CONFIG = {
+        // --- 基本設定 ---
+        baseClickValue: 1.0,           // 1クリックで増える量
+        tickRate: 60,                  // 1秒あたりの更新回数
+        
+        // --- Layer 1: 加算の階層 ---
+        l1_1: {
+            name: "Incrementer",
+            desc: "クリックと秒間増加の基本値を底上げする",
+            baseCost: 15,              // 初期コスト
+            costMult: 1.15,            // レベルアップ毎の価格上昇倍率
+            power: 1                   // 1レベルあたりの増加量
+        },
+        l1_2: {
+            name: "Auto-Derivator",
+            desc: "自動でxを生成する演算器",
+            baseCost: 100,
+            costMult: 1.25,
+            power: 5
+        },
+
+        // --- Layer 2: 乗算の階層 ---
+        l2_1: {
+            name: "Multiplier",
+            desc: "全出力を乗算的に強化する",
+            baseCost: 1e4,
+            costMult: 2.0,
+            power: 1.5                 // 1レベルあたりの倍率(1.5倍)
+        },
+        l2_2: {
+            name: "Efficiency",
+            desc: "演算効率を高め、基本出力を向上させる",
+            baseCost: 1e6,
+            costMult: 5.0,
+            power: 2
+        },
+
+        // --- Layer 3: 指数の階層 ---
+        l3_1: {
+            name: "Exponential Growth",
+            desc: "成長曲線そのものを指数関数へ変貌させる",
+            baseCost: 1e12,
+            costMult: 10.0,
+            power: 0.01                // 指数に加算される微小値
+        },
+
+        // --- システム解放の閾値 ---
+        unlocks: {
+            layer2: 1000,              // Layer 2が解放されるxの値
+            layer3: 1e10,              // Layer 3が解放されるxの値
+            singularity: 1.79e308      // Singularityが発生可能になる値(Number.MAX_VALUE)
+        }
+    };
+
     const D = (val) => new Decimal(val);
 
-    // --- Game State ---
+    // --- State Management ---
     let state = {
         x: D(0),
         singularityCount: D(0),
         lastTick: Date.now(),
         upgrades: {
-            l1_1: { level: D(0), baseCost: D(10), mult: D(1.5) }, // Incrementer
-            l1_2: { level: D(0), baseCost: D(100), mult: D(2.0) }, // Auto-Derivator
-            l2_1: { level: D(0), baseCost: D(1e6), mult: D(5.0) }, // Multiplier
-            l2_2: { level: D(0), baseCost: D(1e9), mult: D(10.0) }, // Efficiency
-            l3_1: { level: D(0), baseCost: D(1e15), mult: D(100.0) } // Power Base
+            l1_1: D(0), l1_2: D(0),
+            l2_1: D(0), l2_2: D(0),
+            l3_1: D(0)
         }
     };
 
-    // --- Initialization ---
-    const canvas = document.getElementById('vizCanvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
+    // --- Core Math Functions ---
+    function getDx() {
+        // 1. 加算ベース
+        let base = D(state.upgrades.l1_1).mul(CONFIG.l1_1.power);
+        let auto = D(state.upgrades.l1_2).mul(CONFIG.l1_2.power);
+        let totalBase = base.add(auto);
 
-    function init() {
-        resize();
-        window.addEventListener('resize', resize);
-        load();
-        createUpgrades();
-        requestAnimationFrame(loop);
-    }
+        // 2. 乗算補正
+        let mult = D(CONFIG.l2_1.power).pow(state.upgrades.l2_1);
+        let eff = D(CONFIG.l2_2.power).pow(state.upgrades.l2_2);
+        let res = totalBase.mul(mult).mul(eff);
 
-    function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight * 0.4;
-    }
-
-    // --- Formatting Logic ---
-    function format(decimal) {
-        if (decimal.lt(1e6)) return decimal.toNumber().toLocaleString(undefined, {maximumFractionDigits: 2});
-        if (decimal.lt(D(10).pow(1000))) {
-            let e = decimal.exponent;
-            let m = decimal.mantissa.toFixed(2);
-            return `${m} \\times 10^{${e}}`;
+        // 3. 指数補正
+        if (state.upgrades.l3_1.gt(0)) {
+            let exp = D(1).add(D(state.upgrades.l3_1).mul(CONFIG.l3_1.power));
+            res = res.pow(exp);
         }
-        // FGH / Tower style for massive numbers
-        let tower = Math.log10(decimal.log10());
-        return `10^{10^{${tower.toFixed(3)}}}`;
+
+        // 4. Singularityボーナス (次回プレイへの影響)
+        res = res.mul(D(2).pow(state.singularityCount));
+
+        return res;
+    }
+
+    function getUpgradeCost(id) {
+        const conf = CONFIG[id];
+        return D(conf.baseCost).mul(D(conf.costMult).pow(state.upgrades[id]));
+    }
+
+    // --- UI Logic ---
+    function format(decimal) {
+        if (decimal.lt(1e6)) return decimal.toNumber().toLocaleString(undefined, {maximumFractionDigits: 1});
+        if (decimal.lt(D(10).pow(1000))) {
+            return `${decimal.mantissa.toFixed(2)} \\times 10^{${decimal.exponent}}`;
+        }
+        return `10^{10^{${Math.log10(decimal.log10()).toFixed(3)}}}`;
+    }
+
+    function handleManualClick() {
+        let clickVal = D(CONFIG.baseClickValue).add(D(state.upgrades.l1_1).mul(CONFIG.l1_1.power));
+        state.x = state.x.add(clickVal);
+        createClickEffect();
+        updateDisplay();
+    }
+
+    function buyUpgrade(id) {
+        const cost = getUpgradeCost(id);
+        if (state.x.gte(cost)) {
+            state.x = state.x.sub(cost);
+            state.upgrades[id] = state.upgrades[id].add(1);
+            updateDisplay();
+        }
     }
 
     function updateDisplay() {
         document.getElementById('main-display').innerHTML = `x = ${format(state.x)}`;
         document.getElementById('derivative-display').innerHTML = `dx/dt = ${format(getDx())}`;
         
-        // Tab unlocking
-        if (state.x.gt(1e5) || state.upgrades.l2_1.level.gt(0)) document.getElementById('tab2-btn').style.display = 'block';
-        if (state.x.gt(1e12) || state.upgrades.l3_1.level.gt(0)) document.getElementById('tab3-btn').style.display = 'block';
-        
-        // Singularity check (e308 threshold)
-        if (state.x.gt(Decimal.MAX_VALUE)) {
-            document.getElementById('singularity-btn').style.display = 'block';
-        }
+        // 解放チェック
+        if (state.x.gt(CONFIG.unlocks.layer2)) document.getElementById('tab2-btn').style.display = 'block';
+        if (state.x.gt(CONFIG.unlocks.layer3)) document.getElementById('tab3-btn').style.display = 'block';
+        if (state.x.gt(CONFIG.unlocks.singularity)) document.getElementById('singularity-btn').style.display = 'block';
 
-        // Update Buttons
+        // ボタンの更新
         for (let id in state.upgrades) {
-            const upg = state.upgrades[id];
-            const cost = getCost(id);
-            const el = document.getElementById(`btn-${id}`);
-            if (el) {
-                el.querySelector('.upgrade-cost').innerText = `Cost: ${format(cost)}`;
-                el.querySelector('.upgrade-level').innerText = `Level: ${upg.level.toString()}`;
-                el.classList.toggle('disabled', state.x.lt(cost));
-            }
+            const btn = document.getElementById(`btn-${id}`);
+            if (!btn) continue;
+            const cost = getUpgradeCost(id);
+            btn.querySelector('.upg-cost').innerText = `Cost: ${format(cost)}`;
+            btn.querySelector('.upg-level').innerText = `Lv. ${state.upgrades[id].toString()}`;
+            btn.classList.toggle('disabled', state.x.lt(cost));
         }
     }
 
-    // --- Math Core ---
-    function getDx() {
-        // dx = (Base + Incrementer * L1_1) * (1 + Multiplier * L2_1) * Efficiency
-        let base = state.upgrades.l1_1.level.mul(1).add(1);
-        let auto = state.upgrades.l1_2.level.mul(0.5);
-        let mult = state.upgrades.l2_1.level.mul(2).add(1);
-        let eff = state.upgrades.l2_2.level.mul(0.1).add(1);
-        
-        let dx = base.add(auto).mul(mult).mul(eff);
-        
-        // Layer 3: Exponentiation (adds a small power factor)
-        if (state.upgrades.l3_1.level.gt(0)) {
-            let pow = state.upgrades.l3_1.level.mul(0.01).add(1);
-            dx = dx.pow(pow);
-        }
-
-        // Singularity Bonus
-        dx = dx.mul(state.singularityCount.add(1).pow(2));
-        
-        return dx;
-    }
-
-    function getCost(id) {
-        const upg = state.upgrades[id];
-        return upg.baseCost.mul(upg.mult.pow(upg.level));
-    }
-
-    function buyUpgrade(id) {
-        const cost = getCost(id);
-        if (state.x.gte(cost)) {
-            state.x = state.x.sub(cost);
-            state.upgrades[id].level = state.upgrades[id].level.add(1);
-            updateDisplay();
-        }
-    }
-
-    // --- UI Helpers ---
     function createUpgrades() {
-        const layers = {
-            l1: ['l1_1', 'l1_2'],
-            l2: ['l2_1', 'l2_2'],
-            l3: ['l3_1']
-        };
-        const names = {
-            l1_1: 'Incrementer (Δd)', l1_2: 'Auto-Derivator',
-            l2_1: 'Multiplier (r)', l2_2: 'Efficiency Booster',
-            l3_1: 'Power Base Refiner'
+        const structure = {
+            layer1: ['l1_1', 'l1_2'],
+            layer2: ['l2_1', 'l2_2'],
+            layer3: ['l3_1']
         };
 
-        for (let l in layers) {
-            const container = document.getElementById(`layer${l.slice(1)}`);
-            layers[l].forEach(id => {
-                const div = document.createElement('div');
-                div.className = 'upgrade-card';
-                div.id = `btn-${id}`;
-                div.onclick = () => buyUpgrade(id);
-                div.innerHTML = `
-                    <div class="upgrade-name">${names[id]}</div>
-                    <div class="upgrade-cost">Cost: -</div>
-                    <div class="upgrade-level">Level: 0</div>
+        for (let layerId in structure) {
+            const container = document.getElementById(layerId);
+            structure[layerId].forEach(id => {
+                const conf = CONFIG[id];
+                const card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.id = `btn-${id}`;
+                card.onclick = () => buyUpgrade(id);
+                card.innerHTML = `
+                    <div class="upg-info">
+                        <span class="upg-name">${conf.name}</span>
+                        <span class="upg-desc">${conf.desc}</span>
+                    </div>
+                    <div class="upg-stats">
+                        <span class="upg-cost"></span>
+                        <span class="upg-level"></span>
+                    </div>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
             });
         }
     }
 
-    function showTab(n) {
-        for(let i=1; i<=3; i++) {
-            document.getElementById(`layer${i}`).style.display = (i === n) ? 'grid' : 'none';
-            document.querySelectorAll('.tab-btn')[i-1].classList.toggle('active', i === n);
-        }
-    }
-
-    // --- Visualizer ---
-    let particles = [];
-    function draw() {
-        ctx.fillStyle = 'rgba(0,0,0,0.1)';
-        ctx.fillRect(0, 0, width, height);
-        
-        const centerX = width / 2;
-        const centerY = height / 2;
-        
-        // 数値の大きさに応じてパーティクル数を調整
-        let targetCount = Math.min(state.x.log10() * 5 + 10, 500);
-        while(particles.length < targetCount) {
-            particles.push({
-                angle: Math.random() * Math.PI * 2,
-                dist: Math.random() * 200 + 50,
-                speed: Math.random() * 0.02 + 0.005
-            });
-        }
-
-        ctx.strokeStyle = '#fff';
-        ctx.beginPath();
-        particles.forEach(p => {
-            p.angle += p.speed * (state.x.add(1).log10() / 10 + 1);
-            let x = centerX + Math.cos(p.angle) * p.dist;
-            let y = centerY + Math.sin(p.angle * 1.5) * p.dist;
-            ctx.lineTo(x, y);
-            ctx.arc(x, y, 1, 0, Math.PI * 2);
-        });
-        ctx.stroke();
-    }
-
-    // --- Main Loop ---
+    // --- System Functions ---
+    const canvas = document.getElementById('vizCanvas');
+    const ctx = canvas.getContext('2d');
     function loop() {
         const now = Date.now();
         const dt = (now - state.lastTick) / 1000;
         state.lastTick = now;
 
-        let dx = getDx();
-        state.x = state.x.add(dx.mul(dt));
+        state.x = state.x.add(getDx().mul(dt));
 
-        draw();
+        drawVisuals();
         updateDisplay();
-        
-        if (Math.random() < 0.01) save(); // 稀にセーブ
         requestAnimationFrame(loop);
     }
 
-    // --- Prestige & Save ---
+    function drawVisuals() {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const time = Date.now() * 0.001;
+        const intensity = Math.min(state.x.add(1).log10(), 100);
+
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        for(let i=0; i<intensity; i++) {
+            let r = (i * 5) + (Math.sin(time) * 10);
+            let x = centerX + Math.cos(time + i*0.1) * r;
+            let y = centerY + Math.sin(time*0.5 + i*0.1) * r;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    function createClickEffect() {
+        // オプション: クリック時の視覚効果（波紋など）
+    }
+
+    function showTab(n) {
+        ['layer1', 'layer2', 'layer3'].forEach((id, idx) => {
+            document.getElementById(id).style.display = (idx + 1 === n) ? 'grid' : 'none';
+            document.querySelectorAll('.tab-btn')[idx].classList.toggle('active', idx + 1 === n);
+        });
+    }
+
     function prestige() {
-        if (!confirm("Singularity（次元収束）を実行しますか？ 現在の x は失われますが、永続的な倍率を得ます。")) return;
+        if(!confirm("Singularityを発生させます。現在のxとアップグレードを失う代わりに、永久的な倍率ボーナスを得ます。よろしいですか？")) return;
         state.singularityCount = state.singularityCount.add(1);
         state.x = D(0);
-        for (let id in state.upgrades) state.upgrades[id].level = D(0);
-        document.getElementById('singularity-btn').style.display = 'none';
+        for(let id in state.upgrades) state.upgrades[id] = D(0);
         save();
+        location.reload(); 
     }
 
     function save() {
-        localStorage.setItem('exponentia_save', JSON.stringify({
+        const data = {
             x: state.x.toString(),
             sc: state.singularityCount.toString(),
-            upg: Object.keys(state.upgrades).reduce((acc, id) => {
-                acc[id] = state.upgrades[id].level.toString();
-                return acc;
-            }, {})
-        }));
+            upg: {}
+        };
+        for(let id in state.upgrades) data.upg[id] = state.upgrades[id].toString();
+        localStorage.setItem('exponentia_v2', JSON.stringify(data));
     }
 
     function load() {
-        const raw = localStorage.getItem('exponentia_save');
-        if (!raw) return;
+        const raw = localStorage.getItem('exponentia_v2');
+        if(!raw) return;
         const data = JSON.parse(raw);
         state.x = D(data.x);
         state.singularityCount = D(data.sc);
-        for (let id in data.upg) {
-            if (state.upgrades[id]) state.upgrades[id].level = D(data.upg[id]);
-        }
+        for(let id in data.upg) state.upgrades[id] = D(data.upg[id]);
     }
 
-    init();
+    window.onload = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight * 0.4;
+        load();
+        createUpgrades();
+        loop();
+        setInterval(save, 10000); // 10秒毎にオートセーブ
+    };
 </script>
 </body>
 </html>
