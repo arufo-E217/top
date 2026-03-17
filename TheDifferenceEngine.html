@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Difference Engine: Fundamental Theorem</title>
+    <title>The Difference Engine: Deep Calculus</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -29,6 +29,7 @@
             height: 100vh;
             overflow: hidden;
             user-select: none;
+            /* ページ全体での誤動作を防ぐ */
             touch-action: manipulation;
         }
 
@@ -104,11 +105,15 @@
             align-items: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             outline: none;
-            touch-action: manipulation;
+            /* タップエリアでのブラウザ操作(スクロール/ズーム)を完全に無効化し、純粋なマルチタップを許可 */
+            touch-action: none; 
         }
 
-        #clicker:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        /* PC等でのホバー効果 */
+        @media (hover: hover) {
+            #clicker:hover {
+                box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            }
         }
 
         #clicker:active {
@@ -269,32 +274,34 @@
 
 <script>
     /**
-     * Increase (購入分) と Accumulated (蓄積分) の分離
-     * Tap (dx) アップグレードの追加
+     * dx10までの拡張とマルチタップ機能(pointerdown)の実装
      */
 
     const game = {
         x: 0,
         lastTime: performance.now(),
         levelToRebirth: 100,
-        rebirthBonusPerCount: 0.02, // 転生1回につき +2%
+        rebirthBonusPerCount: 0.02, 
 
-        // タップ強化 (dx)
         tap: {
             id: 'tap', name: "Manual Differential", symbol: "dx", target: "x",
-            baseCost: 10, costMult: 1.50, baseRatePerLevel: 0.1, baseValue: 0.1, // 初期タップ値は0.1
+            baseCost: 10, costMult: 1.50, baseRatePerLevel: 0.1, baseValue: 0.1, 
             purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, 
-            increase: 0, total: 0.1 // tapは蓄積がないため、total = baseValue + increase
+            increase: 0, total: 0.1 
         },
 
-        // 自動増加変数 (dx1 ~ dx6)
+        // dx10 まで拡張
         derivatives: [
             { id: 1, name: "Velocity", symbol: "dx₁", target: "x", baseCost: 50, costMult: 1.15, baseRatePerLevel: 1.0, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
             { id: 2, name: "Acceleration", symbol: "dx₂", target: "dx₁", baseCost: 500, costMult: 1.20, baseRatePerLevel: 0.5, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
             { id: 3, name: "Jerk", symbol: "dx₃", target: "dx₂", baseCost: 5000, costMult: 1.25, baseRatePerLevel: 0.25, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
             { id: 4, name: "Snap", symbol: "dx₄", target: "dx₃", baseCost: 75000, costMult: 1.30, baseRatePerLevel: 0.1, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
-            { id: 5, name: "Crackle", symbol: "dx₅", target: "dx₄", baseCost: 1000000, costMult: 1.40, baseRatePerLevel: 0.05, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
-            { id: 6, name: "Pop", symbol: "dx₆", target: "dx₅", baseCost: 25000000, costMult: 1.50, baseRatePerLevel: 0.01, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 }
+            { id: 5, name: "Crackle", symbol: "dx₅", target: "dx₄", baseCost: 1000000, costMult: 1.35, baseRatePerLevel: 0.05, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 6, name: "Pop", symbol: "dx₆", target: "dx₅", baseCost: 25000000, costMult: 1.40, baseRatePerLevel: 0.01, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 7, name: "Lock", symbol: "dx₇", target: "dx₆", baseCost: 1e9, costMult: 1.50, baseRatePerLevel: 0.005, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 8, name: "Drop", symbol: "dx₈", target: "dx₇", baseCost: 5e10, costMult: 1.60, baseRatePerLevel: 0.001, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 9, name: "Shot", symbol: "dx₉", target: "dx₈", baseCost: 5e12, costMult: 1.70, baseRatePerLevel: 0.0005, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 10, name: "Put", symbol: "dx₁₀", target: "dx₉", baseCost: 1e15, costMult: 1.80, baseRatePerLevel: 0.0001, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 }
         ]
     };
 
@@ -303,7 +310,7 @@
         dxdt: document.getElementById('display-dx-dt'),
         tapVal: document.getElementById('display-tap-val'),
         upgrades: document.getElementById('upgrades'),
-        elements: {} // 動的生成要素のキャッシュ
+        elements: {}
     };
 
     function format(num) {
@@ -313,9 +320,7 @@
     }
 
     function calculateValues(item, isTap = false) {
-        // 購入による純粋な増加分
         item.increase = (item.purchased * item.baseRatePerLevel) * item.rebirthBonus;
-        // 実際の合計値 (Tapの場合は初期値を足す、Derivativesの場合は上位からの蓄積を足す)
         if (isTap) {
             item.total = item.baseValue + item.increase;
         } else {
@@ -366,7 +371,6 @@
         `;
         ui.upgrades.appendChild(card);
 
-        // キャッシュ
         ui.elements[item.id] = {
             itemRef: item,
             isTap: isTap,
@@ -376,12 +380,11 @@
             lv: document.getElementById(`lv-${item.id}`),
             total: document.getElementById(`total-${item.id}`),
             inc: document.getElementById(`inc-${item.id}`),
-            acc: document.getElementById(`acc-${item.id}`), // Tap時はnull
+            acc: document.getElementById(`acc-${item.id}`),
             bonus: document.getElementById(`bonus-${item.id}`),
             count: document.getElementById(`count-${item.id}`)
         };
 
-        // イベントリスナー
         ui.elements[item.id].btn.addEventListener('click', () => buyUpgrade(item.id));
         ui.elements[item.id].rbtn.addEventListener('click', () => rebirthUpgrade(item.id));
     }
@@ -390,9 +393,22 @@
         createCard(game.tap, true);
         game.derivatives.forEach(d => createCard(d, false));
 
-        document.getElementById('clicker').addEventListener('click', () => {
+        // マルチタップ対応 (pointerdown)
+        // pointerdownは、画面に触れた指1本1本に対して個別に発火するため、
+        // 5本指で叩けば同時に5回分の処理が走ります。
+        const clicker = document.getElementById('clicker');
+        clicker.addEventListener('pointerdown', (e) => {
+            // pointerIdを持つ場合、それが主ボタン(左クリックやタッチ)か確認
+            if (e.pointerType === 'mouse' && e.button !== 0) return; 
+
             game.x += game.tap.total;
             updateDisplay(false);
+            
+            // 視覚的なフィードバックを JS で補強 (CSSの :active だけだとマルチタップ時に分かりづらいため)
+            clicker.style.transform = 'scale(0.94)';
+            setTimeout(() => {
+                clicker.style.transform = 'scale(1)';
+            }, 60);
         });
         
         // 初期計算
@@ -424,7 +440,6 @@
             item.rebirthBonus = 1.0 + (item.rebirthCount * game.rebirthBonusPerCount);
             
             if (!isTap) {
-                // 転生したら他変数からの蓄積分もリセット（真の再誕）
                 item.accumulated = 0;
             }
             
@@ -444,13 +459,11 @@
             const els = ui.elements[item.id];
             const cost = getCost(item);
 
-            // 値が変動するものの更新
             els.total.textContent = format(item.total);
             if (!els.isTap) {
                 els.acc.textContent = format(item.accumulated);
             }
 
-            // 購入や転生時のみ更新するUI要素
             if (forceFullUpdate) {
                 els.lv.textContent = `Lv. ${item.purchased}`;
                 els.inc.textContent = format(item.increase);
@@ -459,7 +472,6 @@
                 els.count.textContent = item.rebirthCount;
             }
 
-            // ボタン状態
             els.btn.disabled = game.x < cost;
             els.rbtn.disabled = item.purchased < game.levelToRebirth;
         });
@@ -469,8 +481,7 @@
         const dt = (currentTime - game.lastTime) / 1000;
         game.lastTime = currentTime;
 
-        // 微積分の連鎖 (dx6 -> dx5 -> ... -> dx1)
-        // 上位のtotal値が、下位のaccumulated値に毎フレーム蓄積されていく
+        // 微積分の連鎖 (dx10 -> dx9 -> ... -> dx1)
         for (let i = game.derivatives.length - 1; i >= 1; i--) {
             game.derivatives[i - 1].accumulated += game.derivatives[i].total * dt;
             calculateValues(game.derivatives[i - 1], false);
