@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Difference Engine: Prestige</title>
+    <title>The Difference Engine: Fundamental Theorem</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -29,6 +29,7 @@
             height: 100vh;
             overflow: hidden;
             user-select: none;
+            touch-action: manipulation;
         }
 
         #game-container {
@@ -64,7 +65,7 @@
         }
 
         .main-variable {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: bold;
             line-height: 1;
             margin-bottom: 0.3rem;
@@ -103,7 +104,6 @@
             align-items: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             outline: none;
-            /* 連打時のズーム防止 */
             touch-action: manipulation;
         }
 
@@ -127,7 +127,7 @@
         }
 
         #upgrades {
-            height: 45%;
+            height: 50%;
             border-top: 1px solid var(--border-color);
             overflow-y: auto;
             background-color: #fafafa;
@@ -145,15 +145,16 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: border-color 0.2s;
         }
 
         .upgrade-header {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.5rem;
             font-size: 1.1rem;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 0.3rem;
         }
 
         .upgrade-name {
@@ -163,20 +164,31 @@
         .upgrade-level {
             font-size: 0.9rem;
             color: #555;
-            margin-left: 0.5rem;
         }
 
-        .upgrade-value {
+        .upgrade-stats {
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .stat-total {
+            font-size: 1.1rem;
             color: var(--accent-blue);
-            font-size: 1rem;
-            text-align: right;
+            font-weight: bold;
+            margin-bottom: 0.2rem;
         }
 
-        .upgrade-desc {
-            font-size: 0.85rem;
+        .stat-detail {
             color: #666;
-            margin-bottom: 0.5rem;
-            line-height: 1.3;
+            margin-left: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .stat-bonus {
+            margin-top: 0.3rem;
+            font-size: 0.85rem;
+            color: var(--accent-red);
         }
 
         .action-row {
@@ -193,7 +205,6 @@
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.2s;
-            /* 連打時のズーム防止 */
             touch-action: manipulation;
             box-sizing: border-box;
             width: 100%;
@@ -226,38 +237,29 @@
             cursor: not-allowed;
         }
 
-        /* スクロールバーのスタイル */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #fafafa;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #ddd;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ccc;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #fafafa; }
+        ::-webkit-scrollbar-thumb { background: #ddd; }
+        ::-webkit-scrollbar-thumb:hover { background: #ccc; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <header>
-        <h1>The Difference Engine: Prestige</h1>
+        <h1>The Difference Engine</h1>
         <div class="main-variable">
             <span class="math-text">x</span> = <span id="display-x">0.00</span>
         </div>
         <div class="rate">
-            <span class="math-text">dx/dt</span> = <span id="display-dx-dt">0.00</span> / s
+            <span class="math-text">dx₁</span> (Total Rate) = <span id="display-dx-dt">0.00</span> / s
         </div>
     </header>
 
     <main>
         <button id="clicker">
             <div class="math-text">dx</div>
-            <span>Tap to Differentiate</span>
+            <span id="display-tap-val">+0.10 / tap</span>
         </button>
     </main>
 
@@ -267,246 +269,223 @@
 
 <script>
     /**
-     * ゲームのコアロジックおよび描画スクリプト
-     * 物理学/微積分の連鎖関係 (Chain of Derivatives) に基づく。
-     * 個別アップグレードの転生（Prestige）要素を追加。
+     * Increase (購入分) と Accumulated (蓄積分) の分離
+     * Tap (dx) アップグレードの追加
      */
 
-    // --- ゲームデータ定義と設定 ---
     const game = {
         x: 0,
-        dx: 0.1, // クリックあたりの初期増加量
         lastTime: performance.now(),
-        levelToRebirth: 100, // 転生に必要なレベル
-        rebirthBonusPerCount: 0.02, // 転生1回あたりのボーナス倍率（2%）
+        levelToRebirth: 100,
+        rebirthBonusPerCount: 0.02, // 転生1回につき +2%
 
-        // 各微係数アップグレードの定義。ここで効果量やコスト倍率を調整可能。
+        // タップ強化 (dx)
+        tap: {
+            id: 'tap', name: "Manual Differential", symbol: "dx", target: "x",
+            baseCost: 10, costMult: 1.50, baseRatePerLevel: 0.1, baseValue: 0.1, // 初期タップ値は0.1
+            purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, 
+            increase: 0, total: 0.1 // tapは蓄積がないため、total = baseValue + increase
+        },
+
+        // 自動増加変数 (dx1 ~ dx6)
         derivatives: [
-            { 
-                id: 1, name: "Velocity", symbol: "x₁", effect: "dx/dt",
-                baseCost: 10, costMult: 1.15, baseRatePerLevel: 1.0, // <-- これを買うと、dx/dtがこれだけ増える
-                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
-            },
-            { 
-                id: 2, name: "Acceleration", symbol: "x₂", effect: "dx₁/dt",
-                baseCost: 150, costMult: 1.20, baseRatePerLevel: 0.5,
-                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
-            },
-            { 
-                id: 3, name: "Jerk", symbol: "x₃", effect: "dx₂/dt",
-                baseCost: 2000, costMult: 1.25, baseRatePerLevel: 0.25,
-                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
-            },
-            { 
-                id: 4, name: "Snap", symbol: "x₄", effect: "dx₃/dt",
-                baseCost: 30000, costMult: 1.30, baseRatePerLevel: 0.1,
-                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
-            },
-            { 
-                id: 5, name: "Crackle", symbol: "x₅", effect: "dx₄/dt",
-                baseCost: 500000, costMult: 1.40, baseRatePerLevel: 0.05,
-                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
-            },
-            { 
-                id: 6, name: "Pop", symbol: "x₆", effect: "dx₅/dt",
-                baseCost: 1e7, costMult: 1.50, baseRatePerLevel: 0.01,
-                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
-            }
+            { id: 1, name: "Velocity", symbol: "dx₁", target: "x", baseCost: 50, costMult: 1.15, baseRatePerLevel: 1.0, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 2, name: "Acceleration", symbol: "dx₂", target: "dx₁", baseCost: 500, costMult: 1.20, baseRatePerLevel: 0.5, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 3, name: "Jerk", symbol: "dx₃", target: "dx₂", baseCost: 5000, costMult: 1.25, baseRatePerLevel: 0.25, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 4, name: "Snap", symbol: "dx₄", target: "dx₃", baseCost: 75000, costMult: 1.30, baseRatePerLevel: 0.1, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 5, name: "Crackle", symbol: "dx₅", target: "dx₄", baseCost: 1000000, costMult: 1.40, baseRatePerLevel: 0.05, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 },
+            { id: 6, name: "Pop", symbol: "dx₆", target: "dx₅", baseCost: 25000000, costMult: 1.50, baseRatePerLevel: 0.01, purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, increase: 0, accumulated: 0, total: 0 }
         ]
     };
 
-    // DOM要素のキャッシュ
     const ui = {
         x: document.getElementById('display-x'),
         dxdt: document.getElementById('display-dx-dt'),
+        tapVal: document.getElementById('display-tap-val'),
         upgrades: document.getElementById('upgrades'),
-        buttons: [] // 動的に追加される購入・転生ボタンのオブジェクト
+        elements: {} // 動的生成要素のキャッシュ
     };
 
-    // --- 数値フォーマット関数 ---
-    // 巨大な数値を指数表記（例: 1.23e10）に変換。描画負荷軽減のためシンプルな文字列操作。
     function format(num) {
         if (num < 1000) return num.toFixed(2);
         if (num < 1e6) return Math.floor(num).toLocaleString('en-US');
         return num.toExponential(2).replace('+', '');
     }
 
-    // --- アップグレードごとの net rate（最終的な毎秒の増加量）を計算 ---
-    // 計算式: (1レベルあたりの効果 * 購入回数) * 転生ボーナス
-    // 例: (1.0 * 10) * 1.02 = 10.2
-    function calculateNetRate(derivative) {
-        return (derivative.baseRatePerLevel * derivative.purchased) * derivative.rebirthBonus;
+    function calculateValues(item, isTap = false) {
+        // 購入による純粋な増加分
+        item.increase = (item.purchased * item.baseRatePerLevel) * item.rebirthBonus;
+        // 実際の合計値 (Tapの場合は初期値を足す、Derivativesの場合は上位からの蓄積を足す)
+        if (isTap) {
+            item.total = item.baseValue + item.increase;
+        } else {
+            item.total = item.increase + item.accumulated;
+        }
     }
 
-    // --- UIの初期化 ---
+    function getCost(item) {
+        return item.baseCost * Math.pow(item.costMult, item.purchased);
+    }
+
+    function createCard(item, isTap) {
+        const card = document.createElement('div');
+        card.className = 'upgrade-card';
+        const cost = getCost(item);
+        
+        let statsHTML = `
+            <div class="stat-total">
+                <i class="math-text">${item.symbol}</i> : <span id="total-${item.id}">0.00</span> ${isTap ? '/tap' : '/s'}
+            </div>
+            <div class="stat-detail">├ Increase: <span id="inc-${item.id}">0.00</span></div>
+        `;
+        
+        if (!isTap) {
+            statsHTML += `<div class="stat-detail">└ Accumulated: <span id="acc-${item.id}">0.00</span></div>`;
+        }
+        
+        statsHTML += `<div class="stat-bonus">Bonus: x<span id="bonus-${item.id}">1.00</span> (Rebirths: <span id="count-${item.id}">0</span>)</div>`;
+
+        card.innerHTML = `
+            <div>
+                <div class="upgrade-header">
+                    <span class="upgrade-name"><i class="math-text">${item.symbol}</i> : ${item.name}</span>
+                    <span class="upgrade-level" id="lv-${item.id}">Lv. 0</span>
+                </div>
+                <div class="upgrade-stats">
+                    ${statsHTML}
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="buy-btn" id="btn-${item.id}">
+                    Cost: <span id="cost-${item.id}">${format(cost)}</span> <i class="math-text">x</i>
+                </button>
+                <button class="rebirth-btn" id="rbtn-${item.id}" disabled>
+                    Rebirth (Lv.${game.levelToRebirth})
+                </button>
+            </div>
+        `;
+        ui.upgrades.appendChild(card);
+
+        // キャッシュ
+        ui.elements[item.id] = {
+            itemRef: item,
+            isTap: isTap,
+            btn: document.getElementById(`btn-${item.id}`),
+            rbtn: document.getElementById(`rbtn-${item.id}`),
+            cost: document.getElementById(`cost-${item.id}`),
+            lv: document.getElementById(`lv-${item.id}`),
+            total: document.getElementById(`total-${item.id}`),
+            inc: document.getElementById(`inc-${item.id}`),
+            acc: document.getElementById(`acc-${item.id}`), // Tap時はnull
+            bonus: document.getElementById(`bonus-${item.id}`),
+            count: document.getElementById(`count-${item.id}`)
+        };
+
+        // イベントリスナー
+        ui.elements[item.id].btn.addEventListener('click', () => buyUpgrade(item.id));
+        ui.elements[item.id].rbtn.addEventListener('click', () => rebirthUpgrade(item.id));
+    }
+
     function initUI() {
-        game.derivatives.forEach((deriv, index) => {
-            const card = document.createElement('div');
-            card.className = 'upgrade-card';
-            
-            const cost = getCost(index);
-            
-            card.innerHTML = `
-                <div>
-                    <div class="upgrade-header">
-                        <span class="upgrade-name"><i class="math-text">${deriv.symbol}</i> : ${deriv.name}</span>
-                        <div class="upgrade-value">
-                            <span id="lv-${index}">Lv. 0</span>
-                            <br>
-                            <i class="math-text">${deriv.effect.split('/')[0]}</i>: <span id="rate-${index}">0.00</span> /s
-                        </div>
-                    </div>
-                    <div class="upgrade-desc">
-                        Increases <i class="math-text">${deriv.effect.split('/')[0]}</i> by 
-                        <i class="math-text">${deriv.baseRatePerLevel.toFixed(2)} * (1.00 + count * ${game.rebirthBonusPerCount.toFixed(2)})</i>.
-                        <br>
-                        Current bonus: <i class="math-text">x<span id="bonus-${index}">1.00</span></i> (Rebirths: <span id="count-${index}">0</span>).
-                    </div>
-                </div>
-                <div class="action-row">
-                    <button class="buy-btn" id="btn-${index}">
-                        Cost: <span id="cost-${index}">${format(cost)}</span> <i class="math-text">x</i>
-                    </button>
-                    <button class="rebirth-btn" id="rbtn-${index}" disabled>
-                        Rebirth (Lv.${game.levelToRebirth})
-                    </button>
-                </div>
-            `;
-            
-            ui.upgrades.appendChild(card);
-            
-            const btn = document.getElementById(`btn-${index}`);
-            const rbtn = document.getElementById(`rbtn-${index}`);
-            ui.buttons.push({
-                buyElement: btn,
-                rebirthElement: rbtn,
-                costElement: document.getElementById(`cost-${index}`),
-                lvElement: document.getElementById(`lv-${index}`),
-                rateElement: document.getElementById(`rate-${index}`),
-                bonusElement: document.getElementById(`bonus-${index}`),
-                countElement: document.getElementById(`count-${index}`)
-            });
+        createCard(game.tap, true);
+        game.derivatives.forEach(d => createCard(d, false));
 
-            // 購入イベント
-            btn.addEventListener('click', () => buyDerivative(index));
-            
-            // 転生イベント
-            rbtn.addEventListener('click', () => rebirthDerivative(index));
-        });
-
-        // クリックイベント
         document.getElementById('clicker').addEventListener('click', () => {
-            game.x += game.dx;
-            updateDisplay();
+            game.x += game.tap.total;
+            updateDisplay(false);
         });
+        
+        // 初期計算
+        calculateValues(game.tap, true);
+        game.derivatives.forEach(d => calculateValues(d, false));
+        updateDisplay(true);
     }
 
-    // --- ゲームロジック ---
-    function getCost(index) {
-        const d = game.derivatives[index];
-        // 転生回数に応じてベースコストも微増させるとバランスが良いかもしれないが、
-        // 今回はシンプルに購入回数のみで計算
-        return d.baseCost * Math.pow(d.costMult, d.purchased);
-    }
+    function buyUpgrade(id) {
+        const isTap = id === 'tap';
+        const item = isTap ? game.tap : game.derivatives.find(d => d.id === id);
+        const cost = getCost(item);
 
-    function buyDerivative(index) {
-        const cost = getCost(index);
         if (game.x >= cost) {
             game.x -= cost;
-            const d = game.derivatives[index];
-            d.purchased += 1;
-            // net rate を再計算して保存
-            d.rate = calculateNetRate(d);
-            
-            // UIの即時更新
-            const nextCost = getCost(index);
-            ui.buttons[index].costElement.textContent = format(nextCost);
-            updateDisplay(true); // 強制更新
+            item.purchased += 1;
+            calculateValues(item, isTap);
+            updateDisplay(true);
         }
     }
 
-    // 個別転生ロジック
-    function rebirthDerivative(index) {
-        const d = game.derivatives[index];
-        // レベル100以上で転生可能
-        if (d.purchased >= game.levelToRebirth) {
-            d.rebirthCount += 1;
-            // 新しい転生ボーナスを計算
-            d.rebirthBonus = 1.0 + (d.rebirthCount * game.rebirthBonusPerCount);
-            // レベルを0にリセット
-            d.purchased = 0;
-            // net rate を再計算 (レベル0になるので0になる)
-            d.rate = calculateNetRate(d);
+    function rebirthUpgrade(id) {
+        const isTap = id === 'tap';
+        const item = isTap ? game.tap : game.derivatives.find(d => d.id === id);
+
+        if (item.purchased >= game.levelToRebirth) {
+            item.purchased = 0;
+            item.rebirthCount += 1;
+            item.rebirthBonus = 1.0 + (item.rebirthCount * game.rebirthBonusPerCount);
             
-            // UIの即時更新 (コストをリセットするために format してセット)
-            const resetCost = getCost(index);
-            ui.buttons[index].costElement.textContent = format(resetCost);
-            updateDisplay(true); // 強制更新
+            if (!isTap) {
+                // 転生したら他変数からの蓄積分もリセット（真の再誕）
+                item.accumulated = 0;
+            }
+            
+            calculateValues(item, isTap);
+            updateDisplay(true);
         }
     }
 
-    // --- メインループ ---
-    function updateDisplay(force = false) {
-        // メイン変数の表示
+    function updateDisplay(forceFullUpdate = false) {
         ui.x.textContent = format(game.x);
-        // dx/dt は最初の微分量の rate を表示
-        ui.dxdt.textContent = format(game.derivatives[0].rate);
+        ui.dxdt.textContent = format(game.derivatives[0].total);
+        ui.tapVal.textContent = `+${format(game.tap.total)} / tap`;
 
-        // アップグレードの表示更新
-        game.derivatives.forEach((deriv, index) => {
-            const cost = getCost(index);
-            const btnObj = ui.buttons[index];
-            
-            // 値の表示更新 (force が true か、値が変わった時のみ)
-            if(force) {
-                btnObj.lvElement.textContent = `Lv. ${deriv.purchased}`;
-                btnObj.rateElement.textContent = format(deriv.rate);
-                btnObj.bonusElement.textContent = deriv.rebirthBonus.toFixed(2);
-                btnObj.countElement.textContent = deriv.rebirthCount;
-                btnObj.costElement.textContent = format(cost); // コストをセット
-            }
-            
-            // 購入ボタンの有効/無効状態の更新
-            if (game.x >= cost) {
-                if (btnObj.buyElement.disabled) btnObj.buyElement.disabled = false;
-            } else {
-                if (!btnObj.buyElement.disabled) btnObj.buyElement.disabled = true;
+        const allItems = [game.tap, ...game.derivatives];
+
+        allItems.forEach(item => {
+            const els = ui.elements[item.id];
+            const cost = getCost(item);
+
+            // 値が変動するものの更新
+            els.total.textContent = format(item.total);
+            if (!els.isTap) {
+                els.acc.textContent = format(item.accumulated);
             }
 
-            // 転生ボタンの有効/無効状態の更新 (レベル100以上)
-            if (deriv.purchased >= game.levelToRebirth) {
-                if (btnObj.rebirthElement.disabled) btnObj.rebirthElement.disabled = false;
-            } else {
-                if (!btnObj.rebirthElement.disabled) btnObj.rebirthElement.disabled = true;
+            // 購入や転生時のみ更新するUI要素
+            if (forceFullUpdate) {
+                els.lv.textContent = `Lv. ${item.purchased}`;
+                els.inc.textContent = format(item.increase);
+                els.cost.textContent = format(cost);
+                els.bonus.textContent = item.rebirthBonus.toFixed(2);
+                els.count.textContent = item.rebirthCount;
             }
+
+            // ボタン状態
+            els.btn.disabled = game.x < cost;
+            els.rbtn.disabled = item.purchased < game.levelToRebirth;
         });
     }
 
     function gameLoop(currentTime) {
-        const dt = (currentTime - game.lastTime) / 1000; // 秒単位のデルタタイム
+        const dt = (currentTime - game.lastTime) / 1000;
         game.lastTime = currentTime;
 
-        // 微積分の連鎖（高階微分から低階微分へ順番に適用）
-        // x_n の net rate が x_(n-1) の net rate を dt の割合で増加させる
-        // 転生でレベル0になった微分は rate が0になるため、この連鎖が止まる。
+        // 微積分の連鎖 (dx6 -> dx5 -> ... -> dx1)
+        // 上位のtotal値が、下位のaccumulated値に毎フレーム蓄積されていく
         for (let i = game.derivatives.length - 1; i >= 1; i--) {
-            game.derivatives[i - 1].rate += game.derivatives[i].rate * dt;
+            game.derivatives[i - 1].accumulated += game.derivatives[i].total * dt;
+            calculateValues(game.derivatives[i - 1], false);
         }
 
-        // 最後に x₁ の net rate が x を増加させる
-        if (game.derivatives[0].rate > 0) {
-            game.x += game.derivatives[0].rate * dt;
+        // 最後に dx1 (velocity) が x を増加させる
+        if (game.derivatives[0].total > 0) {
+            game.x += game.derivatives[0].total * dt;
         }
 
-        // 定期的な描画更新 (1/60秒ごと)
-        updateDisplay();
+        updateDisplay(false);
         requestAnimationFrame(gameLoop);
     }
 
-    // --- 起動 ---
     initUI();
-    // 初期値を表示に反映
-    updateDisplay(true);
     requestAnimationFrame(gameLoop);
 
 </script>
