@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Difference Engine: Prestige</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fdfdfd;
+            --text-color: #222;
+            --accent-blue: #2c5282;
+            --accent-red: #9b2c2c;
+            --border-color: #ddd;
+            --disabled-bg: #f0f0f0;
+            --disabled-text: #999;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'STIX Two Text', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.02);
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 1rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: normal;
+            letter-spacing: 0.1em;
+            margin: 0 0 0.5rem 0;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        .math-text {
+            font-style: italic;
+        }
+
+        .main-variable {
+            font-size: 3rem;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        .main-variable span {
+            color: var(--accent-blue);
+        }
+
+        .rate {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #clicker {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid var(--text-color);
+            color: var(--text-color);
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.05s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            outline: none;
+            /* 連打時のズーム防止 */
+            touch-action: manipulation;
+        }
+
+        #clicker:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        #clicker:active {
+            transform: scale(0.96);
+        }
+
+        #clicker .math-text {
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        #clicker span {
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        #upgrades {
+            height: 45%;
+            border-top: 1px solid var(--border-color);
+            overflow-y: auto;
+            background-color: #fafafa;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1rem;
+            align-content: start;
+        }
+
+        .upgrade-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: border-color 0.2s;
+        }
+
+        .upgrade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.3rem;
+            font-size: 1.1rem;
+        }
+
+        .upgrade-name {
+            font-weight: bold;
+        }
+
+        .upgrade-level {
+            font-size: 0.9rem;
+            color: #555;
+            margin-left: 0.5rem;
+        }
+
+        .upgrade-value {
+            color: var(--accent-blue);
+            font-size: 1rem;
+            text-align: right;
+        }
+
+        .upgrade-desc {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .buy-btn, .rebirth-btn {
+            background: transparent;
+            font-family: inherit;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            /* 連打時のズーム防止 */
+            touch-action: manipulation;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .buy-btn {
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .buy-btn:hover:not(:disabled) {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+
+        .rebirth-btn {
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .rebirth-btn:hover:not(:disabled) {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+        .buy-btn:disabled, .rebirth-btn:disabled {
+            border-color: var(--disabled-bg);
+            color: var(--disabled-text);
+            background: var(--disabled-bg);
+            cursor: not-allowed;
+        }
+
+        /* スクロールバーのスタイル */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fafafa;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ddd;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <h1>The Difference Engine: Prestige</h1>
+        <div class="main-variable">
+            <span class="math-text">x</span> = <span id="display-x">0.00</span>
+        </div>
+        <div class="rate">
+            <span class="math-text">dx/dt</span> = <span id="display-dx-dt">0.00</span> / s
+        </div>
+    </header>
+
+    <main>
+        <button id="clicker">
+            <div class="math-text">dx</div>
+            <span>Tap to Differentiate</span>
+        </button>
+    </main>
+
+    <section id="upgrades">
+        </section>
+</div>
+
+<script>
+    /**
+     * ゲームのコアロジックおよび描画スクリプト
+     * 物理学/微積分の連鎖関係 (Chain of Derivatives) に基づく。
+     * 個別アップグレードの転生（Prestige）要素を追加。
+     */
+
+    // --- ゲームデータ定義と設定 ---
+    const game = {
+        x: 0,
+        dx: 0.1, // クリックあたりの初期増加量
+        lastTime: performance.now(),
+        levelToRebirth: 100, // 転生に必要なレベル
+        rebirthBonusPerCount: 0.02, // 転生1回あたりのボーナス倍率（2%）
+
+        // 各微係数アップグレードの定義。ここで効果量やコスト倍率を調整可能。
+        derivatives: [
+            { 
+                id: 1, name: "Velocity", symbol: "x₁", effect: "dx/dt",
+                baseCost: 10, costMult: 1.15, baseRatePerLevel: 1.0, // <-- これを買うと、dx/dtがこれだけ増える
+                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
+            },
+            { 
+                id: 2, name: "Acceleration", symbol: "x₂", effect: "dx₁/dt",
+                baseCost: 150, costMult: 1.20, baseRatePerLevel: 0.5,
+                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
+            },
+            { 
+                id: 3, name: "Jerk", symbol: "x₃", effect: "dx₂/dt",
+                baseCost: 2000, costMult: 1.25, baseRatePerLevel: 0.25,
+                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
+            },
+            { 
+                id: 4, name: "Snap", symbol: "x₄", effect: "dx₃/dt",
+                baseCost: 30000, costMult: 1.30, baseRatePerLevel: 0.1,
+                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
+            },
+            { 
+                id: 5, name: "Crackle", symbol: "x₅", effect: "dx₄/dt",
+                baseCost: 500000, costMult: 1.40, baseRatePerLevel: 0.05,
+                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
+            },
+            { 
+                id: 6, name: "Pop", symbol: "x₆", effect: "dx₅/dt",
+                baseCost: 1e7, costMult: 1.50, baseRatePerLevel: 0.01,
+                purchased: 0, rebirthCount: 0, rebirthBonus: 1.0, rate: 0.0
+            }
+        ]
+    };
+
+    // DOM要素のキャッシュ
+    const ui = {
+        x: document.getElementById('display-x'),
+        dxdt: document.getElementById('display-dx-dt'),
+        upgrades: document.getElementById('upgrades'),
+        buttons: [] // 動的に追加される購入・転生ボタンのオブジェクト
+    };
+
+    // --- 数値フォーマット関数 ---
+    // 巨大な数値を指数表記（例: 1.23e10）に変換。描画負荷軽減のためシンプルな文字列操作。
+    function format(num) {
+        if (num < 1000) return num.toFixed(2);
+        if (num < 1e6) return Math.floor(num).toLocaleString('en-US');
+        return num.toExponential(2).replace('+', '');
+    }
+
+    // --- アップグレードごとの net rate（最終的な毎秒の増加量）を計算 ---
+    // 計算式: (1レベルあたりの効果 * 購入回数) * 転生ボーナス
+    // 例: (1.0 * 10) * 1.02 = 10.2
+    function calculateNetRate(derivative) {
+        return (derivative.baseRatePerLevel * derivative.purchased) * derivative.rebirthBonus;
+    }
+
+    // --- UIの初期化 ---
+    function initUI() {
+        game.derivatives.forEach((deriv, index) => {
+            const card = document.createElement('div');
+            card.className = 'upgrade-card';
+            
+            const cost = getCost(index);
+            
+            card.innerHTML = `
+                <div>
+                    <div class="upgrade-header">
+                        <span class="upgrade-name"><i class="math-text">${deriv.symbol}</i> : ${deriv.name}</span>
+                        <div class="upgrade-value">
+                            <span id="lv-${index}">Lv. 0</span>
+                            <br>
+                            <i class="math-text">${deriv.effect.split('/')[0]}</i>: <span id="rate-${index}">0.00</span> /s
+                        </div>
+                    </div>
+                    <div class="upgrade-desc">
+                        Increases <i class="math-text">${deriv.effect.split('/')[0]}</i> by 
+                        <i class="math-text">${deriv.baseRatePerLevel.toFixed(2)} * (1.00 + count * ${game.rebirthBonusPerCount.toFixed(2)})</i>.
+                        <br>
+                        Current bonus: <i class="math-text">x<span id="bonus-${index}">1.00</span></i> (Rebirths: <span id="count-${index}">0</span>).
+                    </div>
+                </div>
+                <div class="action-row">
+                    <button class="buy-btn" id="btn-${index}">
+                        Cost: <span id="cost-${index}">${format(cost)}</span> <i class="math-text">x</i>
+                    </button>
+                    <button class="rebirth-btn" id="rbtn-${index}" disabled>
+                        Rebirth (Lv.${game.levelToRebirth})
+                    </button>
+                </div>
+            `;
+            
+            ui.upgrades.appendChild(card);
+            
+            const btn = document.getElementById(`btn-${index}`);
+            const rbtn = document.getElementById(`rbtn-${index}`);
+            ui.buttons.push({
+                buyElement: btn,
+                rebirthElement: rbtn,
+                costElement: document.getElementById(`cost-${index}`),
+                lvElement: document.getElementById(`lv-${index}`),
+                rateElement: document.getElementById(`rate-${index}`),
+                bonusElement: document.getElementById(`bonus-${index}`),
+                countElement: document.getElementById(`count-${index}`)
+            });
+
+            // 購入イベント
+            btn.addEventListener('click', () => buyDerivative(index));
+            
+            // 転生イベント
+            rbtn.addEventListener('click', () => rebirthDerivative(index));
+        });
+
+        // クリックイベント
+        document.getElementById('clicker').addEventListener('click', () => {
+            game.x += game.dx;
+            updateDisplay();
+        });
+    }
+
+    // --- ゲームロジック ---
+    function getCost(index) {
+        const d = game.derivatives[index];
+        // 転生回数に応じてベースコストも微増させるとバランスが良いかもしれないが、
+        // 今回はシンプルに購入回数のみで計算
+        return d.baseCost * Math.pow(d.costMult, d.purchased);
+    }
+
+    function buyDerivative(index) {
+        const cost = getCost(index);
+        if (game.x >= cost) {
+            game.x -= cost;
+            const d = game.derivatives[index];
+            d.purchased += 1;
+            // net rate を再計算して保存
+            d.rate = calculateNetRate(d);
+            
+            // UIの即時更新
+            const nextCost = getCost(index);
+            ui.buttons[index].costElement.textContent = format(nextCost);
+            updateDisplay(true); // 強制更新
+        }
+    }
+
+    // 個別転生ロジック
+    function rebirthDerivative(index) {
+        const d = game.derivatives[index];
+        // レベル100以上で転生可能
+        if (d.purchased >= game.levelToRebirth) {
+            d.rebirthCount += 1;
+            // 新しい転生ボーナスを計算
+            d.rebirthBonus = 1.0 + (d.rebirthCount * game.rebirthBonusPerCount);
+            // レベルを0にリセット
+            d.purchased = 0;
+            // net rate を再計算 (レベル0になるので0になる)
+            d.rate = calculateNetRate(d);
+            
+            // UIの即時更新 (コストをリセットするために format してセット)
+            const resetCost = getCost(index);
+            ui.buttons[index].costElement.textContent = format(resetCost);
+            updateDisplay(true); // 強制更新
+        }
+    }
+
+    // --- メインループ ---
+    function updateDisplay(force = false) {
+        // メイン変数の表示
+        ui.x.textContent = format(game.x);
+        // dx/dt は最初の微分量の rate を表示
+        ui.dxdt.textContent = format(game.derivatives[0].rate);
+
+        // アップグレードの表示更新
+        game.derivatives.forEach((deriv, index) => {
+            const cost = getCost(index);
+            const btnObj = ui.buttons[index];
+            
+            // 値の表示更新 (force が true か、値が変わった時のみ)
+            if(force) {
+                btnObj.lvElement.textContent = `Lv. ${deriv.purchased}`;
+                btnObj.rateElement.textContent = format(deriv.rate);
+                btnObj.bonusElement.textContent = deriv.rebirthBonus.toFixed(2);
+                btnObj.countElement.textContent = deriv.rebirthCount;
+                btnObj.costElement.textContent = format(cost); // コストをセット
+            }
+            
+            // 購入ボタンの有効/無効状態の更新
+            if (game.x >= cost) {
+                if (btnObj.buyElement.disabled) btnObj.buyElement.disabled = false;
+            } else {
+                if (!btnObj.buyElement.disabled) btnObj.buyElement.disabled = true;
+            }
+
+            // 転生ボタンの有効/無効状態の更新 (レベル100以上)
+            if (deriv.purchased >= game.levelToRebirth) {
+                if (btnObj.rebirthElement.disabled) btnObj.rebirthElement.disabled = false;
+            } else {
+                if (!btnObj.rebirthElement.disabled) btnObj.rebirthElement.disabled = true;
+            }
+        });
+    }
+
+    function gameLoop(currentTime) {
+        const dt = (currentTime - game.lastTime) / 1000; // 秒単位のデルタタイム
+        game.lastTime = currentTime;
+
+        // 微積分の連鎖（高階微分から低階微分へ順番に適用）
+        // x_n の net rate が x_(n-1) の net rate を dt の割合で増加させる
+        // 転生でレベル0になった微分は rate が0になるため、この連鎖が止まる。
+        for (let i = game.derivatives.length - 1; i >= 1; i--) {
+            game.derivatives[i - 1].rate += game.derivatives[i].rate * dt;
+        }
+
+        // 最後に x₁ の net rate が x を増加させる
+        if (game.derivatives[0].rate > 0) {
+            game.x += game.derivatives[0].rate * dt;
+        }
+
+        // 定期的な描画更新 (1/60秒ごと)
+        updateDisplay();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // --- 起動 ---
+    initUI();
+    // 初期値を表示に反映
+    updateDisplay(true);
+    requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>
