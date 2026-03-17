@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exponentia - Mathematical Increment</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/break_infinity.js/2.0.0/break_infinity.min.js"></script>
+    <style>
+        :root {
+            --bg: #000;
+            --fg: #fff;
+            --accent: #fff;
+            --dim: #444;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'Times New Roman', Times, serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            padding: 20px;
+            box-sizing: border-box;
+            align-items: center;
+        }
+
+        /* --- Header: The Variable --- */
+        #header {
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        #main-display {
+            font-size: 3.5rem;
+            margin: 10px 0;
+            font-weight: 100;
+        }
+
+        #derivative-display {
+            font-size: 1.2rem;
+            color: #888;
+        }
+
+        /* --- Center: Visualization --- */
+        #canvas-container {
+            flex-grow: 1;
+            width: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* --- Footer: Controls --- */
+        #footer {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(0,0,0,0.8);
+            border-top: 1px solid var(--dim);
+            padding-top: 15px;
+            z-index: 10;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--dim);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+            padding: 5px 10px;
+            border-bottom: 1px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--fg);
+            border-bottom: 1px solid var(--fg);
+        }
+
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            height: 180px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .upgrade-card {
+            border: 1px solid var(--dim);
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .upgrade-card:hover {
+            border-color: var(--fg);
+            background: #111;
+        }
+
+        .upgrade-card:active {
+            transform: scale(0.97);
+        }
+
+        .upgrade-card.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .upgrade-name { font-size: 0.9rem; margin-bottom: 5px; }
+        .upgrade-cost { font-size: 0.8rem; color: #888; }
+        .upgrade-level { font-size: 0.7rem; text-align: right; margin-top: 5px; }
+
+        /* --- Singularity --- */
+        #singularity-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+        }
+
+        #singularity-btn {
+            display: none;
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0px rgba(255,255,255,0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0px rgba(255,255,255,0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            #main-display { font-size: 2.2rem; }
+            .upgrade-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="singularity-container">
+        <button id="singularity-btn" onclick="prestige()">SINGULARITY</button>
+    </div>
+
+    <header id="header">
+        <div id="main-display">x = 0</div>
+        <div id="derivative-display">dx/dt = 0</div>
+    </header>
+
+    <div id="canvas-container">
+        <canvas id="vizCanvas"></canvas>
+    </div>
+
+    <footer id="footer">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab(1)">Layer I (Addition)</button>
+            <button class="tab-btn" onclick="showTab(2)" id="tab2-btn" style="display:none">Layer II (Multiplication)</button>
+            <button class="tab-btn" onclick="showTab(3)" id="tab3-btn" style="display:none">Layer III (Power)</button>
+        </div>
+
+        <div id="layer1" class="upgrade-grid"></div>
+        <div id="layer2" class="upgrade-grid" style="display:none"></div>
+        <div id="layer3" class="upgrade-grid" style="display:none"></div>
+    </footer>
+</div>
+
+<script>
+    const D = (val) => new Decimal(val);
+
+    // --- Game State ---
+    let state = {
+        x: D(0),
+        singularityCount: D(0),
+        lastTick: Date.now(),
+        upgrades: {
+            l1_1: { level: D(0), baseCost: D(10), mult: D(1.5) }, // Incrementer
+            l1_2: { level: D(0), baseCost: D(100), mult: D(2.0) }, // Auto-Derivator
+            l2_1: { level: D(0), baseCost: D(1e6), mult: D(5.0) }, // Multiplier
+            l2_2: { level: D(0), baseCost: D(1e9), mult: D(10.0) }, // Efficiency
+            l3_1: { level: D(0), baseCost: D(1e15), mult: D(100.0) } // Power Base
+        }
+    };
+
+    // --- Initialization ---
+    const canvas = document.getElementById('vizCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        load();
+        createUpgrades();
+        requestAnimationFrame(loop);
+    }
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight * 0.4;
+    }
+
+    // --- Formatting Logic ---
+    function format(decimal) {
+        if (decimal.lt(1e6)) return decimal.toNumber().toLocaleString(undefined, {maximumFractionDigits: 2});
+        if (decimal.lt(D(10).pow(1000))) {
+            let e = decimal.exponent;
+            let m = decimal.mantissa.toFixed(2);
+            return `${m} \\times 10^{${e}}`;
+        }
+        // FGH / Tower style for massive numbers
+        let tower = Math.log10(decimal.log10());
+        return `10^{10^{${tower.toFixed(3)}}}`;
+    }
+
+    function updateDisplay() {
+        document.getElementById('main-display').innerHTML = `x = ${format(state.x)}`;
+        document.getElementById('derivative-display').innerHTML = `dx/dt = ${format(getDx())}`;
+        
+        // Tab unlocking
+        if (state.x.gt(1e5) || state.upgrades.l2_1.level.gt(0)) document.getElementById('tab2-btn').style.display = 'block';
+        if (state.x.gt(1e12) || state.upgrades.l3_1.level.gt(0)) document.getElementById('tab3-btn').style.display = 'block';
+        
+        // Singularity check (e308 threshold)
+        if (state.x.gt(Decimal.MAX_VALUE)) {
+            document.getElementById('singularity-btn').style.display = 'block';
+        }
+
+        // Update Buttons
+        for (let id in state.upgrades) {
+            const upg = state.upgrades[id];
+            const cost = getCost(id);
+            const el = document.getElementById(`btn-${id}`);
+            if (el) {
+                el.querySelector('.upgrade-cost').innerText = `Cost: ${format(cost)}`;
+                el.querySelector('.upgrade-level').innerText = `Level: ${upg.level.toString()}`;
+                el.classList.toggle('disabled', state.x.lt(cost));
+            }
+        }
+    }
+
+    // --- Math Core ---
+    function getDx() {
+        // dx = (Base + Incrementer * L1_1) * (1 + Multiplier * L2_1) * Efficiency
+        let base = state.upgrades.l1_1.level.mul(1).add(1);
+        let auto = state.upgrades.l1_2.level.mul(0.5);
+        let mult = state.upgrades.l2_1.level.mul(2).add(1);
+        let eff = state.upgrades.l2_2.level.mul(0.1).add(1);
+        
+        let dx = base.add(auto).mul(mult).mul(eff);
+        
+        // Layer 3: Exponentiation (adds a small power factor)
+        if (state.upgrades.l3_1.level.gt(0)) {
+            let pow = state.upgrades.l3_1.level.mul(0.01).add(1);
+            dx = dx.pow(pow);
+        }
+
+        // Singularity Bonus
+        dx = dx.mul(state.singularityCount.add(1).pow(2));
+        
+        return dx;
+    }
+
+    function getCost(id) {
+        const upg = state.upgrades[id];
+        return upg.baseCost.mul(upg.mult.pow(upg.level));
+    }
+
+    function buyUpgrade(id) {
+        const cost = getCost(id);
+        if (state.x.gte(cost)) {
+            state.x = state.x.sub(cost);
+            state.upgrades[id].level = state.upgrades[id].level.add(1);
+            updateDisplay();
+        }
+    }
+
+    // --- UI Helpers ---
+    function createUpgrades() {
+        const layers = {
+            l1: ['l1_1', 'l1_2'],
+            l2: ['l2_1', 'l2_2'],
+            l3: ['l3_1']
+        };
+        const names = {
+            l1_1: 'Incrementer (Δd)', l1_2: 'Auto-Derivator',
+            l2_1: 'Multiplier (r)', l2_2: 'Efficiency Booster',
+            l3_1: 'Power Base Refiner'
+        };
+
+        for (let l in layers) {
+            const container = document.getElementById(`layer${l.slice(1)}`);
+            layers[l].forEach(id => {
+                const div = document.createElement('div');
+                div.className = 'upgrade-card';
+                div.id = `btn-${id}`;
+                div.onclick = () => buyUpgrade(id);
+                div.innerHTML = `
+                    <div class="upgrade-name">${names[id]}</div>
+                    <div class="upgrade-cost">Cost: -</div>
+                    <div class="upgrade-level">Level: 0</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+    }
+
+    function showTab(n) {
+        for(let i=1; i<=3; i++) {
+            document.getElementById(`layer${i}`).style.display = (i === n) ? 'grid' : 'none';
+            document.querySelectorAll('.tab-btn')[i-1].classList.toggle('active', i === n);
+        }
+    }
+
+    // --- Visualizer ---
+    let particles = [];
+    function draw() {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.fillRect(0, 0, width, height);
+        
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        // 数値の大きさに応じてパーティクル数を調整
+        let targetCount = Math.min(state.x.log10() * 5 + 10, 500);
+        while(particles.length < targetCount) {
+            particles.push({
+                angle: Math.random() * Math.PI * 2,
+                dist: Math.random() * 200 + 50,
+                speed: Math.random() * 0.02 + 0.005
+            });
+        }
+
+        ctx.strokeStyle = '#fff';
+        ctx.beginPath();
+        particles.forEach(p => {
+            p.angle += p.speed * (state.x.add(1).log10() / 10 + 1);
+            let x = centerX + Math.cos(p.angle) * p.dist;
+            let y = centerY + Math.sin(p.angle * 1.5) * p.dist;
+            ctx.lineTo(x, y);
+            ctx.arc(x, y, 1, 0, Math.PI * 2);
+        });
+        ctx.stroke();
+    }
+
+    // --- Main Loop ---
+    function loop() {
+        const now = Date.now();
+        const dt = (now - state.lastTick) / 1000;
+        state.lastTick = now;
+
+        let dx = getDx();
+        state.x = state.x.add(dx.mul(dt));
+
+        draw();
+        updateDisplay();
+        
+        if (Math.random() < 0.01) save(); // 稀にセーブ
+        requestAnimationFrame(loop);
+    }
+
+    // --- Prestige & Save ---
+    function prestige() {
+        if (!confirm("Singularity（次元収束）を実行しますか？ 現在の x は失われますが、永続的な倍率を得ます。")) return;
+        state.singularityCount = state.singularityCount.add(1);
+        state.x = D(0);
+        for (let id in state.upgrades) state.upgrades[id].level = D(0);
+        document.getElementById('singularity-btn').style.display = 'none';
+        save();
+    }
+
+    function save() {
+        localStorage.setItem('exponentia_save', JSON.stringify({
+            x: state.x.toString(),
+            sc: state.singularityCount.toString(),
+            upg: Object.keys(state.upgrades).reduce((acc, id) => {
+                acc[id] = state.upgrades[id].level.toString();
+                return acc;
+            }, {})
+        }));
+    }
+
+    function load() {
+        const raw = localStorage.getItem('exponentia_save');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        state.x = D(data.x);
+        state.singularityCount = D(data.sc);
+        for (let id in data.upg) {
+            if (state.upgrades[id]) state.upgrades[id].level = D(data.upg[id]);
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
