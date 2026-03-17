@@ -3,162 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Exponentia - Fixed Edition</title>
+    <title>Exponentia - Absolute Logic</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/break_infinity.js/2.0.0/break_infinity.min.js"></script>
     <style>
-        :root {
-            --bg: #000;
-            --fg: #fff;
-            --dim: #333;
-            --accent: #fff;
-        }
-
+        :root { --bg: #000; --fg: #fff; --dim: #333; }
         body, html {
-            margin: 0; padding: 0;
-            background-color: var(--bg);
-            color: var(--fg);
-            font-family: 'Times New Roman', serif;
-            overflow: hidden;
-            user-select: none;
-            height: 100%;
+            margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+            font-family: 'Times New Roman', serif; overflow: hidden; height: 100%;
+            user-select: none; touch-action: manipulation;
         }
+        #app { display: flex; flex-direction: column; height: 100vh; }
 
-        /* ゲーム画面全体をレイアウト */
-        #app {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        /* --- クリック可能エリア (画面上半分) --- */
+        /* メインクリックエリア */
         #click-zone {
-            flex: 1; /* 画面の大部分を占める */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            z-index: 10;
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            cursor: pointer; position: relative; z-index: 10;
         }
+        #main-display { font-size: clamp(2.5rem, 10vw, 5rem); transition: transform 0.05s; }
+        #click-zone:active #main-display { transform: scale(1.05); }
+        #derivative-display { font-size: 1.2rem; color: #666; margin-top: 10px; }
 
-        #main-display {
-            font-size: clamp(2.5rem, 10vw, 5rem);
-            font-weight: 100;
-            transition: transform 0.05s;
-        }
-
-        #click-zone:active #main-display {
-            transform: scale(1.05); /* クリック時に少し大きく */
-        }
-
-        #derivative-display {
-            font-size: 1.2rem;
-            color: #666;
-            margin-top: 10px;
-        }
-
-        /* クリック時の数字エフェクト */
+        /* パーティクル */
         .click-particle {
-            position: absolute;
-            color: #fff;
-            font-family: monospace;
-            pointer-events: none;
-            animation: floatUp 0.8s ease-out forwards;
-            z-index: 100;
+            position: absolute; color: #fff; pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards; z-index: 100;
         }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-100px); opacity: 0; }
-        }
-
-        /* --- キャンバス背景 --- */
-        #canvas-container {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 60%;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* --- 下部メニュー --- */
-        #footer {
-            height: 40vh;
-            border-top: 1px solid var(--dim);
-            background: rgba(0,0,0,0.95);
-            z-index: 20;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tabs {
-            display: flex;
-            justify-content: center;
-            border-bottom: 1px solid var(--dim);
-        }
-
-        .tab-btn {
-            background: none; border: none; color: #555;
-            padding: 15px; cursor: pointer; font-size: 0.8rem;
-        }
-
+        /* 下部メニュー */
+        #footer { height: 45vh; border-top: 1px solid var(--dim); background: #000; z-index: 20; display: flex; flex-direction: column; }
+        .tabs { display: flex; justify-content: center; border-bottom: 1px solid var(--dim); }
+        .tab-btn { background: none; border: none; color: #555; padding: 15px; cursor: pointer; }
         .tab-btn.active { color: #fff; border-bottom: 2px solid #fff; }
 
-        .upgrade-grid {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            overflow-y: auto;
-            gap: 1px;
-            background: var(--dim);
-        }
-
-        .upgrade-card {
-            background: var(--bg);
-            padding: 15px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
+        .upgrade-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); overflow-y: auto; gap: 1px; background: var(--dim); }
+        .upgrade-card { background: #000; padding: 15px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
         .upgrade-card:hover:not(.disabled) { background: #111; }
         .upgrade-card.disabled { opacity: 0.2; cursor: not-allowed; }
 
-        .upg-name { font-size: 0.9rem; margin-bottom: 5px; }
-        .upg-cost { font-size: 0.8rem; font-family: monospace; color: #aaa; }
+        .upg-cost { font-size: 0.8rem; color: #aaa; font-family: monospace; }
         .upg-level { font-size: 0.7rem; color: #444; text-align: right; }
 
-        /* 特殊ボタン: Singularity */
         #singularity-btn {
-            position: fixed; top: 10px; right: 10px;
-            background: #fff; color: #000; border: none;
-            padding: 10px 20px; font-weight: bold; cursor: pointer;
-            display: none; z-index: 1000;
+            position: fixed; top: 10px; right: 10px; background: #fff; color: #000;
+            border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; display: none; z-index: 1000;
+        }
+        
+        #reset-btn {
+            position: fixed; top: 10px; left: 10px; background: #200; color: #600;
+            border: none; font-size: 10px; cursor: pointer; z-index: 1000;
         }
     </style>
 </head>
 <body>
 
 <div id="app">
+    <button id="reset-btn" onclick="hardReset()">HARD RESET</button>
     <button id="singularity-btn" onclick="prestige()">SINGULARITY</button>
 
     <div id="click-zone" onmousedown="handleManualClick(event)" ontouchstart="handleManualClick(event)">
         <div id="main-display">x = 0</div>
         <div id="derivative-display">dx/dt = 0</div>
-        <div style="font-size: 0.7rem; color: #333; margin-top: 10px;">TAP TO CALCULATE</div>
-        
-        <div id="canvas-container">
-            <canvas id="vizCanvas"></canvas>
-        </div>
+        <div style="font-size: 0.8rem; color: #444; margin-top: 15px; letter-spacing: 2px;">CLICK TO GENERATE</div>
     </div>
 
     <footer id="footer">
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab(1)">Layer I</button>
-            <button class="tab-btn" id="tab2-btn" style="display:none" onclick="showTab(2)">Layer II</button>
-            <button class="tab-btn" id="tab3-btn" style="display:none" onclick="showTab(3)">Layer III</button>
+            <button class="tab-btn active" onclick="showTab(1)">LAYER I</button>
+            <button class="tab-btn" id="tab2-btn" style="display:none" onclick="showTab(2)">LAYER II</button>
+            <button class="tab-btn" id="tab3-btn" style="display:none" onclick="showTab(3)">LAYER III</button>
         </div>
         <div id="layer1" class="upgrade-grid"></div>
         <div id="layer2" class="upgrade-grid" style="display:none"></div>
@@ -169,107 +84,132 @@
 <script>
     /**
      * ============================================================
-     * BALANCING_CONFIG: パラメータ調整エリア
+     * BALANCE SETTINGS - ここで全ての数値を調整できます
      * ============================================================
      */
     const CONFIG = {
-        baseClickValue: 1.0,        // 初期状態の1クリックの増加量
-
-        // Layer 1 (加算系)
+        initialX: 0,                // 開始時のx
+        baseClickPower: 1,          // 初期状態の1クリックで増える量
+        
+        // --- Layer 1 (加算) ---
         l1_1: {
-            name: "Incrementer (Δx)",
-            desc: "クリックと基本速度を底上げ",
-            baseCost: 10,           // 最初のコスト (少し下げました)
-            costMult: 1.15,         // コスト上昇率
-            power: 1                // 1レベルあたりの増加量
+            name: "Incrementer",
+            desc: "クリック力と基本秒間増加を強化",
+            baseCost: 10,           // 初期コスト
+            costMult: 1.15,         // 購入毎のコスト倍率
+            power: 1                // 1Lvごとのクリック増加量
         },
         l1_2: {
             name: "Auto-Derivator",
-            desc: "自動的にxを増やす",
+            desc: "自動的にxを増やす装置",
             baseCost: 100,
             costMult: 1.2,
+            power: 2                // 1Lvごとの秒間増加量
+        },
+
+        // --- Layer 2 (乗算) ---
+        l2_1: {
+            name: "Efficiency Boost",
+            desc: "全出力を2倍にする",
+            baseCost: 5000,
+            costMult: 3,
             power: 2
         },
-        // Layer 2 (乗算系)
-        l2_1: {
-            name: "Multiplier (r)",
-            desc: "全出力を乗算で強化",
-            baseCost: 10000,
-            costMult: 2.5,
-            power: 2.0              // 1レベルごとに2倍
-        },
-        // Layer 3 (指数系)
-        l3_1: {
-            name: "Power Surge",
-            desc: "指数関数的な成長を付与",
-            baseCost: 1e15,
-            costMult: 10,
-            power: 0.02             // 指数への加算値
+
+        // --- 解放条件 ---
+        unlocks: {
+            layer2: 1000,           // Layer2解放に必要なx
+            layer3: 1e9             // Layer3解放に必要なx
         }
     };
 
+    // 数値ライブラリのエイリアス
     const D = (val) => new Decimal(val);
 
+    // --- ゲーム状態 ---
     let state = {
-        x: D(0),
-        singularityCount: D(0),
-        lastTick: Date.now(),
+        x: D(CONFIG.initialX),
+        singularity: D(0),
         upgrades: {
-            l1_1: D(0), l1_2: D(0), l2_1: D(0), l3_1: D(0)
-        }
+            l1_1: D(0),
+            l1_2: D(0),
+            l2_1: D(0)
+        },
+        lastTick: Date.now()
     };
 
-    // --- 計算コア ---
-    function getDx() {
-        // 自動増加分のみを計算 (dx/dt)
-        let base = D(state.upgrades.l1_2).mul(CONFIG.l1_2.power);
-        
-        // Layer 1_1 も微量ながら自動増加に寄与させる
-        base = base.add(D(state.upgrades.l1_1).mul(0.1));
-
-        // 乗算
-        let mult = D(CONFIG.l2_1.power).pow(state.upgrades.l2_1);
-        let res = base.mul(mult);
-
-        // 指数
-        if (state.upgrades.l3_1.gt(0)) {
-            let exp = D(1).add(D(state.upgrades.l3_1).mul(CONFIG.l3_1.power));
-            res = res.pow(exp);
-        }
-
-        // Singularityボーナス
-        res = res.mul(D(2).pow(state.singularityCount));
-
-        return res;
-    }
-
+    // --- 数式コア ---
     function getClickValue() {
-        // クリック威力 = (初期値 + Incrementer威力) * 倍率
-        let val = D(CONFIG.baseClickValue).add(D(state.upgrades.l1_1).mul(CONFIG.l1_1.power));
+        // (基本値 + Lv1_1の加算) * Lv2_1の倍率
+        let val = D(CONFIG.baseClickPower).add(state.upgrades.l1_1.mul(CONFIG.l1_1.power));
         let mult = D(CONFIG.l2_1.power).pow(state.upgrades.l2_1);
-        return val.mul(mult);
+        return val.mul(mult).mul(D(2).pow(state.singularity));
     }
 
-    function getUpgradeCost(id) {
+    function getAutoValue() {
+        // (Lv1_2の自動増加) * Lv2_1の倍率
+        let val = state.upgrades.l1_2.mul(CONFIG.l1_2.power);
+        let mult = D(CONFIG.l2_1.power).pow(state.upgrades.l2_1);
+        return val.mul(mult).mul(D(2).pow(state.singularity));
+    }
+
+    function getCost(id) {
         const conf = CONFIG[id];
         return D(conf.baseCost).mul(D(conf.costMult).pow(state.upgrades[id]));
     }
 
     // --- インタラクション ---
     function handleManualClick(e) {
-        if (e.type === 'touchstart') e.preventDefault();
+        if (e.type === 'touchstart') e.preventDefault(); // 重複防止
         
-        const val = getClickValue();
-        state.x = state.x.add(val);
+        const plus = getClickValue();
+        state.x = state.x.add(plus); // 数値を加算
         
-        // 視覚エフェクト
-        const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-        const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-        spawnParticle(x, y, `+${format(val)}`);
+        // 物理的な位置を取得
+        const rect = document.getElementById('click-zone').getBoundingClientRect();
+        const x = e.clientX || (e.touches ? e.touches[0].clientX : rect.width / 2);
+        const y = e.clientY || (e.touches ? e.touches[0].clientY : rect.height / 2);
         
-        updateDisplay();
+        spawnParticle(x, y, `+${format(plus)}`);
+        updateDisplay(); // 即座に反映
     }
 
+    function buyUpgrade(id) {
+        const cost = getCost(id);
+        if (state.x.gte(cost)) {
+            state.x = state.x.sub(cost);
+            state.upgrades[id] = state.upgrades[id].add(1);
+            updateDisplay();
+        }
+    }
+
+    // --- 表示 ---
+    function format(decimal) {
+        if (!decimal || decimal.isNaN()) return "0";
+        if (decimal.lt(1e6)) return decimal.toNumber().toLocaleString(undefined, {maximumFractionDigits: 1});
+        if (decimal.lt(D(10).pow(1000))) return `${decimal.mantissa.toFixed(2)}e${decimal.exponent}`;
+        return `10^{10^{${Math.log10(decimal.log10()).toFixed(3)}}}`;
+    }
+
+    function updateDisplay() {
+        document.getElementById('main-display').innerText = `x = ${format(state.x)}`;
+        document.getElementById('derivative-display').innerText = `dx/dt = ${format(getAutoValue())}`;
+
+        // タブ解放
+        if (state.x.gt(CONFIG.unlocks.layer2) || state.upgrades.l2_1.gt(0)) document.getElementById('tab2-btn').style.display = 'block';
+
+        // アップグレードボタン
+        for (let id in state.upgrades) {
+            const btn = document.getElementById(`btn-${id}`);
+            if (!btn) continue;
+            const cost = getCost(id);
+            btn.querySelector('.upg-cost').innerText = `Cost: ${format(cost)}`;
+            btn.querySelector('.upg-level').innerText = `Lv. ${state.upgrades[id].toString()}`;
+            btn.classList.toggle('disabled', state.x.lt(cost));
+        }
+    }
+
+    // --- システム ---
     function spawnParticle(x, y, text) {
         const p = document.createElement('div');
         p.className = 'click-particle';
@@ -280,98 +220,17 @@
         setTimeout(() => p.remove(), 800);
     }
 
-    function buyUpgrade(id) {
-        const cost = getUpgradeCost(id);
-        if (state.x.gte(cost)) {
-            state.x = state.x.sub(cost);
-            state.upgrades[id] = state.upgrades[id].add(1);
-            updateDisplay();
-        }
-    }
-
-    // --- 表示更新 ---
-    function format(decimal) {
-        if (decimal.lt(1e6)) return decimal.toNumber().toLocaleString(undefined, {maximumFractionDigits: 1});
-        if (decimal.lt(D(10).pow(1000))) {
-            return `${decimal.mantissa.toFixed(2)}e${decimal.exponent}`;
-        }
-        return `10^{10^{${Math.log10(decimal.log10()).toFixed(3)}}}`;
-    }
-
-    function updateDisplay() {
-        document.getElementById('main-display').innerText = `x = ${format(state.x)}`;
-        document.getElementById('derivative-display').innerText = `dx/dt = ${format(getDx())}`;
-
-        // 解放演出
-        if (state.x.gt(1000) || state.upgrades.l2_1.gt(0)) document.getElementById('tab2-btn').style.display = 'block';
-        if (state.x.gt(1e12) || state.upgrades.l3_1.gt(0)) document.getElementById('tab3-btn').style.display = 'block';
-        if (state.x.gt(Decimal.MAX_VALUE)) document.getElementById('singularity-btn').style.display = 'block';
-
-        // アップグレードボタンの状態更新
-        for (let id in state.upgrades) {
-            const btn = document.getElementById(`btn-${id}`);
-            if (!btn) continue;
-            const cost = getUpgradeCost(id);
-            btn.querySelector('.upg-cost').innerText = `Cost: ${format(cost)}`;
-            btn.querySelector('.upg-level').innerText = `Lv. ${state.upgrades[id].toString()}`;
-            btn.classList.toggle('disabled', state.x.lt(cost));
-        }
-    }
-
-    function createUpgradeUI() {
-        const mapping = { layer1: ['l1_1', 'l1_2'], layer2: ['l2_1'], layer3: ['l3_1'] };
-        for (let layer in mapping) {
-            const container = document.getElementById(layer);
-            mapping[layer].forEach(id => {
-                const conf = CONFIG[id];
-                const div = document.createElement('div');
-                div.className = 'upgrade-card';
-                div.id = `btn-${id}`;
-                div.onclick = (e) => { e.stopPropagation(); buyUpgrade(id); };
-                div.innerHTML = `
-                    <div>
-                        <div class="upg-name">${conf.name}</div>
-                        <div style="font-size:0.7rem; color:#555">${conf.desc}</div>
-                    </div>
-                    <div>
-                        <div class="upg-cost">Cost: -</div>
-                        <div class="upg-level">Lv. 0</div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-    }
-
-    // --- システムループ ---
-    const canvas = document.getElementById('vizCanvas');
-    const ctx = canvas.getContext('2d');
-    function gameLoop() {
+    function loop() {
         const now = Date.now();
         const dt = (now - state.lastTick) / 1000;
         state.lastTick = now;
 
         if (dt > 0) {
-            state.x = state.x.add(getDx().mul(dt));
+            state.x = state.x.add(getAutoValue().mul(dt));
         }
 
-        drawVisuals();
         updateDisplay();
-        requestAnimationFrame(gameLoop);
-    }
-
-    function drawVisuals() {
-        ctx.fillStyle = 'rgba(0,0,0,0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#222';
-        ctx.beginPath();
-        const centerY = canvas.height / 2;
-        const speed = state.x.add(1).log10();
-        for(let i=0; i<canvas.width; i+=20) {
-            const offset = Math.sin(Date.now()*0.002 + i*0.01) * speed;
-            ctx.lineTo(i, centerY + offset);
-        }
-        ctx.stroke();
+        requestAnimationFrame(loop);
     }
 
     function showTab(n) {
@@ -381,11 +240,57 @@
         });
     }
 
+    function hardReset() {
+        if (confirm("データを全て削除してリセットしますか？")) {
+            localStorage.removeItem('exponentia_final');
+            location.reload();
+        }
+    }
+
+    function save() {
+        const data = {
+            x: state.x.toString(),
+            s: state.singularity.toString(),
+            u: {}
+        };
+        for (let id in state.upgrades) data.u[id] = state.upgrades[id].toString();
+        localStorage.setItem('exponentia_final', JSON.stringify(data));
+    }
+
+    function load() {
+        const raw = localStorage.getItem('exponentia_final');
+        if (!raw) return;
+        try {
+            const data = JSON.parse(raw);
+            state.x = D(data.x);
+            state.singularity = D(data.s || 0);
+            for (let id in data.u) state.upgrades[id] = D(data.u[id]);
+            // 万が一NaNがロードされたらリセット
+            if (state.x.isNaN()) state.x = D(0);
+        } catch(e) { console.error("Load Error", e); }
+    }
+
     window.onload = () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight * 0.6;
-        createUpgradeUI();
-        gameLoop();
+        load();
+        // UI生成
+        const structure = { layer1: ['l1_1', 'l1_2'], layer2: ['l2_1'] };
+        for (let l in structure) {
+            const container = document.getElementById(l);
+            structure[l].forEach(id => {
+                const conf = CONFIG[id];
+                const div = document.createElement('div');
+                div.className = 'upgrade-card';
+                div.id = `btn-${id}`;
+                div.onclick = (e) => { e.stopPropagation(); buyUpgrade(id); };
+                div.innerHTML = `
+                    <div><div style="font-size:1rem;">${conf.name}</div><div style="font-size:0.7rem;color:#444;">${conf.desc}</div></div>
+                    <div><div class="upg-cost"></div><div class="upg-level"></div></div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        loop();
+        setInterval(save, 5000);
     };
 </script>
 </body>
