@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Interference Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            color: #00FF00; /* ターミナル風の高コントラスト */
+            font-family: 'Courier New', Consolas, monospace;
+        }
+        
+        /* UIコンテナは左上に配置 */
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 360px;
+            max-height: 100vh;
+            overflow-y: auto;
+            background: rgba(10, 10, 10, 0.9);
+            padding: 15px;
+            box-sizing: border-box;
+            border-right: 1px solid #00FF00;
+            z-index: 10;
+        }
+
+        /* タイトルは左寄りに配置 */
+        h1 {
+            text-align: left;
+            font-size: 1.2rem;
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #00FF00;
+            padding-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1rem;
+            margin: 15px 0 5px 0;
+            color: #fff;
+            border-bottom: 1px dashed #005500;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: inline-block;
+            font-size: 0.85rem;
+            margin-bottom: 3px;
+        }
+        
+        .toggle-label {
+            display: block;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        input[type="number"], input[type="text"], select {
+            background: #000;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            padding: 3px 5px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        input[type="text"] { width: 120px; }
+        input[type="number"] { width: 70px; }
+        select { width: 100%; margin-top: 5px; }
+
+        button {
+            background: #000;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-right: 2px;
+            margin-bottom: 4px;
+        }
+
+        button:hover {
+            background: #00FF00;
+            color: #000;
+        }
+
+        button.active {
+            background: #00FF00;
+            color: #000;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        #speed-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-top: 5px;
+        }
+        
+        #speed-buttons button {
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            flex-grow: 1;
+        }
+
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui-container">
+    <h1>Wave Simulator</h1>
+    
+    <div class="control-group">
+        <button id="btn-play-pause" style="width: 100%; font-size: 1rem; padding: 8px;">停止 (Pause)</button>
+    </div>
+
+    <div class="control-group">
+        <div class="flex-row">
+            <label>時間:</label>
+            <input type="text" id="time-display" value="0m 0.000s">
+        </div>
+        <input type="range" id="time-slider" min="0" max="60" step="0.01" value="0">
+    </div>
+
+    <div class="control-group">
+        <div class="flex-row">
+            <label>再生速度 (倍):</label>
+            <input type="number" id="speed-input" value="1" step="0.05" min="0">
+        </div>
+        <div id="speed-buttons">
+            <button data-speed="0.1">0.1</button>
+            <button data-speed="0.25">0.25</button>
+            <button data-speed="0.5">0.5</button>
+            <button data-speed="0.75">0.75</button>
+            <button data-speed="1" class="active">1</button>
+            <button data-speed="1.25">1.25</button>
+            <button data-speed="1.5">1.5</button>
+            <button data-speed="2">2</button>
+            <button data-speed="3">3</button>
+            <button data-speed="5">5</button>
+        </div>
+    </div>
+
+    <h2>表示設定 (Visibility)</h2>
+    <div class="control-group">
+        <label>View Mode:</label>
+        <select id="view-mode">
+            <option value="chromatic" selected>Chromatic (干渉縞・マゼンタ強調)</option>
+            <option value="standard">Standard (単色ウォーター)</option>
+        </select>
+        
+        <label class="toggle-label"><input type="checkbox" id="show-combined" checked> 合成波を表示 (Combined Surface)</label>
+        <label class="toggle-label"><input type="checkbox" id="show-w1" checked> 波1を網目で表示 (Wave 1 Wireframe)</label>
+        <label class="toggle-label"><input type="checkbox" id="show-w2" checked> 波2を網目で表示 (Wave 2 Wireframe)</label>
+        <label class="toggle-label"><input type="checkbox" id="show-source" checked> 波源を表示 (Sources)</label>
+    </div>
+
+    <h2>物理パラメータ (Parameters)</h2>
+    <div class="control-group">
+        <div class="flex-row">
+            <label>波源間の距離:</label>
+            <input type="number" id="p-distance" value="20" step="1">
+        </div>
+    </div>
+
+    <div style="color:#FF5555; margin-top:10px;">■ 波 1 (Wave 1)</div>
+    <div class="control-group">
+        <div class="flex-row"><label>周期 (s):</label><input type="number" id="w1-period" value="2" step="0.1"></div>
+        <div class="flex-row"><label>振幅:</label><input type="number" id="w1-amp" value="2" step="0.1"></div>
+        <div class="flex-row"><label>ディレイ (s):</label><input type="number" id="w1-delay" value="0" step="0.1"></div>
+    </div>
+
+    <div style="color:#5555FF; margin-top:10px;">■ 波 2 (Wave 2)</div>
+    <div class="control-group">
+        <div class="flex-row"><label>周期 (s):</label><input type="number" id="w2-period" value="2" step="0.1"></div>
+        <div class="flex-row"><label>振幅:</label><input type="number" id="w2-amp" value="2" step="0.1"></div>
+        <div class="flex-row"><label>ディレイ (s):</label><input type="number" id="w2-delay" value="0" step="0.1"></div>
+    </div>
+</div>
+
+<script>
+    // --- 物理・シミュレーションパラメータ ---
+    const WAVE_SPEED = 10.0; // 波の伝播速度 (m/s)
+
+    let simTime = 0;
+    let isPlaying = true;
+    let playSpeed = 1.0;
+    let lastTime = performance.now();
+
+    const config = {
+        distance: 20.0,
+        w1: { period: 2.0, amp: 2.0, delay: 0.0 },
+        w2: { period: 2.0, amp: 2.0, delay: 0.0 },
+        mode: 'chromatic',
+        showCombined: true,
+        showW1: true,
+        showW2: true,
+        showSource: true
+    };
+
+    // --- Three.js セットアップ ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050505);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 50, 70);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // 照明設定
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 50, 20);
+    scene.add(dirLight);
+
+    // ジオメトリ作成 (共通)
+    const size = 150;
+    const segments = 250;
+    const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+    geometry.rotateX(-Math.PI / 2);
+
+    // 1. 合成波 (サーフェス)
+    const combinedMaterial = new THREE.MeshPhongMaterial({
+        shininess: 80,
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        flatShading: false,
+        transparent: true,
+        opacity: 0.9
+    });
+    const combinedMesh = new THREE.Mesh(geometry, combinedMaterial);
+    scene.add(combinedMesh);
+
+    // 2. 波1 (単独・赤ワイヤーフレーム)
+    const w1Material = new THREE.MeshBasicMaterial({ color: 0xff3333, wireframe: true, transparent: true, opacity: 0.25 });
+    const w1Mesh = new THREE.Mesh(geometry.clone(), w1Material);
+    scene.add(w1Mesh);
+
+    // 3. 波2 (単独・青ワイヤーフレーム)
+    const w2Material = new THREE.MeshBasicMaterial({ color: 0x3333ff, wireframe: true, transparent: true, opacity: 0.25 });
+    const w2Mesh = new THREE.Mesh(geometry.clone(), w2Material);
+    scene.add(w2Mesh);
+
+    // 4. 波源インジケーター
+    const srcGeo = new THREE.SphereGeometry(1.5, 16, 16);
+    const src1Mesh = new THREE.Mesh(srcGeo, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+    const src2Mesh = new THREE.Mesh(srcGeo, new THREE.MeshBasicMaterial({ color: 0x0000ff }));
+    scene.add(src1Mesh, src2Mesh);
+
+    // 頂点データの初期状態とカラー属性設定
+    const positionAttribute = combinedMesh.geometry.attributes.position;
+    const colorAttribute = new THREE.BufferAttribute(new Float32Array(positionAttribute.count * 3), 3);
+    combinedMesh.geometry.setAttribute('color', colorAttribute);
+    
+    const initialPositions = [];
+    for (let i = 0; i < positionAttribute.count; i++) {
+        initialPositions.push({
+            x: positionAttribute.getX(i),
+            z: positionAttribute.getZ(i)
+        });
+    }
+
+    // --- UI と イベントリスナー ---
+    const timeDisplay = document.getElementById('time-display');
+    const timeSlider = document.getElementById('time-slider');
+    const btnPlayPause = document.getElementById('btn-play-pause');
+    const speedInput = document.getElementById('speed-input');
+    const speedButtons = document.querySelectorAll('#speed-buttons button');
+
+    function formatTime(t) {
+        const m = Math.floor(t / 60);
+        const s = (t % 60).toFixed(3);
+        return `${m}m ${s}s`;
+    }
+
+    function parseTime(str) {
+        const match = str.match(/(\d+)m\s*([\d.]+)s/);
+        if (match) return parseInt(match[1], 10) * 60 + parseFloat(match[2]);
+        return parseFloat(str) || 0;
+    }
+
+    // 再生・停止
+    btnPlayPause.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        btnPlayPause.textContent = isPlaying ? "停止 (Pause)" : "再生 (Play)";
+        lastTime = performance.now();
+    });
+
+    // 速度変更
+    function setSpeed(speed) {
+        playSpeed = speed;
+        speedInput.value = speed;
+        speedButtons.forEach(btn => {
+            if (parseFloat(btn.dataset.speed) === speed) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    speedInput.addEventListener('change', (e) => setSpeed(parseFloat(e.target.value)));
+    speedButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => setSpeed(parseFloat(e.target.dataset.speed)));
+    });
+
+    // 時間変更（テキストボックス＆シークバー）
+    function setTime(t) {
+        simTime = Math.max(0, t);
+        timeDisplay.value = formatTime(simTime);
+        timeSlider.value = simTime;
+        isPlaying = false;
+        btnPlayPause.textContent = "再生 (Play)";
+        updateWaveGeometry();
+    }
+
+    timeDisplay.addEventListener('change', (e) => setTime(parseTime(e.target.value)));
+    timeSlider.addEventListener('input', (e) => setTime(parseFloat(e.target.value)));
+
+    // バインディングユーティリティ
+    const bindParam = (id, obj, key) => {
+        document.getElementById(id).addEventListener('change', (e) => {
+            obj[key] = parseFloat(e.target.value);
+            if (!isPlaying) updateWaveGeometry();
+        });
+    };
+    const bindToggle = (id, obj, key, meshCallback) => {
+        document.getElementById(id).addEventListener('change', (e) => {
+            obj[key] = e.target.checked;
+            if (meshCallback) meshCallback(e.target.checked);
+            if (!isPlaying) updateWaveGeometry();
+        });
+    };
+
+    bindParam('p-distance', config, 'distance');
+    bindParam('w1-period', config.w1, 'period'); bindParam('w1-amp', config.w1, 'amp'); bindParam('w1-delay', config.w1, 'delay');
+    bindParam('w2-period', config.w2, 'period'); bindParam('w2-amp', config.w2, 'amp'); bindParam('w2-delay', config.w2, 'delay');
+
+    document.getElementById('view-mode').addEventListener('change', (e) => { config.mode = e.target.value; if (!isPlaying) updateWaveGeometry(); });
+    
+    // 表示トグルのバインディング
+    bindToggle('show-combined', config, 'showCombined', (val) => combinedMesh.visible = val);
+    bindToggle('show-w1', config, 'showW1', (val) => w1Mesh.visible = val);
+    bindToggle('show-w2', config, 'showW2', (val) => w2Mesh.visible = val);
+    bindToggle('show-source', config, 'showSource', (val) => { src1Mesh.visible = val; src2Mesh.visible = val; });
+
+    // ウィンドウリサイズ対応
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- 波の計算と描画更新 ---
+    function updateWaveGeometry() {
+        const p_pos = combinedMesh.geometry.attributes.position;
+        const w1_pos = w1Mesh.geometry.attributes.position;
+        const w2_pos = w2Mesh.geometry.attributes.position;
+        const c_attr = combinedMesh.geometry.attributes.color;
+        
+        const src1_x = -config.distance / 2;
+        const src2_x = config.distance / 2;
+
+        src1Mesh.position.set(src1_x, 2, 0);
+        src2Mesh.position.set(src2_x, 2, 0);
+
+        const omega1 = (2 * Math.PI) / config.w1.period;
+        const omega2 = (2 * Math.PI) / config.w2.period;
+        const k1 = omega1 / WAVE_SPEED;
+        const k2 = omega2 / WAVE_SPEED;
+
+        // 最大振幅 (色の正規化に使用)
+        const maxAmp1 = Math.abs(config.w1.amp) || 1;
+        const maxAmp2 = Math.abs(config.w2.amp) || 1;
+        const maxTotalAmp = maxAmp1 + maxAmp2;
+
+        for (let i = 0; i < p_pos.count; i++) {
+            const { x, z } = initialPositions[i];
+            const r1 = Math.sqrt((x - src1_x)**2 + z**2);
+            const r2 = Math.sqrt((x - src2_x)**2 + z**2);
+
+            let h1 = 0, h2 = 0;
+
+            const t1 = simTime - config.w1.delay;
+            if (t1 > 0 && r1 <= WAVE_SPEED * t1) h1 = config.w1.amp * Math.sin(k1 * r1 - omega1 * t1);
+
+            const t2 = simTime - config.w2.delay;
+            if (t2 > 0 && r2 <= WAVE_SPEED * t2) h2 = config.w2.amp * Math.sin(k2 * r2 - omega2 * t2);
+
+            const totalH = h1 + h2;
+
+            // 各メッシュのY座標を更新
+            if (config.showCombined) p_pos.setY(i, totalH);
+            if (config.showW1) w1_pos.setY(i, h1);
+            if (config.showW2) w2_pos.setY(i, h2);
+
+            // 色の計算 (合成波用)
+            if (config.showCombined) {
+                if (config.mode === 'chromatic') {
+                    // 赤と青の寄与度を計算
+                    const r = Math.min(1.0, Math.abs(h1) / maxAmp1);
+                    const b = Math.min(1.0, Math.abs(h2) / maxAmp2);
+                    // 干渉による振幅の大きさを少し白っぽくする係数
+                    const g = Math.min(1.0, Math.abs(totalH) / maxTotalAmp) * 0.3; 
+                    
+                    c_attr.setXYZ(i, r + g, g, b + g);
+                } else {
+                    // スタンダード (青っぽい水面)
+                    c_attr.setXYZ(i, 0.05, 0.3, 0.8);
+                }
+            }
+        }
+        
+        if (config.showCombined) {
+            combinedMesh.geometry.computeVertexNormals();
+            p_pos.needsUpdate = true;
+            c_attr.needsUpdate = true;
+        }
+        if (config.showW1) {
+            w1Mesh.geometry.computeVertexNormals();
+            w1_pos.needsUpdate = true;
+        }
+        if (config.showW2) {
+            w2Mesh.geometry.computeVertexNormals();
+            w2_pos.needsUpdate = true;
+        }
+    }
+
+    // --- メインループ ---
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const dt = (now - lastTime) / 1000.0;
+        lastTime = now;
+
+        if (isPlaying) {
+            simTime += dt * playSpeed;
+            timeDisplay.value = formatTime(simTime);
+            
+            if (simTime > parseFloat(timeSlider.max)) {
+                timeSlider.max = Math.ceil(simTime + 10);
+            }
+            timeSlider.value = simTime;
+            
+            updateWaveGeometry();
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    animate();
+</script>
+</body>
+</html>
