@@ -2,344 +2,539 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仮想チンチロ・オンライン (Pure Entertainment)</title>
+    <title>仮想チンチロ・オンライン (完全版)</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --bg-color: #f4f7f6;
-            --text-color: #333;
-            --log-bg: #fff;
-            --sys-log-bg: #1e1e1e;
-            --sys-log-text: #00ff00;
-        }
-
-        body {
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            text-align: center;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        h1 { margin: 0; font-size: 1.5rem; }
-
-        main {
-            flex: 1;
-            padding: 1rem;
-            max-width: 600px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .panel {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 1rem;
-        }
-
-        h2, h3 { color: var(--primary-color); margin-top: 0; }
-
-        input[type="text"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-
-        button:hover { background-color: #1a252f; }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
-
-        .room-id-display {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            background: #eee;
-            padding: 5px 10px;
-            border-radius: 4px;
-            display: inline-block;
-            letter-spacing: 1px;
-            word-break: break-all;
-        }
-
-        .status-board {
-            display: flex;
-            justify-content: space-between;
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-
-        .game-log {
-            height: 200px;
-            overflow-y: auto;
-            background: var(--log-bg);
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 10px;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-        .game-log p { margin: 5px 0; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
-
-        /* システムデバッグ用ログのスタイル */
-        .system-log-container {
-            background: var(--sys-log-bg);
-            color: var(--sys-log-text);
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            height: 120px;
-            overflow-y: auto;
-            margin-top: 1rem;
-            word-break: break-all;
-        }
-        .system-log-container p { margin: 2px 0; border-bottom: 1px solid #333; padding-bottom: 2px; }
-        .system-log-container .error-text { color: #ff5555; }
-
-        footer {
-            background-color: #333;
-            color: #ccc;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.8rem;
-        }
-
-        .hidden { display: none; }
-        .divider { border-top: 1px solid #eee; margin: 1.5rem 0; }
-
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: #2c3e50; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #canvas-container { flex: 1; position: relative; background: #1a252f; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; box-sizing: border-box; }
+        .panel { background: rgba(0,0,0,0.85); padding: 15px; border-radius: 8px; pointer-events: auto; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        input[type="text"], input[type="number"] { padding: 10px; margin: 5px 0; width: 140px; font-size: 1.1rem; border-radius: 4px; border: none; text-align: center; }
+        button { background: #e74c3c; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #c0392b; }
+        button:disabled { background: #7f8c8d; cursor: not-allowed; }
+        .status-board { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; align-items: center; }
+        #log-area { height: 150px; overflow-y: auto; font-size: 1rem; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }
+        #log-area p { margin: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; }
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .highlight { color: #f1c40f; }
+        .red-text { color: #e74c3c; }
+        .green-text { color: #2ecc71; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>仮想チンチロ・オンライン</h1>
-    </header>
+    <div id="canvas-container"></div>
 
-    <main>
-        <div id="connection-panel" class="panel">
-            <h2>P2P マッチングロビー</h2>
-            
-            <div class="host-section">
-                <h3>部屋を作る（ホスト）</h3>
-                <p>あなたの Room ID: <br><span id="my-id" class="room-id-display">取得中...</span></p>
-                <p id="host-status" style="color: #7f8c8d; font-size: 0.9rem;">※対戦相手にこのIDを伝えてください</p>
+    <div id="ui-layer">
+        
+        <div class="status-board panel">
+            <span>💰 所持: <span id="my-points" class="highlight">10000</span> pts</span>
+            <span>役職: <span id="my-role" class="highlight">未定</span> | 手番: <span id="current-turn">-</span></span>
+        </div>
+
+        <div id="connection-panel" class="panel text-center" style="max-width: 400px; margin: 0 auto;">
+            <h3 style="margin-top:0;">P2P マッチング</h3>
+            <p>あなたの Room ID: <br><strong id="my-id" style="font-size:2rem; color:#f1c40f; letter-spacing: 2px;">生成中...</strong></p>
+            <hr style="border-color:#555; margin: 15px 0;">
+            <p style="font-size: 0.9rem; color: #ccc;">相手の6桁IDを入力して接続</p>
+            <input type="text" id="input-room-id" placeholder="123456" maxlength="6">
+            <button id="btn-join" disabled>接続する</button>
+            <p id="conn-status" style="margin-bottom:0; font-size:0.9rem; color:#e74c3c;"></p>
+        </div>
+
+        <div id="game-panel" class="panel hidden text-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+            <div id="bet-area" class="hidden">
+                <h3 style="margin-top:0;">賭け金を入力</h3>
+                <input type="number" id="input-bet" value="1000" step="100" min="100"><br><br>
+                <button id="btn-bet">ベットして確定</button>
             </div>
-
-            <div class="divider"></div>
-
-            <div class="join-section">
-                <h3>部屋に入る（ゲスト）</h3>
-                <input type="text" id="input-room-id" placeholder="相手の Room ID を入力">
-                <button id="btn-join" disabled>サーバー接続待ち...</button>
-                <p id="join-status" style="color: var(--accent-color); font-size: 0.9rem; margin-top: 10px; font-weight: bold;"></p>
-            </div>
-
-            <div class="system-log-container" id="system-log">
-                <p>=== System Info Log ===</p>
+            <div id="roll-area" class="hidden">
+                <button id="btn-roll" style="font-size: 1.8rem; padding: 20px 40px; border-radius: 10px; box-shadow: 0 4px 0 #c0392b;">🎲 サイコロを振る！</button>
             </div>
         </div>
 
-        <div id="game-panel" class="panel hidden">
-            <h2>対戦ルーム</h2>
-            <div class="status-board">
-                <span>💰 所持: <span id="my-points">10000</span> pts</span>
-                <span>役割: <span id="my-role">未定</span></span>
-            </div>
-            
-            <div class="game-log" id="game-log">
-                </div>
-
-            <div class="action-area">
-                <button id="btn-roll" disabled>サイコロを振る (未実装)</button>
-            </div>
-        </div>
-    </main>
-
-    <footer>
-        <p>※免責事項：当サイトは娯楽目的のシミュレーターであり、現実の金銭を賭ける機能（リアルマネーギャンブル）は一切ありません。ゲーム内のポイントは無価値な仮想データです。</p>
-    </footer>
+        <div id="log-area" class="panel"></div>
+    </div>
 
     <script>
-        // --- UI Elements ---
-        const myIdDisplay = document.getElementById('my-id');
-        const joinBtn = document.getElementById('btn-join');
-        const inputRoomId = document.getElementById('input-room-id');
-        const joinStatus = document.getElementById('join-status');
-        const connectionPanel = document.getElementById('connection-panel');
-        const gamePanel = document.getElementById('game-panel');
-        const gameLog = document.getElementById('game-log');
-        const systemLog = document.getElementById('system-log');
-        const myRoleDisplay = document.getElementById('my-role');
-
-        // --- System Logging Utility ---
-        function sysLog(msg, isError = false) {
-            const p = document.createElement('p');
-            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
-            p.textContent = `[${time}] ${msg}`;
-            if (isError) p.classList.add('error-text');
-            systemLog.prepend(p); // 最新ログを上に
-        }
-
-        function gameAddLog(msg) {
-            const p = document.createElement('p');
-            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
-            p.textContent = `[${time}] ${msg}`;
-            gameLog.prepend(p);
-        }
-
-        // --- PeerJS Initialization ---
-        sysLog('PeerJSの初期化を開始します...');
-        // debug: 3 を設定し、内部のログも多く出力させるようにする
-        const peer = new Peer({
-            debug: 3,
-            config: {'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:global.stun.twilio.com:3478' }
-            ]} // STUNサーバーを明示的に指定して接続率を上げる
-        });
+        // ==========================================
+        // 0. スコア管理ロジック (localStorage)
+        // ==========================================
+        let myPoints = parseInt(localStorage.getItem('chinchiro_score'));
+        if (isNaN(myPoints)) myPoints = 10000;
         
-        let conn; // 現在の接続オブジェクト
-        let isHost = false;
+        function saveScore() {
+            if (myPoints <= 0) {
+                myPoints = 1000;
+                addLog('<span class="red-text">【救済】</span> 所持金が尽きたため、1000pts支給されました。');
+            }
+            localStorage.setItem('chinchiro_score', myPoints);
+            document.getElementById('my-points').textContent = myPoints;
+        }
+        
+        // 初期表示
+        document.getElementById('my-points').textContent = myPoints;
 
-        // [1] Peerサーバーへの接続成功
+        // ==========================================
+        // 1. P2P 通信 & 状態管理
+        // ==========================================
+        const myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
+        const peer = new Peer(myRoomId, { host: '0.peerjs.com', port: 443, secure: true });
+
+        let conn;
+        let isHost = false; // 通信のホストか
+        let isOya = false;  // 現在のラウンドで親か
+        let currentBet = 0;
+        let gameState = 'WAITING';
+        
+        // 役の記録用
+        let oyaResult = null; 
+        let koResult = null;
+
+        const ui = {
+            myId: document.getElementById('my-id'),
+            joinBtn: document.getElementById('btn-join'),
+            inputId: document.getElementById('input-room-id'),
+            connPanel: document.getElementById('connection-panel'),
+            gamePanel: document.getElementById('game-panel'),
+            logArea: document.getElementById('log-area'),
+            myRole: document.getElementById('my-role'),
+            currentTurn: document.getElementById('current-turn'),
+            betArea: document.getElementById('bet-area'),
+            btnBet: document.getElementById('btn-bet'),
+            inputBet: document.getElementById('input-bet'),
+            rollArea: document.getElementById('roll-area'),
+            btnRoll: document.getElementById('btn-roll'),
+            connStatus: document.getElementById('conn-status')
+        };
+
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+            ui.logArea.innerHTML = `<p>[${time}] ${msg}</p>` + ui.logArea.innerHTML;
+        }
+
         peer.on('open', (id) => {
-            sysLog(`シグナリングサーバー接続成功。あなたのID: ${id}`);
-            myIdDisplay.textContent = id;
-            joinBtn.disabled = false;
-            joinBtn.textContent = '接続する';
-            joinStatus.textContent = '';
+            ui.myId.textContent = id;
+            ui.joinBtn.disabled = false;
         });
 
-        // [2] ホストとして他のユーザーからの接続を受けた時の処理
         peer.on('connection', (connection) => {
-            sysLog(`外部からの接続要求を受信: ${connection.peer}`);
-            if (conn) {
-                sysLog('既に接続済みのため、新しい接続を拒否しました。');
-                connection.close();
-                return;
-            }
+            if (conn) return connection.close();
             conn = connection;
             isHost = true;
-            setupConnection();
+            isOya = true; // ホストが最初の親
+            setupGame();
         });
 
-        // [3] ゲストとして他のユーザーへ接続する時の処理
-        joinBtn.addEventListener('click', () => {
-            const roomId = inputRoomId.value.trim();
-            if (!roomId) {
-                joinStatus.textContent = 'Room ID を入力してください。';
-                return;
-            }
-            if (roomId === peer.id) {
-                joinStatus.textContent = '自分自身のIDです。相手のIDを入力してください。';
-                return;
-            }
+        ui.joinBtn.addEventListener('click', () => {
+            const id = ui.inputId.value;
+            if (id.length !== 6) return ui.connStatus.textContent = '6桁の数字を入力してください';
+            ui.joinBtn.disabled = true;
+            ui.connStatus.textContent = '接続中...';
             
-            joinStatus.textContent = '接続試行中...';
-            sysLog(`ID: ${roomId} へ接続を試みます...`);
-            joinBtn.disabled = true;
-            
-            // reliable オプションを true にして通信の安定性を向上
-            conn = peer.connect(roomId, { reliable: true });
+            conn = peer.connect(id, { reliable: true });
             isHost = false;
-
-            conn.on('open', () => {
-                sysLog('ホストとのP2P接続が確立しました。');
-                setupConnection();
-            });
-
-            conn.on('error', (err) => {
-                sysLog(`P2P接続エラー: ${err}`, true);
-                joinStatus.textContent = '接続失敗。システムログを確認してください。';
-                joinBtn.disabled = false;
-                conn = null;
-            });
+            isOya = false; 
+            
+            conn.on('open', setupGame);
+            conn.on('error', () => { ui.connStatus.textContent = '接続失敗'; ui.joinBtn.disabled = false; });
         });
 
-        // 接続完了後の共通セットアップ処理
-        function setupConnection() {
-            connectionPanel.classList.add('hidden');
-            gamePanel.classList.remove('hidden');
+        function setupGame() {
+            ui.connPanel.classList.add('hidden');
+            ui.gamePanel.classList.remove('hidden');
+            addLog('<span class="green-text">通信確立！ゲームを開始します。</span>');
             
-            myRoleDisplay.textContent = isHost ? '親 (Host)' : '子 (Guest)';
-            
-            gameAddLog('対戦相手と通信が確立しました！');
-            gameAddLog(isHost ? 'あなたは「親」としてゲームを開始します。' : 'あなたは「子」としてゲームを開始します。');
-
             conn.on('data', (data) => {
-                sysLog(`データ受信: ${JSON.stringify(data)}`);
-                if (data.type === 'log') {
-                    gameAddLog('相手: ' + data.message);
-                }
+                if(data.type === 'sync_physics') updateMeshesFromServer(data.dices);
+                else if(data.type === 'state') handleStateChange(data);
             });
 
             conn.on('close', () => {
-                sysLog('P2P接続が切断されました。', true);
-                gameAddLog('⚠️ 対戦相手との接続が切れました。3秒後にリロードします...');
+                addLog('<span class="red-text">通信が切断されました。リロードします。</span>');
                 setTimeout(() => location.reload(), 3000);
+            });
+
+            if(isHost) startNewRound();
+        }
+
+        function sendState(data) { if(conn) conn.send({ type: 'state', ...data }); }
+
+        function startNewRound() {
+            oyaResult = null;
+            koResult = null;
+            const data = { state: 'BET', oyaIsHost: isOya };
+            sendState(data);
+            handleStateChange(data);
+        }
+
+        // 状態遷移のハンドリング
+        function handleStateChange(data) {
+            gameState = data.state;
+            ui.betArea.classList.add('hidden');
+            ui.rollArea.classList.add('hidden');
+
+            if(data.oyaIsHost !== undefined) {
+                isOya = (isHost === data.oyaIsHost);
+                ui.myRole.textContent = isOya ? '親' : '子';
+            }
+
+            switch(gameState) {
+                case 'BET':
+                    ui.currentTurn.textContent = '子のベット';
+                    addLog('--- 新しいラウンド ---');
+                    addLog('子のベット待ちです。');
+                    if(!isOya) ui.betArea.classList.remove('hidden');
+                    break;
+
+                case 'OYA_ROLL':
+                    currentBet = data.bet;
+                    ui.currentTurn.textContent = '親のターン';
+                    addLog(`ベット <span class="highlight">${currentBet} pts</span> 確定。親がサイコロを振ります。`);
+                    if(isOya) ui.rollArea.classList.remove('hidden');
+                    break;
+
+                case 'KO_ROLL':
+                    ui.currentTurn.textContent = '子のターン';
+                    addLog(`子がサイコロを振ります。`);
+                    if(!isOya) ui.rollArea.classList.remove('hidden');
+                    break;
+                
+                case 'JUDGE':
+                    ui.currentTurn.textContent = '結果判定';
+                    processJudge(data.result);
+                    break;
+            }
+        }
+
+        ui.btnBet.addEventListener('click', () => {
+            const bet = parseInt(ui.inputBet.value);
+            if (bet > myPoints) return alert('所持金以上のベットはできません！');
+            sendState({ state: 'OYA_ROLL', bet: bet }); 
+            handleStateChange({ state: 'OYA_ROLL', bet: bet });
+        });
+
+        ui.btnRoll.addEventListener('click', () => {
+            ui.rollArea.classList.add('hidden');
+            throwDice(); 
+        });
+
+        // ==========================================
+        // 2. 役判定・勝敗・スコアロジック
+        // ==========================================
+
+        function evaluateDices(arr) {
+            const sorted = [...arr].sort((a,b) => a - b);
+            const [a, b, c] = sorted;
+            
+            if (a === 1 && b === 1 && c === 1) return { name: "ピンゾロ", score: 9, mult: 5 };
+            if (a === b && b === c) return { name: `アラシ (${a}のゾロ目)`, score: 8, mult: 3 };
+            if (a === 4 && b === 5 && c === 6) return { name: "シゴロ", score: 7, mult: 2 };
+            if (a === 1 && b === 2 && c === 3) return { name: "ヒフミ", score: -1, mult: 2 };
+            
+            // 通常の目
+            if (a === b) {
+                if (c === 1) return { name: "目 (インケツ)", score: 1, mult: 1 };
+                return { name: `目 (${c})`, score: c, mult: 1 };
+            }
+            if (b === c) {
+                if (a === 1) return { name: "目 (インケツ)", score: 1, mult: 1 };
+                return { name: `目 (${a})`, score: a, mult: 1 };
+            }
+            
+            return { name: "目なし", score: 0, mult: 1 };
+        }
+
+        function onRollComplete(dices) {
+            const yaku = evaluateDices(dices);
+            addLog(`出目: [${dices.join(', ')}] -> <span class="highlight">【${yaku.name}】</span>`);
+
+            if (isHost) {
+                handleHostGameLogic(yaku);
+            } else {
+                // ゲストは出目をホストに送って判定を委ねる
+                sendState({ state: 'SUBMIT_DICE', yaku: yaku });
+            }
+        }
+
+        // ホスト側でのみ動作する進行ロジック
+        function handleHostGameLogic(yakuData = null, fromGuest = false) {
+            if (!fromGuest && isOya) oyaResult = yakuData;
+            if (fromGuest && !isOya) koResult = yakuData;
+
+            if (gameState === 'OYA_ROLL') {
+                // 親の即判定
+                if (oyaResult.score >= 7 || oyaResult.score === 6) {
+                    addLog('親の即勝ちです！');
+                    finishRound('OYA_WIN', oyaResult.mult);
+                } else if (oyaResult.score <= 1) {
+                    addLog('親の即負けです...');
+                    finishRound('KO_WIN', oyaResult.mult);
+                } else {
+                    const nextData = { state: 'KO_ROLL' };
+                    sendState(nextData);
+                    handleStateChange(nextData);
+                }
+            } else if (gameState === 'KO_ROLL' && koResult) {
+                // 子の出目が確定した後の勝敗判定
+                if (koResult.score <= 0) {
+                    finishRound('OYA_WIN', koResult.mult);
+                } else if (koResult.score >= 7) {
+                    finishRound('KO_WIN', koResult.mult);
+                } else {
+                    if (koResult.score > oyaResult.score) finishRound('KO_WIN', 1);
+                    else if (koResult.score < oyaResult.score) finishRound('OYA_WIN', 1);
+                    else finishRound('DRAW', 1);
+                }
+            }
+        }
+
+        // ゲストから出目を受信した時のフック
+        if(peer) {
+            peer.on('connection', (c) => {
+                c.on('data', (d) => {
+                    if(isHost && d.state === 'SUBMIT_DICE') handleHostGameLogic(d.yaku, true);
+                });
             });
         }
 
-        // --- PeerJS Error Handling ---
-        peer.on('error', (err) => {
-            sysLog(`[PeerJS Error] Type: ${err.type}, Message: ${err.message}`, true);
-            
-            if (err.type === 'server-error') {
-                joinStatus.textContent = 'サーバーエラー: シグナリングサーバーへの接続に失敗しました。';
-                sysLog('無料のPeerJSサーバーがダウンしているか、通信がファイアウォールでブロックされている可能性があります。', true);
-            } else if (err.type === 'peer-unavailable') {
-                joinStatus.textContent = '相手が見つかりません。Room IDが正しいか確認してください。';
-            } else if (err.type === 'network') {
-                joinStatus.textContent = 'ネットワークエラー: インターネット接続を確認してください。';
+        function finishRound(winner, multiplier) {
+            const resultData = { winner, multiplier };
+            const nextData = { state: 'JUDGE', result: resultData };
+            sendState(nextData);
+            handleStateChange(nextData);
+
+            // 4秒後に親を交代して次へ
+            setTimeout(() => {
+                isOya = !isOya; // ホスト視点で親を交代
+                startNewRound();
+            }, 4000);
+        }
+
+        function processJudge(result) {
+            const { winner, multiplier } = result;
+            const pointsChange = currentBet * multiplier;
+
+            if (winner === 'DRAW') {
+                addLog('結果: <span class="highlight">引き分け</span> (ポイント移動なし)');
+            } else if (
+                (winner === 'OYA_WIN' && isOya) || 
+                (winner === 'KO_WIN' && !isOya)
+            ) {
+                myPoints += pointsChange;
+                addLog(`結果: <span class="green-text">あなたの勝ち！</span> (+${pointsChange} pts)`);
             } else {
-                joinStatus.textContent = 'エラーが発生しました。ログを確認してください。';
+                myPoints -= pointsChange;
+                addLog(`結果: <span class="red-text">あなたの負け...</span> (-${pointsChange} pts)`);
             }
+
+            saveScore();
+        }
+
+
+        // ==========================================
+        // 3. 3D描画 (Three.js) & 日本式サイコロマテリアル生成
+        // ==========================================
+        
+        const world = new CANNON.World();
+        world.gravity.set(0, -20, 0);
+        world.broadphase = new CANNON.NaiveBroadphase();
+        world.solver.iterations = 10;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 18, 15);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(5, 20, 5);
+        light.castShadow = true;
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x777777));
+
+        // どんぶり (器)
+        const bowlMaterial = new THREE.MeshPhongMaterial({ color: 0x34495e });
+        const groundGeo = new THREE.CylinderGeometry(8, 7, 1, 32);
+        const groundMesh = new THREE.Mesh(groundGeo, bowlMaterial);
+        groundMesh.position.y = -0.5;
+        groundMesh.receiveShadow = true;
+        scene.add(groundMesh);
+
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Cylinder(8, 8, 1, 32) });
+        // Cannon.jsのCylinderはX軸に沿って生成されるため回転が必要
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI/2);
+        groundBody.position.y = -0.5;
+        world.addBody(groundBody);
+
+        // サイコロのテクスチャ生成 (Canvas API)
+        function createDiceMaterial(val) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
             
-            // UIのリセット
-            if (!conn && myIdDisplay.textContent !== '取得中...') {
-                joinBtn.disabled = false;
-                joinBtn.textContent = '接続する';
+            // ベース (象牙色)
+            ctx.fillStyle = '#fdfdfd';
+            ctx.fillRect(0,0,256,256);
+            ctx.strokeStyle = '#dddddd';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(0,0,256,256);
+
+            // 1の目は大きく赤く
+            ctx.fillStyle = (val === 1) ? '#e74c3c' : '#222222';
+            const drawDot = (x, y, r) => {
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI*2);
+                ctx.fill();
+            };
+
+            const c = 128, r = (val===1) ? 50 : 22, d = 65;
+            if(val===1) drawDot(c, c, r);
+            if(val===2) { drawDot(c-d, c-d, r); drawDot(c+d, c+d, r); }
+            if(val===3) { drawDot(c-d, c-d, r); drawDot(c, c, r); drawDot(c+d, c+d, r); }
+            if(val===4) { drawDot(c-d, c-d, r); drawDot(c+d, c-d, r); drawDot(c-d, c+d, r); drawDot(c+d, c+d, r); }
+            if(val===5) { drawDot(c-d, c-d, r); drawDot(c+d, c-d, r); drawDot(c, c, r); drawDot(c-d, c+d, r); drawDot(c+d, c+d, r); }
+            if(val===6) { drawDot(c-d, c-d, r); drawDot(c+d, c-d, r); drawDot(c-d, c, r); drawDot(c+d, c, r); drawDot(c-d, c+d, r); drawDot(c+d, c+d, r); }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            return new THREE.MeshPhongMaterial({ map: tex });
+        }
+
+        const dices = [];
+        const diceGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        
+        // BoxGeometry面の並び: +x, -x, +y, -y, +z, -z
+        // これを getDiceResult の判定ベクトルと合わせる: 3, 4, 2, 5, 1, 6
+        const diceMaterials = [
+            createDiceMaterial(3),
+            createDiceMaterial(4),
+            createDiceMaterial(2),
+            createDiceMaterial(5),
+            createDiceMaterial(1),
+            createDiceMaterial(6)
+        ];
+
+        for(let i=0; i<3; i++) {
+            const mesh = new THREE.Mesh(diceGeo, diceMaterials);
+            mesh.castShadow = true;
+            scene.add(mesh);
+
+            const shape = new CANNON.Box(new CANNON.Vec3(0.75, 0.75, 0.75));
+            const body = new CANNON.Body({ mass: 1, shape: shape });
+            body.material = new CANNON.Material({ friction: 0.1, restitution: 0.6 });
+            world.addBody(body);
+
+            dices.push({ mesh, body });
+        }
+
+        // ==========================================
+        // 4. アニメーションと同期ループ
+        // ==========================================
+        let isRolling = false;
+
+        function throwDice() {
+            dices.forEach((d, i) => {
+                d.body.position.set((Math.random()-0.5)*4, 8 + i*2, (Math.random()-0.5)*4);
+                d.body.velocity.set((Math.random()-0.5)*15, -10, (Math.random()-0.5)*15);
+                d.body.angularVelocity.set(Math.random()*15, Math.random()*15, Math.random()*15);
+                d.body.wakeUp();
+            });
+            isRolling = true;
+        }
+
+        function updateMeshesFromServer(syncData) {
+            syncData.forEach((data, i) => {
+                dices[i].mesh.position.copy(data.p);
+                dices[i].mesh.quaternion.copy(data.q);
+            });
+        }
+
+        function checkSleep() {
+            let sleeping = true;
+            dices.forEach(d => {
+                if (d.body.velocity.norm() > 0.05 || d.body.angularVelocity.norm() > 0.05) sleeping = false;
+                // 空中に浮いている場合もスリープさせない
+                if (d.body.position.y > 1.0) sleeping = false; 
+            });
+            return sleeping;
+        }
+
+        function getDiceResult() {
+            const results = [];
+            const upVector = new THREE.Vector3(0, 1, 0);
+            
+            const faceValues = [
+                { vec: new THREE.Vector3(1,0,0), val: 3 },
+                { vec: new THREE.Vector3(-1,0,0), val: 4 },
+                { vec: new THREE.Vector3(0,1,0), val: 2 },
+                { vec: new THREE.Vector3(0,-1,0), val: 5 },
+                { vec: new THREE.Vector3(0,0,1), val: 1 },
+                { vec: new THREE.Vector3(0,0,-1), val: 6 }
+            ];
+
+            dices.forEach(d => {
+                let maxDot = -1;
+                let finalVal = 1;
+                faceValues.forEach(f => {
+                    const rotatedVec = f.vec.clone().applyQuaternion(d.mesh.quaternion).normalize();
+                    const dot = rotatedVec.dot(upVector);
+                    if (dot > maxDot) { maxDot = dot; finalVal = f.val; }
+                });
+                results.push(finalVal);
+            });
+            return results;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isRolling) {
+                world.step(1 / 60);
+                
+                // サイコロがどんぶりから落ちないよう壁を簡易シミュレート（原点に押し戻す力）
+                dices.forEach(d => {
+                    const distanceFromCenter = Math.sqrt(d.body.position.x**2 + d.body.position.z**2);
+                    if (distanceFromCenter > 7) {
+                        d.body.velocity.x *= -0.8;
+                        d.body.velocity.z *= -0.8;
+                        d.body.position.x *= 0.95;
+                        d.body.position.z *= 0.95;
+                    }
+                });
+                
+                const syncData = dices.map(d => {
+                    d.mesh.position.copy(d.body.position);
+                    d.mesh.quaternion.copy(d.body.quaternion);
+                    return { p: d.body.position, q: d.body.quaternion };
+                });
+
+                if(conn) conn.send({ type: 'sync_physics', dices: syncData });
+
+                if (checkSleep()) {
+                    isRolling = false;
+                    const result = getDiceResult();
+                    onRollComplete(result);
+                }
             }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        peer.on('disconnected', () => {
-            sysLog('シグナリングサーバーから切断されました。再接続を試みます...', true);
-            peer.reconnect();
-        });
+        animate();
 
     </script>
 </body>
