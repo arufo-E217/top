@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仮想チンチロ・オンライン (Pure Entertainment)</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --log-bg: #fff;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; }
+
+        main {
+            flex: 1;
+            padding: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+        }
+
+        h2, h3 { color: var(--primary-color); margin-top: 0; }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        button:hover { background-color: #1a252f; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+
+        .room-id-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            background: #eee;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        .status-board {
+            display: flex;
+            justify-content: space-between;
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .game-log {
+            height: 200px;
+            overflow-y: auto;
+            background: var(--log-bg);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-log p { margin: 5px 0; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+
+        footer {
+            background-color: #333;
+            color: #ccc;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .hidden { display: none; }
+        .divider { border-top: 1px solid #eee; margin: 1.5rem 0; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>仮想チンチロ・オンライン</h1>
+    </header>
+
+    <main>
+        <div id="connection-panel" class="panel">
+            <h2>P2P マッチングロビー</h2>
+            
+            <div class="host-section">
+                <h3>部屋を作る（ホスト）</h3>
+                <p>あなたの Room ID: <br><span id="my-id" class="room-id-display">取得中...</span></p>
+                <p id="host-status" style="color: #7f8c8d; font-size: 0.9rem;">※対戦相手にこのIDを伝えてください</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="join-section">
+                <h3>部屋に入る（ゲスト）</h3>
+                <input type="text" id="input-room-id" placeholder="相手の Room ID を入力">
+                <button id="btn-join">接続する</button>
+                <p id="join-status" style="color: var(--accent-color); font-size: 0.9rem; margin-top: 10px;"></p>
+            </div>
+        </div>
+
+        <div id="game-panel" class="panel hidden">
+            <h2>対戦ルーム</h2>
+            <div class="status-board">
+                <span>💰 所持: <span id="my-points">10000</span> pts</span>
+                <span>役割: <span id="my-role">未定</span></span>
+            </div>
+            
+            <div class="game-log" id="game-log">
+                </div>
+
+            <div class="action-area">
+                <button id="btn-roll" disabled>サイコロを振る (未実装)</button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>※免責事項：当サイトは娯楽目的のシミュレーターであり、現実の金銭を賭ける機能（リアルマネーギャンブル）は一切ありません。ゲーム内のポイントは無価値な仮想データです。</p>
+    </footer>
+
+    <script>
+        // --- PeerJS & Connection Logic ---
+        
+        // PeerJSインスタンスの初期化
+        const peer = new Peer();
+        let conn; // 現在の接続オブジェクト
+        let isHost = false;
+
+        // UI要素の取得
+        const myIdDisplay = document.getElementById('my-id');
+        const joinBtn = document.getElementById('btn-join');
+        const inputRoomId = document.getElementById('input-room-id');
+        const joinStatus = document.getElementById('join-status');
+        const connectionPanel = document.getElementById('connection-panel');
+        const gamePanel = document.getElementById('game-panel');
+        const gameLog = document.getElementById('game-log');
+        const myRoleDisplay = document.getElementById('my-role');
+
+        // [1] Peerサーバーに接続し、自分のIDが確定した時の処理
+        peer.on('open', (id) => {
+            myIdDisplay.textContent = id;
+        });
+
+        // [2] ホストとして他のユーザーからの接続を受けた時の処理
+        peer.on('connection', (connection) => {
+            if (conn) {
+                // 既に接続済みの場合は拒否（1対1想定）
+                connection.close();
+                return;
+            }
+            conn = connection;
+            isHost = true;
+            setupConnection();
+        });
+
+        // [3] ゲストとして他のユーザーへ接続する時の処理
+        joinBtn.addEventListener('click', () => {
+            const roomId = inputRoomId.value.trim();
+            if (!roomId) {
+                joinStatus.textContent = 'Room ID を入力してください。';
+                return;
+            }
+            if (roomId === peer.id) {
+                joinStatus.textContent = '自分自身には接続できません。';
+                return;
+            }
+            
+            joinStatus.textContent = '接続中...';
+            joinBtn.disabled = true;
+            
+            conn = peer.connect(roomId);
+            isHost = false;
+
+            conn.on('open', () => {
+                setupConnection();
+            });
+
+            conn.on('error', (err) => {
+                joinStatus.textContent = 'エラー: 接続できませんでした。';
+                joinBtn.disabled = false;
+                conn = null;
+            });
+        });
+
+        // 接続完了後の共通セットアップ処理
+        function setupConnection() {
+            // UIの切り替え
+            connectionPanel.classList.add('hidden');
+            gamePanel.classList.remove('hidden');
+            
+            // 役割の仮設定（ホストを最初の親とする等、のちに変更可能）
+            myRoleDisplay.textContent = isHost ? '親 (Host)' : '子 (Guest)';
+            
+            addLog('対戦相手と通信が確立しました！');
+            addLog(isHost ? 'あなたは「親」としてゲームを開始します。' : 'あなたは「子」としてゲームを開始します。');
+
+            // データ受信時の処理（フェーズ2のゲームロジックで本格利用）
+            conn.on('data', (data) => {
+                console.log('Received:', data);
+                // 例: { type: 'chat', message: 'Hello' } や { type: 'roll', dice: [1,2,3] } など
+                if (data.type === 'log') {
+                    addLog('相手: ' + data.message);
+                }
+            });
+
+            // 接続切断時の処理
+            conn.on('close', () => {
+                addLog('⚠️ 対戦相手との接続が切れました。3秒後にリロードします...');
+                setTimeout(() => location.reload(), 3000);
+            });
+        }
+
+        // ログ出力用ヘルパー関数（最新のログが上にくるようにprepend）
+        function addLog(msg) {
+            const p = document.createElement('p');
+            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+            p.textContent = `[${time}] ${msg}`;
+            gameLog.prepend(p);
+        }
+
+        // 万が一のPeerJS自体のエラーハンドリング
+        peer.on('error', (err) => {
+            console.error('PeerJS Error:', err);
+            joinStatus.textContent = 'システムエラー: ' + err.type;
+            if(joinBtn) joinBtn.disabled = false;
+        });
+
+    </script>
+</body>
+</html>
