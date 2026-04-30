@@ -12,6 +12,8 @@
             --bg-color: #f4f7f6;
             --text-color: #333;
             --log-bg: #fff;
+            --sys-log-bg: #1e1e1e;
+            --sys-log-text: #00ff00;
         }
 
         body {
@@ -87,6 +89,7 @@
             border-radius: 4px;
             display: inline-block;
             letter-spacing: 1px;
+            word-break: break-all;
         }
 
         .status-board {
@@ -109,8 +112,23 @@
             font-size: 0.9rem;
             margin-bottom: 1rem;
         }
-
         .game-log p { margin: 5px 0; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+
+        /* システムデバッグ用ログのスタイル */
+        .system-log-container {
+            background: var(--sys-log-bg);
+            color: var(--sys-log-text);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            height: 120px;
+            overflow-y: auto;
+            margin-top: 1rem;
+            word-break: break-all;
+        }
+        .system-log-container p { margin: 2px 0; border-bottom: 1px solid #333; padding-bottom: 2px; }
+        .system-log-container .error-text { color: #ff5555; }
 
         footer {
             background-color: #333;
@@ -146,8 +164,12 @@
             <div class="join-section">
                 <h3>部屋に入る（ゲスト）</h3>
                 <input type="text" id="input-room-id" placeholder="相手の Room ID を入力">
-                <button id="btn-join">接続する</button>
-                <p id="join-status" style="color: var(--accent-color); font-size: 0.9rem; margin-top: 10px;"></p>
+                <button id="btn-join" disabled>サーバー接続待ち...</button>
+                <p id="join-status" style="color: var(--accent-color); font-size: 0.9rem; margin-top: 10px; font-weight: bold;"></p>
+            </div>
+
+            <div class="system-log-container" id="system-log">
+                <p>=== System Info Log ===</p>
             </div>
         </div>
 
@@ -172,14 +194,7 @@
     </footer>
 
     <script>
-        // --- PeerJS & Connection Logic ---
-        
-        // PeerJSインスタンスの初期化
-        const peer = new Peer();
-        let conn; // 現在の接続オブジェクト
-        let isHost = false;
-
-        // UI要素の取得
+        // --- UI Elements ---
         const myIdDisplay = document.getElementById('my-id');
         const joinBtn = document.getElementById('btn-join');
         const inputRoomId = document.getElementById('input-room-id');
@@ -187,17 +202,53 @@
         const connectionPanel = document.getElementById('connection-panel');
         const gamePanel = document.getElementById('game-panel');
         const gameLog = document.getElementById('game-log');
+        const systemLog = document.getElementById('system-log');
         const myRoleDisplay = document.getElementById('my-role');
 
-        // [1] Peerサーバーに接続し、自分のIDが確定した時の処理
+        // --- System Logging Utility ---
+        function sysLog(msg, isError = false) {
+            const p = document.createElement('p');
+            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+            p.textContent = `[${time}] ${msg}`;
+            if (isError) p.classList.add('error-text');
+            systemLog.prepend(p); // 最新ログを上に
+        }
+
+        function gameAddLog(msg) {
+            const p = document.createElement('p');
+            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+            p.textContent = `[${time}] ${msg}`;
+            gameLog.prepend(p);
+        }
+
+        // --- PeerJS Initialization ---
+        sysLog('PeerJSの初期化を開始します...');
+        // debug: 3 を設定し、内部のログも多く出力させるようにする
+        const peer = new Peer({
+            debug: 3,
+            config: {'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+            ]} // STUNサーバーを明示的に指定して接続率を上げる
+        });
+        
+        let conn; // 現在の接続オブジェクト
+        let isHost = false;
+
+        // [1] Peerサーバーへの接続成功
         peer.on('open', (id) => {
+            sysLog(`シグナリングサーバー接続成功。あなたのID: ${id}`);
             myIdDisplay.textContent = id;
+            joinBtn.disabled = false;
+            joinBtn.textContent = '接続する';
+            joinStatus.textContent = '';
         });
 
         // [2] ホストとして他のユーザーからの接続を受けた時の処理
         peer.on('connection', (connection) => {
+            sysLog(`外部からの接続要求を受信: ${connection.peer}`);
             if (conn) {
-                // 既に接続済みの場合は拒否（1対1想定）
+                sysLog('既に接続済みのため、新しい接続を拒否しました。');
                 connection.close();
                 return;
             }
@@ -214,22 +265,26 @@
                 return;
             }
             if (roomId === peer.id) {
-                joinStatus.textContent = '自分自身には接続できません。';
+                joinStatus.textContent = '自分自身のIDです。相手のIDを入力してください。';
                 return;
             }
             
-            joinStatus.textContent = '接続中...';
+            joinStatus.textContent = '接続試行中...';
+            sysLog(`ID: ${roomId} へ接続を試みます...`);
             joinBtn.disabled = true;
             
-            conn = peer.connect(roomId);
+            // reliable オプションを true にして通信の安定性を向上
+            conn = peer.connect(roomId, { reliable: true });
             isHost = false;
 
             conn.on('open', () => {
+                sysLog('ホストとのP2P接続が確立しました。');
                 setupConnection();
             });
 
             conn.on('error', (err) => {
-                joinStatus.textContent = 'エラー: 接続できませんでした。';
+                sysLog(`P2P接続エラー: ${err}`, true);
+                joinStatus.textContent = '接続失敗。システムログを確認してください。';
                 joinBtn.disabled = false;
                 conn = null;
             });
@@ -237,45 +292,53 @@
 
         // 接続完了後の共通セットアップ処理
         function setupConnection() {
-            // UIの切り替え
             connectionPanel.classList.add('hidden');
             gamePanel.classList.remove('hidden');
             
-            // 役割の仮設定（ホストを最初の親とする等、のちに変更可能）
             myRoleDisplay.textContent = isHost ? '親 (Host)' : '子 (Guest)';
             
-            addLog('対戦相手と通信が確立しました！');
-            addLog(isHost ? 'あなたは「親」としてゲームを開始します。' : 'あなたは「子」としてゲームを開始します。');
+            gameAddLog('対戦相手と通信が確立しました！');
+            gameAddLog(isHost ? 'あなたは「親」としてゲームを開始します。' : 'あなたは「子」としてゲームを開始します。');
 
-            // データ受信時の処理（フェーズ2のゲームロジックで本格利用）
             conn.on('data', (data) => {
-                console.log('Received:', data);
-                // 例: { type: 'chat', message: 'Hello' } や { type: 'roll', dice: [1,2,3] } など
+                sysLog(`データ受信: ${JSON.stringify(data)}`);
                 if (data.type === 'log') {
-                    addLog('相手: ' + data.message);
+                    gameAddLog('相手: ' + data.message);
                 }
             });
 
-            // 接続切断時の処理
             conn.on('close', () => {
-                addLog('⚠️ 対戦相手との接続が切れました。3秒後にリロードします...');
+                sysLog('P2P接続が切断されました。', true);
+                gameAddLog('⚠️ 対戦相手との接続が切れました。3秒後にリロードします...');
                 setTimeout(() => location.reload(), 3000);
             });
         }
 
-        // ログ出力用ヘルパー関数（最新のログが上にくるようにprepend）
-        function addLog(msg) {
-            const p = document.createElement('p');
-            const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
-            p.textContent = `[${time}] ${msg}`;
-            gameLog.prepend(p);
-        }
-
-        // 万が一のPeerJS自体のエラーハンドリング
+        // --- PeerJS Error Handling ---
         peer.on('error', (err) => {
-            console.error('PeerJS Error:', err);
-            joinStatus.textContent = 'システムエラー: ' + err.type;
-            if(joinBtn) joinBtn.disabled = false;
+            sysLog(`[PeerJS Error] Type: ${err.type}, Message: ${err.message}`, true);
+            
+            if (err.type === 'server-error') {
+                joinStatus.textContent = 'サーバーエラー: シグナリングサーバーへの接続に失敗しました。';
+                sysLog('無料のPeerJSサーバーがダウンしているか、通信がファイアウォールでブロックされている可能性があります。', true);
+            } else if (err.type === 'peer-unavailable') {
+                joinStatus.textContent = '相手が見つかりません。Room IDが正しいか確認してください。';
+            } else if (err.type === 'network') {
+                joinStatus.textContent = 'ネットワークエラー: インターネット接続を確認してください。';
+            } else {
+                joinStatus.textContent = 'エラーが発生しました。ログを確認してください。';
+            }
+            
+            // UIのリセット
+            if (!conn && myIdDisplay.textContent !== '取得中...') {
+                joinBtn.disabled = false;
+                joinBtn.textContent = '接続する';
+            }
+        });
+
+        peer.on('disconnected', () => {
+            sysLog('シグナリングサーバーから切断されました。再接続を試みます...', true);
+            peer.reconnect();
         });
 
     </script>
