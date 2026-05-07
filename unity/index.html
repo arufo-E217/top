@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Scripting Notes</title>
+    <style>
+        /* --- 基本のライトテーマ設定 (共通デザイン) --- */
+        :root {
+            --bg-color: #f9f9f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --accent-color: #0078d4;
+            --border-color: #e0e0e0;
+            --hover-bg: #f0f7ff;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: var(--container-bg);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+
+        header {
+            border-bottom: 2px solid var(--accent-color);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        /* --- ナビゲーションリスト --- */
+        .menu-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .menu-item {
+            margin-bottom: 15px;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-color);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background-color: #fff;
+        }
+
+        .menu-link:hover {
+            border-color: var(--accent-color);
+            background-color: var(--hover-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,120,212,0.1);
+        }
+
+        .icon {
+            font-size: 1.5rem;
+            margin-right: 20px;
+            color: var(--accent-color);
+        }
+
+        .title-text {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .path-text {
+            display: block;
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 4px;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Unity Scripting Notes</h1>
+    </header>
+    
+    <p class="description">Unityの基本機能やコードの意味をまとめた学習ノート</p>
+
+    <nav>
+        <ul class="menu-list">
+            <!-- debugLog へのリンク -->
+            <li class="menu-item">
+                <a href="./debugLog/index.html" class="menu-link">
+                    <span class="icon">📝</span>
+                    <div>
+                        <span class="title-text">Debug.Log()とは？</span>
+                        <span class="path-text">/unity/debugLog/index.html</span>
+                    </div>
+                </a>
+            </li>
+
+            <!-- Render へのリンク -->
+            <li class="menu-item">
+                <a href="./Render/index.html" class="menu-link">
+                    <span class="icon">🎨</span>
+                    <div>
+                        <span class="title-text">rend.material.colorの意味って？</span>
+                        <span class="path-text">/unity/Render/index.html</span>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <footer>
+        &copy; 2026 Unity Study Portfolio by skota All rights reserved.
+    </footer>
+</div>
+
+</body>
+</html>

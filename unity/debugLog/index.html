@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug.Log()とは？</title>
+    <style>
+        /* --- 基本のライトテーマ設定 --- */
+        :root {
+            --bg-color: #f9f9f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --accent-color: #0078d4;
+            --border-color: #e0e0e0;
+            --code-bg: #f0f0f0;
+            --note-color: #666666;
+            --hover-color: #fffae6;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: var(--container-bg);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            border-left: 5px solid var(--accent-color);
+            padding-left: 15px;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 40px;
+            color: var(--accent-color);
+        }
+
+        p { margin: 15px 0; }
+        b, strong { color: #d32f2f; }
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        /* --- 画像エリアと拡大機能 --- */
+        .image-placeholder {
+            background-color: #eeeeee;
+            border: 2px dashed #cccccc;
+            padding: 10px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 4px;
+            cursor: zoom-in; /* 拡大できることを示すカーソル */
+            transition: opacity 0.2s;
+        }
+
+        .image-placeholder:hover {
+            opacity: 0.8;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 拡大用モーダル（隠し要素） */
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            cursor: zoom-out;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* --- 注釈のスタイル --- */
+        sup a {
+            text-decoration: none;
+            color: var(--accent-color);
+            font-weight: bold;
+            padding: 0 2px;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--note-color);
+        }
+
+        .footnote { margin-bottom: 8px; scroll-margin-top: 20px; }
+        .footnote:target {
+            background-color: var(--hover-color);
+            border-radius: 4px;
+        }
+
+        .arrow { display: inline-block; margin-right: 10px; color: var(--accent-color); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Debug.Log()とは？</h1>
+
+    <section>
+        <h3>Debug.Log()ってなに？</h3>
+        <p>Debug.Log()とは デバッグ<sup><a href="#note1">*1</a></sup> のときに<strong>プログラムの動きを画面に出して確認できる機能</strong>。</p>
+        <p>これはあってもなくてもゲームの進行には影響しないからわざわざ書かなくてもいい</p>
+        <p>そしてゲームが完成したとき、スマホやPCで遊ぶプレイヤーには原則見えない<sup><a href="#note2">*2</a></sup></p>
+        <p><span class="arrow">→</span>つまり<strong>自分のために"プログラムがちゃんと動いてるか"のメモを残せる機能</strong></p>
+        <p>例えば、どうしてもバグが起きる(思ってる動きじゃない)とき、"どこかでプログラムを書くのをミスったのは確定なんだけど、そのどこかがわからない"っていうのが定番。</p>
+        <p>そのどこかを特定するためにプログラムがどの値をどんなふうに処理してどこでズレた(バグった)のかが目でみて追えるようにするのがDebug.Log()<sup><a href="#note3">*3</a></sup></p>
+    </section>
+
+    <section>
+        <h3>デバッグログの見方</h3>
+        <p>デバッグログは、<strong>Consoleタブ</strong>から見ることができる。</p>
+        
+        <div class="image-placeholder" onclick="openModal(this)">
+            <img src="image1.png" alt="画像1">
+            <p><small>※画像1 (タップで拡大)</small></p>
+        </div>
+
+        <p>Consoleタブにデバッグログや、プログラムが吐いたエラー、その他の情報が全部集まってくる。</p>
+    </section>
+
+    <section>
+        <h3>デバッグログの作り方</h3>
+        <p>コードの中で <code>Debug.Log(ここに出力したい情報);</code> を書くだけ</p>
+    </section>
+
+    <section>
+        <h3>種類</h3>
+        
+        <div class="image-placeholder" onclick="openModal(this)">
+            <img src="image2.png" alt="画像2">
+            <p><small>※画像2 (タップで拡大)</small></p>
+        </div>
+
+        <p>Debug. のあとにLogと続ける(<code>Debug.Log();</code>)とすると、普通の情報の見た目で出てくる。</p>
+        <p>Debug. のあとにLogWarningと続ける(<code>Debug.LogWarning();</code>)とすると、警告の見た目で出てくる。</p>
+        <p>Debug. の後にLogErrorと続ける(<code>Debug.LogError();</code>)とすると、エラー吐いたときの見た目で出てくる。</p>
+    </section>
+
+    <footer>
+        <div id="note1" class="footnote">*1 デバッグ : プログラムのバグを取り除く作業</div>
+        <div id="note2" class="footnote">*2 実はDebug.Log()は隠しフォルダにログファイルとして保存されてるから見れたりすることもある。この話は気にしなくていい</div>
+        <div id="note3" class="footnote">*3 デバッグプリント と言ったりもする。</div>
+    </footer>
+</div>
+
+<!-- 拡大表示用モーダル構造 -->
+<div id="image-modal" onclick="this.style.display='none'">
+    <img id="modal-img" src="" alt="拡大画像">
+</div>
+
+<script>
+    function openModal(wrapper) {
+        const imgSrc = wrapper.querySelector('img').src;
+        document.getElementById('modal-img').src = imgSrc;
+        document.getElementById('image-modal').style.display = 'flex';
+    }
+</script>
+
+</body>
+</html>

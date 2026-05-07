@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rend.material.colorの意味</title>
+    <style>
+        /* --- 基本のライトテーマ設定 --- */
+        :root {
+            --bg-color: #f9f9f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --accent-color: #0078d4;
+            --border-color: #e0e0e0;
+            --code-bg: #f0f0f0;
+            --note-color: #666666;
+            --hover-color: #fffae6;
+            --highlight-text: #d32f2f;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: var(--container-bg);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            border-left: 5px solid var(--accent-color);
+            padding-left: 15px;
+            font-size: 1.6rem;
+            margin-bottom: 30px;
+            word-break: break-all;
+        }
+
+        h3 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 40px;
+            color: var(--accent-color);
+        }
+
+        p { margin: 15px 0; }
+        b, strong { color: var(--highlight-text); }
+        
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 0.95em;
+        }
+
+        .translation-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #b3d4fc;
+            padding: 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        /* --- 画像エリアと拡大機能 --- */
+        .image-placeholder {
+            background-color: #eeeeee;
+            border: 2px dashed #cccccc;
+            padding: 10px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 4px;
+            cursor: zoom-in;
+            transition: opacity 0.2s;
+        }
+
+        .image-placeholder:hover { opacity: 0.8; }
+        img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            cursor: zoom-out;
+            justify-content: center;
+            align-items: center;
+        }
+        #image-modal img { max-width: 90%; max-height: 90%; }
+
+        /* --- 注釈のスタイル --- */
+        sup a {
+            text-decoration: none;
+            color: var(--accent-color);
+            font-weight: bold;
+            padding: 0 2px;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--note-color);
+        }
+
+        .footnote { margin-bottom: 8px; scroll-margin-top: 20px; }
+        .footnote:target { background-color: var(--hover-color); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>rend.material.color = new Color(Random.value, Random.value, Random.value);の意味って？</h1>
+
+    <section>
+        <h3>左辺の意味</h3>
+        <p>
+            まず、<code>rend (Renderer)</code> の、<code>material</code> ってやつの、 <code>color</code> を変更してねってのが左辺。<br>
+            <code>new Color( )</code> は、色を変えるときのおまじない<sup><a href="#note1">*1</a></sup>みたいなもので、とりあえずこれを書いておけばおっけー。
+        </p>
+    </section>
+
+    <section>
+        <h3>右辺の意味</h3>
+        <p>
+            これから Color っていう言い方で赤色の要素を <code>Random.value</code>, 緑色の要素を <code>Random.value</code>, 青色の要素を <code>Random.value</code>だけ含んだ色を持つよってのが右辺。
+        </p>
+
+        <h3>なんでColor()のなかに3回も繰り返してRandom.valueを書いてるの？</h3>
+        <p>
+            結論、<code>Color()</code>っていう関数が 赤色の要素、緑色の要素、青色の要素 っていう3つの数字<sup><a href="#note3">*3</a></sup><sup><a href="#note4">*4</a></sup>を欲しがってるから。
+        </p>
+        
+        <p>ちなみにColor() は、説明を見る(関数にマウスカーソルをあわせる)と、こんな感じのが載ってる</p>
+
+        <div class="image-placeholder" onclick="openModal(this)">
+            <!-- 画像1のパスをここに入れる -->
+            <img src="image1.png" alt="画像1">
+            <p><small>※画像1 (タップで拡大)</small></p>
+        </div>
+
+        <p>これを翻訳してみると、</p>
+
+        <div class="translation-box">
+            Constructs a new color with given r,g,b components and sets a to 1<br>
+            指定されたr、g、b成分から新しい色を構築し、aを1に設定します。
+        </div>
+
+        <p>となり、3つの数字と a を定義<sup><a href="#note4">*4</a></sup>していることがわかる。</p>
+    </section>
+
+    <section>
+        <h3>まとめ</h3>
+        <p>
+            <code>rend.material.color = new Color(Random.value, Random.value, Random.value);</code>は、ランダムな色を設定するコード。<br>
+            そして "ランダムな色" を赤色の要素をランダムに、緑色の要素をランダムに、青色の要素をランダムに決めてるから3回連続で<code>Random.value</code>って書いてるってこと。
+        </p>
+    </section>
+
+    <footer>
+        <div id="note1" class="footnote">*1 しっかり解説すると、Rendererのmaterialのcolorという値<sup><a href="#note2">*2</a></sup> は"Color"っていう言い方で情報を伝えてほしいとunity側が言ってる。だから、 new でColorっていう言い方をするよと伝えて、メモリにColorという箱を用意する。でColorに情報を書く。難しいから理解しなくて大丈夫。おまじないだと思ってもらって平気</div>
+        <div id="note2" class="footnote">*2 ここでいう値をプログラミング用語でプロパティという</div>
+        <div id="note3" class="footnote">*3 光の三原色、RGB (Red, Green, Blue)に対応している</div>
+        <div id="note4" class="footnote">*4 実は4つ目の数字(alpha値。a値ともいう。)をもたせることで 透明度 の情報をもたせることもできる。a = 1で不透明。 a = 0 で完全に透明。半透明なオブジェクトとか作りたいときに使う。</div>
+    </footer>
+</div>
+
+<!-- 拡大表示用モーダル -->
+<div id="image-modal" onclick="this.style.display='none'">
+    <img id="modal-img" src="" alt="拡大画像">
+</div>
+
+<script>
+    function openModal(wrapper) {
+        const imgSrc = wrapper.querySelector('img').src;
+        const modal = document.getElementById('image-modal');
+        document.getElementById('modal-img').src = imgSrc;
+        modal.style.display = 'flex';
+    }
+</script>
+
+</body>
+</html>
