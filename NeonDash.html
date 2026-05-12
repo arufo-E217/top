@@ -2,63 +2,108 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>NEON DASH - BOOSTED</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON DASH - STRATEGY</title>
     <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-red: #ff3e3e;
+            --neon-green: #00ff00;
+            --neon-yellow: #ffeb3b;
+        }
         body {
             margin: 0;
-            overflow: hidden;
-            background: #0a0a0a;
-            font-family: 'Arial', sans-serif;
+            padding: 0;
+            background: #050505;
             color: #fff;
-            user-select: none;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
             touch-action: none;
         }
-        #ui {
+
+        /* 16:9のプレイエリアコンテナ */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            max-width: calc(100vh * 16 / 9);
+            aspect-ratio: 16 / 9;
+            background: #0a0a0a;
+            border: 2px solid #333;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            left: 15px;
             pointer-events: none;
             z-index: 10;
         }
-        #timer { font-size: 2em; color: #ff3e3e; text-shadow: 0 0 10px #f00; }
-        #score { font-size: 1.5em; color: #00f2ff; }
-        #highScore { font-size: 1em; color: #aaa; }
-        #level { font-size: 1.2em; color: #ffeb3b; }
-        
-        #overlay {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background: rgba(0,0,0,0.9);
-            padding: 40px;
-            border: 2px solid #00f2ff;
-            border-radius: 20px;
-            display: block;
+        .stat-item { margin-bottom: 2px; }
+        #timer { font-size: 1.8rem; color: var(--neon-red); text-shadow: 0 0 10px #f00; }
+        #score { font-size: 1.2rem; color: var(--neon-blue); }
+        #best-info { font-size: 0.8rem; color: #888; }
+
+        /* オーバーレイ共通 */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             z-index: 100;
+            text-align: center;
+        }
+
+        h1 { margin-bottom: 10px; color: var(--neon-blue); }
+        .input-group { margin: 15px 0; }
+        input {
+            background: #222;
+            border: 1px solid var(--neon-blue);
+            color: #fff;
+            padding: 10px;
+            font-size: 1rem;
+            width: 150px;
+            text-align: center;
+            border-radius: 5px;
         }
         button {
-            background: #00f2ff;
+            background: var(--neon-blue);
             border: none;
-            padding: 15px 30px;
-            font-size: 1.2em;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
             cursor: pointer;
             border-radius: 5px;
-            font-weight: bold;
             transition: 0.2s;
         }
-        button:hover { background: #fff; transform: scale(1.1); }
-        canvas { display: block; }
+        button:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        /* 被弾時の画面フラッシュ用レイヤー */
-        #damage-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 100px rgba(255, 0, 0, 0);
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+            font-size: 1rem;
+        }
+        .res-val { font-weight: bold; }
+
+        #damage-flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 5;
             transition: box-shadow 0.1s;
@@ -67,226 +112,262 @@
 </head>
 <body>
 
-<div id="damage-overlay"></div>
+<div id="game-container">
+    <div id="damage-flash"></div>
+    <div id="ui-layer">
+        <div id="timer" class="stat-item">TIME: 30</div>
+        <div id="score" class="stat-item">SCORE: 0</div>
+        <div id="best-info" class="stat-item">BEST: 0 (Seed: ---)</div>
+    </div>
 
-<div id="ui">
-    <div id="timer">TIME: 30</div>
-    <div id="score">SCORE: 0</div>
-    <div id="level">LV: 1</div>
-    <div id="highScore">BEST: 0</div>
+    <div id="start-overlay" class="overlay">
+        <h1>NEON DASH</h1>
+        <p>16:9 FIXED AREA / SEEDED PATTERN</p>
+        <div class="input-group">
+            <label style="display:block; font-size: 0.8rem; color:#888;">SEED (6 digits or blank):</label>
+            <input type="number" id="seed-input" placeholder="RANDOM" maxlength="6">
+        </div>
+        <button onclick="initGame()">GAME START</button>
+    </div>
+
+    <div id="result-overlay" class="overlay" style="display:none;">
+        <h1 id="result-title">FINISH!</h1>
+        <div class="result-grid">
+            <span>SCORE:</span><span id="res-score" class="res-val" style="color:var(--neon-blue)">0</span>
+            <span>BLUE (+100):</span><span id="res-blue" class="res-val">0</span>
+            <span>TIME UP (+5s):</span><span id="res-green" class="res-val" style="color:var(--neon-green)">0</span>
+            <span>HIT (-50):</span><span id="res-red" class="res-val" style="color:var(--neon-red)">0</span>
+            <span>SEED USED:</span><span id="res-seed" class="res-val">0</span>
+        </div>
+        <div id="new-record" style="color:var(--neon-yellow); margin-bottom:10px; font-weight:bold; display:none;">NEW RECORD!</div>
+        <button onclick="showStart()">BACK TO MENU</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
 </div>
-
-<div id="overlay">
-    <h1 id="msg">NEON DASH v2</h1>
-    <p>🔴 避ける(-50) / 🔵 スコア(+100)<br>🟢 レア：時間回復(+5秒)</p>
-    <button onclick="startGame()">START GAME</button>
-</div>
-
-<canvas id="gameCanvas"></canvas>
 
 <script>
+    // --- SEED-BASED PRNG (mulberry32) ---
+    function createPRNG(seed) {
+        return function() {
+            let t = seed += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const timerEl = document.getElementById('timer');
-    const scoreEl = document.getElementById('score');
-    const levelEl = document.getElementById('level');
-    const highScoreEl = document.getElementById('highScore');
-    const overlay = document.getElementById('overlay');
-    const damageOverlay = document.getElementById('damage-overlay');
-    const msg = document.getElementById('msg');
+    const container = document.getElementById('game-container');
+    
+    // 定数（仮想解像度を1280x720として内部計算）
+    const V_WIDTH = 1280;
+    const V_HEIGHT = 720;
 
-    let score = 0;
-    let level = 1;
-    let timeLeft = 30;
-    let gameActive = false;
-    let player = { x: 0, y: 0, r: 15 };
-    let enemies = [];
-    let items = [];
-    let timeItems = []; // 緑のアイテム
-    let particles = [];
-    let floatingTexts = []; // ポップアップスコア
+    let score = 0, timeLeft = 30, level = 1, gameActive = false;
+    let countBlue = 0, countGreen = 0, countRed = 0;
+    let currentSeed = 0, rnd = null;
+    let player = { x: V_WIDTH/2, y: V_HEIGHT/2, r: 18 };
+    let enemies = [], items = [], timeItems = [], particles = [], floatingTexts = [];
     let frameCount = 0;
 
-    let bestScore = localStorage.getItem('neonDashBest_v2') || 0;
-    highScoreEl.innerText = `BEST: ${bestScore}`;
+    // ハイスコアデータ
+    let bestData = JSON.parse(localStorage.getItem('neonDashBestData_v3')) || { score: 0, seed: '---' };
+    updateBestUI();
 
     function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // キャンバスのピクセルサイズをコンテナの表示サイズに合わせる
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    window.addEventListener('mousemove', e => { player.x = e.clientX; player.y = e.clientY; });
+    // 座標変換 (スクリーン座標 -> 仮想1280x720座標)
+    function getVirtualPos(e) {
+        const rect = container.getBoundingClientRect();
+        let clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        let clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        return {
+            x: (clientX - rect.left) * (V_WIDTH / rect.width),
+            y: (clientY - rect.top) * (V_HEIGHT / rect.height)
+        };
+    }
+
+    window.addEventListener('mousemove', e => {
+        if (!gameActive) return;
+        const pos = getVirtualPos(e);
+        player.x = pos.x; player.y = pos.y;
+    });
     window.addEventListener('touchmove', e => {
-        player.x = e.touches[0].clientX;
-        player.y = e.touches[0].clientY;
+        if (!gameActive) return;
+        const pos = getVirtualPos(e);
+        player.x = pos.x; player.y = pos.y;
         e.preventDefault();
     }, { passive: false });
 
-    function startGame() {
-        score = 0;
-        level = 1;
-        timeLeft = 30;
-        enemies = [];
-        items = [];
-        timeItems = [];
-        particles = [];
-        floatingTexts = [];
+    function showStart() {
+        document.getElementById('result-overlay').style.display = 'none';
+        document.getElementById('start-overlay').style.display = 'flex';
+    }
+
+    function initGame() {
+        const seedInput = document.getElementById('seed-input').value;
+        currentSeed = seedInput ? parseInt(seedInput) : Math.floor(Math.random() * 899999) + 100000;
+        rnd = createPRNG(currentSeed);
+        
+        score = 0; timeLeft = 30; level = 1;
+        countBlue = 0; countGreen = 0; countRed = 0;
+        frameCount = 0;
+        enemies = []; items = []; timeItems = []; particles = []; floatingTexts = [];
+        
+        document.getElementById('start-overlay').style.display = 'none';
         gameActive = true;
-        overlay.style.display = 'none';
         
         let timerId = setInterval(() => {
-            if (!gameActive) {
-                clearInterval(timerId);
-                return;
-            }
+            if (!gameActive) { clearInterval(timerId); return; }
             timeLeft--;
-            if (timeLeft <= 0) {
-                timeLeft = 0;
-                endGame();
-            }
-            timerEl.innerText = `TIME: ${timeLeft}`;
+            if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+            document.getElementById('timer').innerText = `TIME: ${timeLeft}`;
         }, 1000);
+
         update();
-    }
-
-    function spawnEntity() {
-        frameCount++;
-        // 敵
-        if (frameCount % Math.max(2, (15 - level)) === 0) {
-            enemies.push({ x: Math.random() * canvas.width, y: -20, speed: 4 + level + Math.random() * 4, r: 12 });
-        }
-        // 通常アイテム（青）
-        if (frameCount % 30 === 0) {
-            items.push({ x: Math.random() * canvas.width, y: -20, speed: 4, r: 10 });
-        }
-        // レアタイムアイテム（緑）- 約5~6秒に1回程度の確率
-        if (frameCount % 300 === 0 && Math.random() > 0.3) {
-            timeItems.push({ x: Math.random() * canvas.width, y: -20, speed: 5, r: 12 });
-        }
-    }
-
-    function triggerDamageEffect(val) {
-        // 画面フラッシュ
-        damageOverlay.style.boxShadow = "inset 0 0 100px rgba(255, 0, 0, 0.8)";
-        setTimeout(() => { damageOverlay.style.boxShadow = "inset 0 0 0px rgba(255, 0, 0, 0)"; }, 150);
-        // 数値ポップアップ
-        addFloatingText(player.x, player.y - 20, `-${val}`, "#ff3e3e");
-    }
-
-    function addFloatingText(x, y, text, color) {
-        floatingTexts.push({ x, y, text, color, life: 1.0 });
     }
 
     function update() {
         if (!gameActive) return;
+        
+        // 描画準備（仮想解像度に合わせてスケール調整）
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.scale(canvas.width / V_WIDTH, canvas.height / V_HEIGHT);
 
-        spawnEntity();
+        spawnLogic();
 
-        // 自機
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#00f2ff";
+        // プレイヤー描画
+        ctx.shadowBlur = 15; ctx.shadowColor = "#00f2ff";
         ctx.fillStyle = "#00f2ff";
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
 
-        // 敵（赤）
-        ctx.shadowColor = "#ff3e3e";
-        ctx.fillStyle = "#ff3e3e";
+        // 敵 (赤)
+        ctx.shadowColor = "#ff3e3e"; ctx.fillStyle = "#ff3e3e";
         enemies.forEach((en, i) => {
             en.y += en.speed;
-            ctx.beginPath();
-            ctx.arc(en.x, en.y, en.r, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(en.x, en.y, en.r, 0, Math.PI * 2); ctx.fill();
             if (Math.hypot(player.x - en.x, player.y - en.y) < player.r + en.r) {
-                const penalty = 50;
-                score = Math.max(0, score - penalty);
-                triggerDamageEffect(penalty);
+                hitEffect(50); countRed++;
                 enemies.splice(i, 1);
             }
-            if (en.y > canvas.height) enemies.splice(i, 1);
+            if (en.y > V_HEIGHT + 50) enemies.splice(i, 1);
         });
 
         // 青アイテム
-        ctx.shadowColor = "#00f2ff";
-        ctx.fillStyle = "#00f2ff";
+        ctx.shadowColor = "#00f2ff"; ctx.fillStyle = "#00f2ff";
         items.forEach((it, i) => {
             it.y += it.speed;
             ctx.fillRect(it.x - it.r, it.y - it.r, it.r * 2, it.r * 2);
             if (Math.hypot(player.x - it.x, player.y - it.y) < player.r + it.r) {
-                score += 100;
-                addFloatingText(it.x, it.y, "+100", "#00f2ff");
+                score += 100; countBlue++;
+                addText(it.x, it.y, "+100", "#00f2ff");
                 items.splice(i, 1);
-                checkLevelUp();
+                checkLevel();
             }
-            if (it.y > canvas.height) items.splice(i, 1);
+            if (it.y > V_HEIGHT + 50) items.splice(i, 1);
         });
 
-        // 緑アイテム（タイム回復）
-        ctx.shadowColor = "#00ff00";
-        ctx.fillStyle = "#00ff00";
+        // 緑アイテム
+        ctx.shadowColor = "#00ff00"; ctx.fillStyle = "#00ff00";
         timeItems.forEach((ti, i) => {
             ti.y += ti.speed;
-            // 菱形にする
             ctx.beginPath();
-            ctx.moveTo(ti.x, ti.y - ti.r);
-            ctx.lineTo(ti.x + ti.r, ti.y);
-            ctx.lineTo(ti.x, ti.y + ti.r);
-            ctx.lineTo(ti.x - ti.r, ti.y);
-            ctx.closePath();
-            ctx.fill();
-
+            ctx.moveTo(ti.x, ti.y - ti.r); ctx.lineTo(ti.x + ti.r, ti.y);
+            ctx.lineTo(ti.x, ti.y + ti.r); ctx.lineTo(ti.x - ti.r, ti.y);
+            ctx.closePath(); ctx.fill();
             if (Math.hypot(player.x - ti.x, player.y - ti.y) < player.r + ti.r) {
-                timeLeft += 5;
-                timerEl.innerText = `TIME: ${timeLeft}`;
-                addFloatingText(ti.x, ti.y, "+5 SEC", "#00ff00");
+                timeLeft += 5; countGreen++;
+                addText(ti.x, ti.y, "+5 SEC", "#00ff00");
                 timeItems.splice(i, 1);
-                // 画面を緑に光らせる
-                damageOverlay.style.boxShadow = "inset 0 0 50px rgba(0, 255, 0, 0.5)";
-                setTimeout(() => { damageOverlay.style.boxShadow = "inset 0 0 0px rgba(0, 255, 0, 0)"; }, 200);
+                flashScreen("rgba(0, 255, 0, 0.4)");
             }
-            if (ti.y > canvas.height) timeItems.splice(i, 1);
+            if (ti.y > V_HEIGHT + 50) timeItems.splice(i, 1);
         });
 
-        // 浮遊テキスト描画
+        // 浮遊テキスト
         ctx.shadowBlur = 0;
         floatingTexts.forEach((ft, i) => {
-            ft.y -= 2;
-            ft.life -= 0.02;
+            ft.y -= 2; ft.life -= 0.02;
             ctx.globalAlpha = ft.life;
             ctx.fillStyle = ft.color;
-            ctx.font = "bold 20px Arial";
-            ctx.fillText(ft.text, ft.x - 20, ft.y);
+            ctx.font = "bold 24px Arial";
+            ctx.fillText(ft.text, ft.x - 30, ft.y);
             if (ft.life <= 0) floatingTexts.splice(i, 1);
         });
         ctx.globalAlpha = 1.0;
 
-        scoreEl.innerText = `SCORE: ${score}`;
+        ctx.restore();
+        document.getElementById('score').innerText = `SCORE: ${score}`;
         requestAnimationFrame(update);
     }
 
-    function checkLevelUp() {
-        let nextLevel = Math.floor(score / 1000) + 1;
-        if (nextLevel > level) {
-            level = nextLevel;
-            levelEl.innerText = `LV: ${level}`;
-            addFloatingText(player.x, player.y - 40, "LEVEL UP!", "#ffeb3b");
+    function spawnLogic() {
+        frameCount++;
+        // シード値に基づいた乱数 rnd() を使用
+        if (frameCount % Math.max(3, (12 - level)) === 0) {
+            enemies.push({ x: rnd() * V_WIDTH, y: -30, speed: 5 + level + rnd() * 5, r: 15 });
         }
+        if (frameCount % 40 === 0) {
+            items.push({ x: rnd() * V_WIDTH, y: -30, speed: 4 + rnd() * 2, r: 12 });
+        }
+        if (frameCount % 360 === 0 && rnd() > 0.4) {
+            timeItems.push({ x: rnd() * V_WIDTH, y: -30, speed: 6, r: 15 });
+        }
+    }
+
+    function hitEffect(val) {
+        score = Math.max(0, score - val);
+        flashScreen("rgba(255, 0, 0, 0.7)");
+        addText(player.x, player.y - 20, `-${val}`, "#ff3e3e");
+    }
+
+    function flashScreen(color) {
+        const flash = document.getElementById('damage-flash');
+        flash.style.boxShadow = `inset 0 0 100px ${color}`;
+        setTimeout(() => flash.style.boxShadow = "none", 150);
+    }
+
+    function addText(x, y, text, color) {
+        floatingTexts.push({ x, y, text, color, life: 1.0 });
+    }
+
+    function checkLevel() {
+        level = Math.floor(score / 1500) + 1;
+    }
+
+    function updateBestUI() {
+        document.getElementById('best-info').innerText = `BEST: ${bestData.score} (Seed: ${bestData.seed})`;
     }
 
     function endGame() {
         gameActive = false;
-        overlay.style.display = 'block';
-        msg.innerHTML = `GAME OVER<br>SCORE: ${score}`;
+        const resOverlay = document.getElementById('result-overlay');
+        resOverlay.style.display = 'flex';
         
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('neonDashBest_v2', bestScore);
-            highScoreEl.innerText = `BEST: ${bestScore}`;
-            msg.innerHTML += "<br><span style='color:#ffeb3b'>NEW RECORD!</span>";
+        document.getElementById('res-score').innerText = score;
+        document.getElementById('res-blue').innerText = countBlue;
+        document.getElementById('res-green').innerText = countGreen;
+        document.getElementById('res-red').innerText = countRed;
+        document.getElementById('res-seed').innerText = currentSeed;
+
+        const newRecordMsg = document.getElementById('new-record');
+        if (score > bestData.score) {
+            bestData = { score: score, seed: currentSeed };
+            localStorage.setItem('neonDashBestData_v3', JSON.stringify(bestData));
+            updateBestUI();
+            newRecordMsg.style.display = 'block';
+        } else {
+            newRecordMsg.style.display = 'none';
         }
     }
 </script>
