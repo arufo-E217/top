@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>NEON DASH - 30秒の挑戦</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #0a0a0a;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            user-select: none;
+            touch-action: none;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+        #timer { font-size: 2em; color: #ff3e3e; }
+        #score { font-size: 1.5em; color: #00f2ff; }
+        #highScore { font-size: 1em; color: #aaa; }
+        #level { font-size: 1.2em; color: #ffeb3b; }
+        
+        #overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 40px;
+            border: 2px solid #00f2ff;
+            border-radius: 20px;
+            display: block;
+        }
+        button {
+            background: #00f2ff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover { background: #fff; transform: scale(1.1); }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div id="timer">TIME: 30</div>
+    <div id="score">SCORE: 0</div>
+    <div id="level">LV: 1</div>
+    <div id="highScore">BEST: 0</div>
+</div>
+
+<div id="overlay">
+    <h1 id="msg">NEON DASH</h1>
+    <p>赤いトゲを避けて、青い光を集めろ！</p>
+    <button onclick="startGame()">START GAME</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const timerEl = document.getElementById('timer');
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const highScoreEl = document.getElementById('highScore');
+    const overlay = document.getElementById('overlay');
+    const msg = document.getElementById('msg');
+
+    let score = 0;
+    let level = 1;
+    let timeLeft = 30;
+    let gameActive = false;
+    let player = { x: 0, y: 0, r: 15 };
+    let enemies = [];
+    let items = [];
+    let particles = [];
+    let frameCount = 0;
+
+    // ハイスコア読み込み
+    let bestScore = localStorage.getItem('neonDashBest') || 0;
+    highScoreEl.innerText = `BEST: ${bestScore}`;
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // マウス・タッチ移動
+    window.addEventListener('mousemove', e => { player.x = e.clientX; player.y = e.clientY; });
+    window.addEventListener('touchmove', e => {
+        player.x = e.touches[0].clientX;
+        player.y = e.touches[0].clientY;
+    });
+
+    function startGame() {
+        score = 0;
+        level = 1;
+        timeLeft = 30;
+        enemies = [];
+        items = [];
+        gameActive = true;
+        overlay.style.display = 'none';
+        
+        let timerId = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = `TIME: ${timeLeft}`;
+            if (timeLeft <= 0) {
+                clearInterval(timerId);
+                endGame();
+            }
+        }, 1000);
+        update();
+    }
+
+    function spawnEntity() {
+        frameCount++;
+        // 敵のスポーン（レベルが上がるほど頻度アップ）
+        if (frameCount % Math.max(2, (20 - level * 2)) === 0) {
+            enemies.push({
+                x: Math.random() * canvas.width,
+                y: -20,
+                speed: 3 + level + Math.random() * 5,
+                r: 10 + Math.random() * 10
+            });
+        }
+        // アイテムのスポーン
+        if (frameCount % 40 === 0) {
+            items.push({
+                x: Math.random() * canvas.width,
+                y: -20,
+                speed: 4,
+                r: 8
+            });
+        }
+    }
+
+    function update() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        spawnEntity();
+
+        // プレイヤー描画
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "#00f2ff";
+        ctx.fillStyle = "#00f2ff";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 敵の処理
+        ctx.shadowColor = "#ff3e3e";
+        ctx.fillStyle = "#ff3e3e";
+        enemies.forEach((en, i) => {
+            en.y += en.speed;
+            ctx.beginPath();
+            ctx.arc(en.x, en.y, en.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 衝突判定（敵）
+            let dist = Math.hypot(player.x - en.x, player.y - en.y);
+            if (dist < player.r + en.r) {
+                score = Math.max(0, score - 5); // ペナルティ
+                enemies.splice(i, 1);
+                createParticles(en.x, en.y, "#ff3e3e");
+            }
+            if (en.y > canvas.height) enemies.splice(i, 1);
+        });
+
+        // アイテムの処理
+        ctx.shadowColor = "#ffeb3b";
+        ctx.fillStyle = "#ffeb3b";
+        items.forEach((it, i) => {
+            it.y += it.speed;
+            ctx.beginPath();
+            ctx.rect(it.x - it.r, it.y - it.r, it.r * 2, it.r * 2);
+            ctx.fill();
+
+            let dist = Math.hypot(player.x - it.x, player.y - it.y);
+            if (dist < player.r + it.r) {
+                score += 100;
+                items.splice(i, 1);
+                createParticles(it.x, it.y, "#ffeb3b");
+                checkLevelUp();
+            }
+            if (it.y > canvas.height) items.splice(i, 1);
+        });
+
+        // パーティクル
+        particles.forEach((p, i) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+            if (p.life <= 0) particles.splice(i, 1);
+            ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
+            ctx.fillRect(p.x, p.y, 3, 3);
+        });
+
+        scoreEl.innerText = `SCORE: ${score}`;
+        requestAnimationFrame(update);
+    }
+
+    function createParticles(x, y, color) {
+        let rgb = color === "#ff3e3e" ? "255, 62, 62" : "255, 235, 59";
+        for (let i = 0; i < 10; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10,
+                life: 1.0,
+                color: rgb
+            });
+        }
+    }
+
+    function checkLevelUp() {
+        let nextLevel = Math.floor(score / 500) + 1;
+        if (nextLevel > level) {
+            level = nextLevel;
+            levelEl.innerText = `LV: ${level}`;
+            levelEl.style.color = "#fff";
+            setTimeout(() => levelEl.style.color = "#ffeb3b", 500);
+        }
+    }
+
+    function endGame() {
+        gameActive = false;
+        overlay.style.display = 'block';
+        msg.innerText = `TIME UP! SCORE: ${score}`;
+        
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('neonDashBest', bestScore);
+            highScoreEl.innerText = `BEST: ${bestScore}`;
+            msg.innerHTML += "<br><span style='color:#ffeb3b'>NEW RECORD!</span>";
+        }
+    }
+</script>
+</body>
+</html>
