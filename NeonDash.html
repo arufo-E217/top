@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON DASH - CUSTOMIZABLE</title>
+    <title>NEON DASH - PERFECT SEED</title>
     <style>
         :root {
             --neon-blue: #00f2ff;
@@ -11,7 +11,6 @@
             --neon-green: #00ff00;
             --neon-yellow: #ffeb3b;
         }
-        /* ページ全体を固定し、スクロールを禁止 */
         html, body {
             margin: 0;
             padding: 0;
@@ -23,7 +22,7 @@
             font-family: 'Segoe UI', sans-serif;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* 上端に合わせる */
+            align-items: flex-start;
         }
 
         #game-container {
@@ -144,28 +143,22 @@
 
 <script>
     // ==========================================
-    //  ゲームバランス調整用設定 (ここをいじる)
+    //  ゲームバランス調整用設定
     // ==========================================
     const GAME_CONFIG = {
-        INITIAL_TIME: 30,         // 初期時間
-        TIME_GAIN: 5,             // 緑アイテム取得時の回復秒数
-        PENALTY_SCORE: 50,        // 被弾時のスコア減点
-        SCORE_BLUE: 100,          // 青アイテムの得点
-        
-        // 出現頻度（数字が小さいほどたくさん出る）
-        SPAWN_RATE_ENEMY: 12,     // 敵（赤）の基本出現間隔（フレーム単位）
-        SPAWN_RATE_BLUE: 25,      // 青アイテムの出現間隔
-        SPAWN_RATE_GREEN: 300,    // 緑アイテムの出現間隔
-        
-        // 緑アイテムが出る確率 (0.0 〜 1.0)
+        INITIAL_TIME: 30,
+        TIME_GAIN: 5,
+        PENALTY_SCORE: 50,
+        SCORE_BLUE: 100,
+        SPAWN_RATE_ENEMY: 12,
+        SPAWN_RATE_BLUE: 25,
+        SPAWN_RATE_GREEN: 300,
         CHANCE_GREEN: 0.5,
-        
-        // レベルアップのしきい値 (このスコアごとに難易度アップ)
         LEVEL_UP_STEP: 1500
     };
 
     // ==========================================
-    //  システム変数
+    //  システム
     // ==========================================
     function createPRNG(seed) {
         return function() {
@@ -183,20 +176,21 @@
 
     let score = 0, timeLeft = 0, level = 1, gameActive = false;
     let countBlue = 0, countGreen = 0, countRed = 0;
-    let currentSeed = 0, rnd = null;
+    let currentSeed = 0;
+    // 各アイテムごとに独立した乱数生成器を持たせる
+    let rndEnemy, rndBlue, rndGreen;
+
     let player = { x: V_WIDTH/2, y: V_HEIGHT/2, r: 18 };
     let enemies = [], items = [], timeItems = [], floatingTexts = [], frameCount = 0;
 
     let bestData = JSON.parse(localStorage.getItem('neonDashBestData_v4')) || { score: 0, seed: '---' };
     updateBestUI();
 
-    // スクロールズレ防止：入力を終えた時や開始時にトップへ戻す
     function scrollToTop() {
         window.scrollTo(0, 0);
         document.body.scrollTop = 0;
     }
 
-    // 入力フォームからフォーカスが外れたらスクロールをリセット
     document.getElementById('seed-input').addEventListener('blur', scrollToTop);
 
     function resize() {
@@ -239,7 +233,12 @@
         scrollToTop();
         const seedInput = document.getElementById('seed-input').value;
         currentSeed = seedInput ? parseInt(seedInput.substring(0,6)) : Math.floor(Math.random() * 899999) + 100000;
-        rnd = createPRNG(currentSeed);
+        
+        // --- 独立したPRNGの初期化 ---
+        // 同じシードをベースにしつつ、わずかにオフセットを加えて異なる系列を作る
+        rndEnemy = createPRNG(currentSeed);
+        rndBlue = createPRNG(currentSeed + 1);
+        rndGreen = createPRNG(currentSeed + 2);
         
         score = 0; level = 1; frameCount = 0;
         timeLeft = GAME_CONFIG.INITIAL_TIME;
@@ -261,17 +260,38 @@
 
     function spawnLogic() {
         frameCount++;
-        // 敵の出現
+        
+        // 1. 敵の出現（rndEnemyを使用）
         if (frameCount % Math.max(2, (GAME_CONFIG.SPAWN_RATE_ENEMY - level)) === 0) {
-            enemies.push({ x: rnd() * V_WIDTH, y: -30, speed: 5 + level + rnd() * 5, r: 15 });
+            enemies.push({ 
+                x: rndEnemy() * V_WIDTH, 
+                y: -30, 
+                speed: 5 + level + rndEnemy() * 5, 
+                r: 15 
+            });
         }
-        // 青アイテムの出現
+        
+        // 2. 青アイテムの出現（rndBlueを使用）
         if (frameCount % GAME_CONFIG.SPAWN_RATE_BLUE === 0) {
-            items.push({ x: rnd() * V_WIDTH, y: -30, speed: 4 + rnd() * 2, r: 12 });
+            items.push({ 
+                x: rndBlue() * V_WIDTH, 
+                y: -30, 
+                speed: 4 + rndBlue() * 2, 
+                r: 12 
+            });
         }
-        // 緑アイテムの出現
-        if (frameCount % GAME_CONFIG.SPAWN_RATE_GREEN === 0 && rnd() < GAME_CONFIG.CHANCE_GREEN) {
-            timeItems.push({ x: rnd() * V_WIDTH, y: -30, speed: 6, r: 16 });
+        
+        // 3. 緑アイテムの出現（rndGreenを使用）
+        // ここでrndGreen()が呼ばれるタイミングは、敵や青アイテムに左右されなくなりました
+        if (frameCount % GAME_CONFIG.SPAWN_RATE_GREEN === 0) {
+            if (rndGreen() < GAME_CONFIG.CHANCE_GREEN) {
+                timeItems.push({ 
+                    x: rndGreen() * V_WIDTH, 
+                    y: -30, 
+                    speed: 6, 
+                    r: 16 
+                });
+            }
         }
     }
 
