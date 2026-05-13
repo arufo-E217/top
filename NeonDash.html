@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON DASH - PERFECT SEED</title>
+    <title>NEON DASH - CONFIGURABLE</title>
     <style>
         :root {
             --neon-blue: #00f2ff;
@@ -12,97 +12,50 @@
             --neon-yellow: #ffeb3b;
         }
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; 
-            background: #050505;
-            color: #fff;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #050505; color: #fff;
             font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            display: flex; justify-content: center; align-items: flex-start;
         }
-
         #game-container {
-            position: relative;
-            width: 100vw;
-            max-width: calc(100vh * 16 / 9);
-            aspect-ratio: 16 / 9;
-            background: #0a0a0a;
-            border-bottom: 2px solid #333;
-            box-sizing: border-box;
-            overflow: hidden;
+            position: relative; width: 100vw; max-width: calc(100vh * 16 / 9);
+            aspect-ratio: 16 / 9; background: #0a0a0a;
+            border-bottom: 2px solid #333; box-sizing: border-box; overflow: hidden;
         }
-
         canvas { display: block; width: 100%; height: 100%; }
-
-        #ui-layer {
-            position: absolute;
-            top: 10px;
-            left: 15px;
-            pointer-events: none;
-            z-index: 10;
-        }
+        #ui-layer { position: absolute; top: 10px; left: 15px; pointer-events: none; z-index: 10; }
         .stat-item { margin-bottom: 2px; }
         #timer { font-size: 1.8rem; color: var(--neon-red); text-shadow: 0 0 10px #f00; }
         #score { font-size: 1.2rem; color: var(--neon-blue); }
         #best-info { font-size: 0.8rem; color: #888; }
-
         .overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            text-align: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; text-align: center;
         }
-
         h1 { margin-bottom: 10px; color: var(--neon-blue); font-size: 2.5rem; }
         .input-group { margin: 15px 0; }
         input {
-            background: #222;
-            border: 1px solid var(--neon-blue);
-            color: #fff;
-            padding: 12px;
-            font-size: 1.2rem;
-            width: 180px;
-            text-align: center;
-            border-radius: 5px;
-            outline: none;
+            background: #222; border: 1px solid var(--neon-blue);
+            color: #fff; padding: 12px; font-size: 1.2rem;
+            width: 180px; text-align: center; border-radius: 5px; outline: none;
         }
         button {
-            background: var(--neon-blue);
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: 0.2s;
+            background: var(--neon-blue); border: none; padding: 15px 40px;
+            font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            border-radius: 5px; transition: 0.2s;
         }
         button:active { transform: scale(0.95); }
-
         .result-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 20px;
-            margin: 15px 0;
-            font-size: 1rem;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 8px 20px; margin: 15px 0; font-size: 1rem;
         }
         .res-val { font-weight: bold; text-align: left; }
         .res-label { text-align: right; }
-
         #damage-flash {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 5;
-            transition: box-shadow 0.1s;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5; transition: box-shadow 0.1s;
         }
     </style>
 </head>
@@ -129,9 +82,9 @@
         <h1 id="result-title">FINISH!</h1>
         <div class="result-grid">
             <span class="res-label">SCORE:</span><span id="res-score" class="res-val" style="color:var(--neon-blue)">0</span>
-            <span class="res-label">BLUE (+100):</span><span id="res-blue" class="res-val">0</span>
-            <span class="res-label">TIME (+5s):</span><span id="res-green" class="res-val" style="color:var(--neon-green)">0</span>
-            <span class="res-label">HIT (-50):</span><span id="res-red" class="res-val" style="color:var(--neon-red)">0</span>
+            <span class="res-label">BLUE COLLECT:</span><span id="res-blue" class="res-val">0</span>
+            <span class="res-label">TIME BONUS:</span><span id="res-green" class="res-val" style="color:var(--neon-green)">0</span>
+            <span class="res-label">HIT COUNT:</span><span id="res-red" class="res-val" style="color:var(--neon-red)">0</span>
             <span class="res-label">SEED:</span><span id="res-seed" class="res-val">0</span>
         </div>
         <div id="new-record" style="color:var(--neon-yellow); margin-bottom:10px; font-weight:bold; display:none;">NEW RECORD!</div>
@@ -143,22 +96,45 @@
 
 <script>
     // ==========================================
-    //  ゲームバランス調整用設定
+    //  ゲーム・アイテム詳細設定
     // ==========================================
-    const GAME_CONFIG = {
+    const SYSTEM_CONFIG = {
         INITIAL_TIME: 30,
-        TIME_GAIN: 5,
-        PENALTY_SCORE: 50,
-        SCORE_BLUE: 100,
-        SPAWN_RATE_ENEMY: 12,
-        SPAWN_RATE_BLUE: 25,
-        SPAWN_RATE_GREEN: 300,
-        CHANCE_GREEN: 0.5,
-        LEVEL_UP_STEP: 1500
+        LEVEL_UP_STEP: 1500  // 何スコアごとにレベル（敵の速度）を上げるか
+    };
+
+    const ENTITY_CONFIG = {
+        RED: { // 敵（邪魔者）
+            spawnRate: 12,      // 出現頻度（フレーム：値が小さいほど速い）
+            spawnChance: 1.0,   // 出現確率（0.0 ~ 1.0）
+            scoreMod: 0,      // ヒット時のスコア増減（ペナルティは負の数）
+            timeMod: -0.5,        // ヒット時の時間増減（秒）
+            baseSpeed: 5,
+            colorName: '--neon-red',
+            shape: 'circle'
+        },
+        BLUE: { // スコアアイテム
+            spawnRate: 25,
+            spawnChance: 1.0,
+            scoreMod: 100,
+            timeMod: 0,
+            baseSpeed: 4,
+            colorName: '--neon-blue',
+            shape: 'square'
+        },
+        GREEN: { // タイムアイテム
+            spawnRate: 60,
+            spawnChance: 0.6,
+            scoreMod: 0,
+            timeMod: 5,
+            baseSpeed: 6,
+            colorName: '--neon-green',
+            shape: 'diamond'
+        }
     };
 
     // ==========================================
-    //  システム
+    //  システム内部ロジック
     // ==========================================
     function createPRNG(seed) {
         return function() {
@@ -177,27 +153,18 @@
     let score = 0, timeLeft = 0, level = 1, gameActive = false;
     let countBlue = 0, countGreen = 0, countRed = 0;
     let currentSeed = 0;
-    // 各アイテムごとに独立した乱数生成器を持たせる
     let rndEnemy, rndBlue, rndGreen;
 
     let player = { x: V_WIDTH/2, y: V_HEIGHT/2, r: 18 };
     let enemies = [], items = [], timeItems = [], floatingTexts = [], frameCount = 0;
 
-    let bestData = JSON.parse(localStorage.getItem('neonDashBestData_v4')) || { score: 0, seed: '---' };
+    let bestData = JSON.parse(localStorage.getItem('neonDashBestData_v5')) || { score: 0, seed: '---' };
     updateBestUI();
-
-    function scrollToTop() {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-    }
-
-    document.getElementById('seed-input').addEventListener('blur', scrollToTop);
 
     function resize() {
         const rect = container.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
-        scrollToTop();
     }
     window.addEventListener('resize', resize);
     resize();
@@ -224,24 +191,20 @@
     }, { passive: false });
 
     function showStart() {
-        scrollToTop();
         document.getElementById('result-overlay').style.display = 'none';
         document.getElementById('start-overlay').style.display = 'flex';
     }
 
     function initGame() {
-        scrollToTop();
         const seedInput = document.getElementById('seed-input').value;
         currentSeed = seedInput ? parseInt(seedInput.substring(0,6)) : Math.floor(Math.random() * 899999) + 100000;
         
-        // --- 独立したPRNGの初期化 ---
-        // 同じシードをベースにしつつ、わずかにオフセットを加えて異なる系列を作る
         rndEnemy = createPRNG(currentSeed);
         rndBlue = createPRNG(currentSeed + 1);
         rndGreen = createPRNG(currentSeed + 2);
         
         score = 0; level = 1; frameCount = 0;
-        timeLeft = GAME_CONFIG.INITIAL_TIME;
+        timeLeft = SYSTEM_CONFIG.INITIAL_TIME;
         countBlue = 0; countGreen = 0; countRed = 0;
         enemies = []; items = []; timeItems = []; floatingTexts = [];
         
@@ -260,37 +223,26 @@
 
     function spawnLogic() {
         frameCount++;
-        
-        // 1. 敵の出現（rndEnemyを使用）
-        if (frameCount % Math.max(2, (GAME_CONFIG.SPAWN_RATE_ENEMY - level)) === 0) {
-            enemies.push({ 
-                x: rndEnemy() * V_WIDTH, 
-                y: -30, 
-                speed: 5 + level + rndEnemy() * 5, 
-                r: 15 
-            });
+        const confR = ENTITY_CONFIG.RED;
+        const confB = ENTITY_CONFIG.BLUE;
+        const confG = ENTITY_CONFIG.GREEN;
+
+        // RED Spawn (レベルに応じて頻度上昇)
+        if (frameCount % Math.max(2, (confR.spawnRate - level)) === 0) {
+            if(rndEnemy() < confR.spawnChance) {
+                enemies.push({ x: rndEnemy() * V_WIDTH, y: -30, speed: confR.baseSpeed + level + rndEnemy() * 5, r: 15 });
+            }
         }
-        
-        // 2. 青アイテムの出現（rndBlueを使用）
-        if (frameCount % GAME_CONFIG.SPAWN_RATE_BLUE === 0) {
-            items.push({ 
-                x: rndBlue() * V_WIDTH, 
-                y: -30, 
-                speed: 4 + rndBlue() * 2, 
-                r: 12 
-            });
+        // BLUE Spawn
+        if (frameCount % confB.spawnRate === 0) {
+            if(rndBlue() < confB.spawnChance) {
+                items.push({ x: rndBlue() * V_WIDTH, y: -30, speed: confB.baseSpeed + rndBlue() * 2, r: 12 });
+            }
         }
-        
-        // 3. 緑アイテムの出現（rndGreenを使用）
-        // ここでrndGreen()が呼ばれるタイミングは、敵や青アイテムに左右されなくなりました
-        if (frameCount % GAME_CONFIG.SPAWN_RATE_GREEN === 0) {
-            if (rndGreen() < GAME_CONFIG.CHANCE_GREEN) {
-                timeItems.push({ 
-                    x: rndGreen() * V_WIDTH, 
-                    y: -30, 
-                    speed: 6, 
-                    r: 16 
-                });
+        // GREEN Spawn
+        if (frameCount % confG.spawnRate === 0) {
+            if (rndGreen() < confG.spawnChance) {
+                timeItems.push({ x: rndGreen() * V_WIDTH, y: -30, speed: confG.baseSpeed, r: 16 });
             }
         }
     }
@@ -303,52 +255,27 @@
 
         spawnLogic();
 
-        // プレイヤー
+        // Player
         ctx.shadowBlur = 15; ctx.shadowColor = varColor('--neon-blue');
         ctx.fillStyle = varColor('--neon-blue');
         ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
 
-        // 敵 (赤)
-        ctx.shadowColor = varColor('--neon-red'); ctx.fillStyle = varColor('--neon-red');
-        enemies.forEach((en, i) => {
-            en.y += en.speed;
-            ctx.beginPath(); ctx.arc(en.x, en.y, en.r, 0, Math.PI * 2); ctx.fill();
-            if (Math.hypot(player.x - en.x, player.y - en.y) < player.r + en.r) {
-                score = Math.max(0, score - GAME_CONFIG.PENALTY_SCORE);
-                flashScreen("rgba(255, 0, 0, 0.7)");
-                addText(player.x, player.y - 20, `-${GAME_CONFIG.PENALTY_SCORE}`, varColor('--neon-red'));
-                countRed++; enemies.splice(i, 1);
-            } else if (en.y > V_HEIGHT + 50) enemies.splice(i, 1);
+        // RED (Enemies)
+        handleEntities(enemies, ENTITY_CONFIG.RED, (hit) => {
+            if(hit) { countRed++; flashScreen("rgba(255, 0, 0, 0.7)"); }
         });
 
-        // 青
-        ctx.shadowColor = varColor('--neon-blue'); ctx.fillStyle = varColor('--neon-blue');
-        items.forEach((it, i) => {
-            it.y += it.speed;
-            ctx.fillRect(it.x - it.r, it.y - it.r, it.r * 2, it.r * 2);
-            if (Math.hypot(player.x - it.x, player.y - it.y) < player.r + it.r) {
-                score += GAME_CONFIG.SCORE_BLUE; countBlue++;
-                addText(it.x, it.y, `+${GAME_CONFIG.SCORE_BLUE}`, varColor('--neon-blue'));
-                items.splice(i, 1); checkLevel();
-            } else if (it.y > V_HEIGHT + 50) items.splice(i, 1);
+        // BLUE (Items)
+        handleEntities(items, ENTITY_CONFIG.BLUE, (hit) => {
+            if(hit) { countBlue++; checkLevel(); }
         });
 
-        // 緑
-        ctx.shadowColor = varColor('--neon-green'); ctx.fillStyle = varColor('--neon-green');
-        timeItems.forEach((ti, i) => {
-            ti.y += ti.speed;
-            ctx.beginPath();
-            ctx.moveTo(ti.x, ti.y - ti.r); ctx.lineTo(ti.x + ti.r, ti.y);
-            ctx.lineTo(ti.x, ti.y + ti.r); ctx.lineTo(ti.x - ti.r, ti.y);
-            ctx.closePath(); ctx.fill();
-            if (Math.hypot(player.x - ti.x, player.y - ti.y) < player.r + ti.r) {
-                timeLeft += GAME_CONFIG.TIME_GAIN; countGreen++;
-                addText(ti.x, ti.y, `+${GAME_CONFIG.TIME_GAIN} SEC`, varColor('--neon-green'));
-                timeItems.splice(i, 1); flashScreen("rgba(0, 255, 0, 0.4)");
-            } else if (ti.y > V_HEIGHT + 50) timeItems.splice(i, 1);
+        // GREEN (Time)
+        handleEntities(timeItems, ENTITY_CONFIG.GREEN, (hit) => {
+            if(hit) { countGreen++; flashScreen("rgba(0, 255, 0, 0.4)"); }
         });
 
-        // テキスト
+        // Floating Text
         ctx.shadowBlur = 0;
         floatingTexts.forEach((ft, i) => {
             ft.y -= 2; ft.life -= 0.02;
@@ -363,6 +290,56 @@
         requestAnimationFrame(update);
     }
 
+    function handleEntities(array, config, onHit) {
+        ctx.shadowColor = varColor(config.colorName);
+        ctx.fillStyle = varColor(config.colorName);
+
+        for (let i = array.length - 1; i >= 0; i--) {
+            let ent = array[i];
+            ent.y += ent.speed;
+
+            // Draw
+            if (config.shape === 'circle') {
+                ctx.beginPath(); ctx.arc(ent.x, ent.y, ent.r, 0, Math.PI * 2); ctx.fill();
+            } else if (config.shape === 'square') {
+                ctx.fillRect(ent.x - ent.r, ent.y - ent.r, ent.r * 2, ent.r * 2);
+            } else if (config.shape === 'diamond') {
+                ctx.beginPath();
+                ctx.moveTo(ent.x, ent.y - ent.r); ctx.lineTo(ent.x + ent.r, ent.y);
+                ctx.lineTo(ent.x, ent.y + ent.r); ctx.lineTo(ent.x - ent.r, ent.y);
+                ctx.closePath(); ctx.fill();
+            }
+
+            // Collision
+            if (Math.hypot(player.x - ent.x, player.y - ent.y) < player.r + ent.r) {
+                applyEffect(config, ent.x, ent.y);
+                array.splice(i, 1);
+                onHit(true);
+            } else if (ent.y > V_HEIGHT + 50) {
+                array.splice(i, 1);
+            }
+        }
+    }
+
+    function applyEffect(config, x, y) {
+        // Score logic
+        score = Math.max(0, score + config.scoreMod);
+        
+        // Time logic
+        timeLeft = Math.max(0, timeLeft + config.timeMod);
+        document.getElementById('timer').innerText = `TIME: ${timeLeft}`;
+
+        // Text Feedback
+        if (config.scoreMod !== 0) {
+            const txt = config.scoreMod > 0 ? `+${config.scoreMod}` : `${config.scoreMod}`;
+            addText(x, y - 20, txt, varColor(config.colorName));
+        }
+        if (config.timeMod !== 0) {
+            const txt = config.timeMod > 0 ? `+${config.timeMod} SEC` : `${config.timeMod} SEC`;
+            addText(x, y + 10, txt, varColor(config.colorName));
+        }
+    }
+
     function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
     function flashScreen(color) {
         const flash = document.getElementById('damage-flash');
@@ -370,12 +347,11 @@
         setTimeout(() => flash.style.boxShadow = "none", 150);
     }
     function addText(x, y, text, color) { floatingTexts.push({ x, y, text, color, life: 1.0 }); }
-    function checkLevel() { level = Math.floor(score / GAME_CONFIG.LEVEL_UP_STEP) + 1; }
+    function checkLevel() { level = Math.floor(score / SYSTEM_CONFIG.LEVEL_UP_STEP) + 1; }
     function updateBestUI() { document.getElementById('best-info').innerText = `BEST: ${bestData.score} (Seed: ${bestData.seed})`; }
 
     function endGame() {
         gameActive = false;
-        scrollToTop();
         document.getElementById('result-overlay').style.display = 'flex';
         document.getElementById('res-score').innerText = score;
         document.getElementById('res-blue').innerText = countBlue;
@@ -386,7 +362,7 @@
         const newRecordMsg = document.getElementById('new-record');
         if (score > bestData.score) {
             bestData = { score: score, seed: currentSeed };
-            localStorage.setItem('neonDashBestData_v4', JSON.stringify(bestData));
+            localStorage.setItem('neonDashBestData_v5', JSON.stringify(bestData));
             updateBestUI();
             newRecordMsg.style.display = 'block';
         } else {
