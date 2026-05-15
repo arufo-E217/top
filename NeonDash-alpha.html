@@ -3,332 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON DASH - HYPER DRIVE</title>
+    <title>NEON DASH: FUTURE CITY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
             --neon-blue: #00f2ff;
-            --neon-red: #ff3e3e;
-            --neon-green: #00ff00;
-            --neon-yellow: #ffeb3b;
-            --neon-purple: #bc13fe;
+            --neon-pink: #ff00ff;
+            --neon-yellow: #fff200;
+            --bg-dark: #050510;
         }
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background: #000; color: #fff;
-            font-family: 'Orbitron', 'Segoe UI', sans-serif;
-            display: flex; justify-content: center; align-items: flex-start;
+            overflow: hidden; background: var(--bg-dark); color: #fff;
+            font-family: 'Share Tech Mono', monospace;
         }
         #game-container {
             position: relative; width: 100vw; max-width: calc(100vh * 16 / 9);
-            aspect-ratio: 16 / 9; background: #050508;
-            border: 2px solid #333; box-sizing: border-box; overflow: hidden;
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
+            aspect-ratio: 16 / 9; background: radial-gradient(circle at 50% 50%, #101030 0%, #050510 100%);
+            overflow: hidden; margin: 0 auto;
         }
         canvas { display: block; width: 100%; height: 100%; }
-        
-        /* UI Styling */
-        #ui-layer { position: absolute; top: 20px; left: 20px; pointer-events: none; z-index: 10; }
-        .stat-item { margin-bottom: 5px; font-weight: bold; }
-        #timer { font-size: 2.2rem; color: var(--neon-red); text-shadow: 0 0 15px #f00; }
-        #score { font-size: 1.5rem; color: var(--neon-blue); }
-        #combo-ui { position: absolute; top: 20px; right: 20px; text-align: right; }
-        #combo-count { font-size: 3rem; color: var(--neon-yellow); text-shadow: 0 0 20px #ffeb3b; display:none; }
 
+        /* HUD - 超高速更新UI */
+        #hud {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 20px;
+            pointer-events: none; z-index: 10;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            box-sizing: border-box;
+        }
+        .hud-data {
+            text-shadow: 0 0 10px var(--neon-blue);
+            font-size: 1.5rem; letter-spacing: 2px;
+        }
+        #timer-val { color: var(--neon-pink); font-size: 2.5rem; text-shadow: 0 0 15px var(--neon-pink); }
+
+        /* COMBO - 巨大かつスタイリッシュに */
+        #combo-container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none; text-align: center; z-index: 5;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        #combo-num {
+            font-size: 8rem; font-style: italic; font-weight: 900;
+            background: linear-gradient(to bottom, #fff 30%, var(--neon-yellow) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px var(--neon-yellow));
+            margin: 0; line-height: 1;
+        }
+        .combo-label { font-size: 1.5rem; color: var(--neon-yellow); letter-spacing: 10px; }
+
+        /* カウントダウン */
+        #countdown {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 12rem; color: #fff; text-shadow: 0 0 30px var(--neon-blue);
+            z-index: 100; pointer-events: none; display: none;
+        }
+
+        /* オーバーレイ */
         .overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); display: flex;
-            flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100; text-align: center; backdrop-filter: blur(5px);
+            position: absolute; inset: 0; background: rgba(0,0,10,0.9);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 200; backdrop-filter: blur(10px);
         }
-        h1 { margin-bottom: 10px; color: var(--neon-blue); font-size: 4rem; letter-spacing: 5px; text-shadow: 0 0 20px var(--neon-blue); }
-        button {
-            background: transparent; border: 2px solid var(--neon-blue); color: var(--neon-blue);
-            padding: 15px 50px; font-size: 1.5rem; font-weight: bold; cursor: pointer;
-            border-radius: 50px; transition: 0.3s; text-transform: uppercase;
+        h1 { font-size: 4rem; margin: 0; background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn {
+            margin-top: 30px; padding: 15px 60px; border: 1px solid var(--neon-blue);
+            background: rgba(0, 242, 255, 0.1); color: var(--neon-blue);
+            font-family: inherit; font-size: 1.5rem; cursor: pointer; transition: 0.3s;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
         }
-        button:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 30px var(--neon-blue); }
-        
-        #damage-flash {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 5; transition: opacity 0.1s; opacity: 0;
-            background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.4) 100%);
+        .btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 30px var(--neon-blue); }
+
+        /* スキャンライン演出 */
+        #game-container::after {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 3px 100%; pointer-events: none; z-index: 15;
         }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="damage-flash"></div>
-    <div id="ui-layer">
-        <div id="timer" class="stat-item">TIME: 30</div>
-        <div id="score" class="stat-item">SCORE: 0</div>
-    </div>
-    <div id="combo-ui">
-        <div id="combo-count">0 COMBO</div>
+    <div id="hud">
+        <div>
+            <div class="hud-data">SCORE: <span id="score-val">000000</span></div>
+            <div class="hud-data" style="font-size: 1rem; opacity: 0.7;">COMBO: <span id="combo-stat">0</span></div>
+        </div>
+        <div id="timer-val">30.00</div>
     </div>
 
+    <div id="combo-container">
+        <p id="combo-num">0</p>
+        <p class="combo-label">CHAIN</p>
+    </div>
+
+    <div id="countdown"></div>
+
     <div id="start-overlay" class="overlay">
-        <h1>NEON DASH</h1>
-        <p style="color:#888; margin-bottom: 20px;">AVOID RED | COLLECT BLUE & GREEN</p>
-        <button onclick="initGame()">HYPER DRIVE START</button>
+        <h1>NEON CITY DASH</h1>
+        <p style="color: var(--neon-blue); opacity: 0.6;">SYSTEM READY / NEURAL LINK ESTABLISHED</p>
+        <button class="btn" onclick="startCountdown()">INITIALIZE</button>
     </div>
 
     <div id="result-overlay" class="overlay" style="display:none;">
-        <h1 id="result-title" style="color:var(--neon-yellow)">MISSION COMPLETE</h1>
-        <div id="res-score" style="font-size:3rem; color:var(--neon-blue); margin: 20px 0;">0</div>
-        <button onclick="showStart()">REBOOT SYSTEM</button>
+        <h1 style="color: var(--neon-yellow); -webkit-text-fill-color: var(--neon-yellow);">TERMINATED</h1>
+        <div id="final-score" style="font-size: 3rem; margin: 20px 0;">0</div>
+        <button class="btn" onclick="location.reload()">RE-SYNC</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 </div>
 
 <script>
-    // --- 🛠 CONFIG ---
-    const SYSTEM = {
-        INITIAL_TIME: 30,
-        BASE_V_WIDTH: 1280,
-        BASE_V_HEIGHT: 720
-    };
-
-    const ENTITY = {
-        RED: { color: '#ff3e3e', score: 0, time: -2, speed: 6, shape: 'circle', shadow: '#f00' },
-        BLUE: { color: '#00f2ff', score: 100, time: 0, speed: 4, shape: 'square', shadow: '#00f2ff' },
-        GREEN: { color: '#00ff00', score: 50, time: 3, speed: 5, shape: 'diamond', shadow: '#0f0' }
-    };
-
-    // --- 🧬 STATE ---
-    let score = 0, timeLeft = 0, gameActive = false, combo = 0, comboTimer = 0;
-    let player = { x: 640, y: 360, r: 18, trail: [] };
-    let enemies = [], items = [], particles = [], floatingTexts = [];
-    let frameCount = 0, shake = 0, gridOffset = 0;
-
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const container = document.getElementById('game-container');
+    const V_WIDTH = 1280, V_HEIGHT = 720;
+    
+    let score = 0, timeLeft = 30.00, combo = 0, comboScale = 1;
+    let gameState = 'START'; // START, COUNTDOWN, PLAYING, END
+    let entities = [], particles = [], trail = [];
+    let player = { x: V_WIDTH/2, y: V_HEIGHT * 0.8, r: 15 };
+    let frame = 0, gridScroll = 0, shake = 0;
 
-    // --- 🎨 RENDERING HELPERS ---
     function resize() {
-        const rect = container.getBoundingClientRect();
+        const rect = canvas.parentElement.getBoundingClientRect();
         canvas.width = rect.width; canvas.height = rect.height;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    function getMousePos(e) {
-        const rect = container.getBoundingClientRect();
+    // マウス/タッチ位置取得
+    const updatePlayerPos = (e) => {
+        if (gameState !== 'PLAYING') return;
+        const rect = canvas.getBoundingClientRect();
         const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-        return {
-            x: (clientX - rect.left) * (SYSTEM.BASE_V_WIDTH / rect.width),
-            y: (clientY - rect.top) * (SYSTEM.BASE_V_HEIGHT / rect.height)
-        };
+        player.x = (clientX - rect.left) * (V_WIDTH / rect.width);
+        player.y = (clientY - rect.top) * (V_HEIGHT / rect.height);
+    };
+    window.addEventListener('mousemove', updatePlayerPos);
+    window.addEventListener('touchmove', e => { updatePlayerPos(e); e.preventDefault(); }, {passive:false});
+
+    function startCountdown() {
+        document.getElementById('start-overlay').style.display = 'none';
+        gameState = 'COUNTDOWN';
+        const cd = document.getElementById('countdown');
+        cd.style.display = 'block';
+        let count = 3;
+        
+        const timer = setInterval(() => {
+            if (count > 0) {
+                cd.innerText = count;
+                cd.style.transform = 'translate(-50%, -50%) scale(2)';
+                cd.style.opacity = '1';
+                setTimeout(() => {
+                    cd.style.transform = 'translate(-50%, -50%) scale(1)';
+                    cd.style.opacity = '0';
+                }, 500);
+                count--;
+            } else if (count === 0) {
+                cd.innerText = "GO!";
+                cd.style.opacity = '1';
+                setTimeout(() => cd.style.display = 'none', 500);
+                gameState = 'PLAYING';
+                lastTime = performance.now();
+                loop();
+                clearInterval(timer);
+            }
+        }, 1000);
     }
 
-    window.addEventListener('mousemove', e => { 
-        const p = getMousePos(e); 
-        player.x = p.x; player.y = p.y; 
-    });
-    window.addEventListener('touchmove', e => {
-        const p = getMousePos(e); 
-        player.x = p.x; player.y = p.y;
-        e.preventDefault();
-    }, {passive: false});
-
-    // --- 🎇 EFFECTS ---
     function createExplosion(x, y, color) {
-        for(let i=0; i<15; i++) {
+        for(let i=0; i<10; i++) {
             particles.push({
-                x, y,
-                vx: (Math.random() - 0.5) * 15,
-                vy: (Math.random() - 0.5) * 15,
-                life: 1.0,
-                color: color,
-                size: Math.random() * 4 + 2
+                x, y, 
+                vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
+                life: 1.0, color
             });
         }
     }
 
-    function addFloatingText(x, y, text, color) {
-        floatingTexts.push({ x, y, text, color, life: 1.0, vy: -2 });
+    let lastTime = 0;
+    function loop(now = performance.now()) {
+        if (gameState !== 'PLAYING') return;
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
     }
 
-    function triggerShake(amt) { shake = amt; }
+    function update(dt) {
+        timeLeft -= dt;
+        if (timeLeft <= 0) { timeLeft = 0; gameState = 'END'; endGame(); }
 
-    // --- 🕹 GAME LOGIC ---
-    function initGame() {
-        score = 0; combo = 0; timeLeft = SYSTEM.INITIAL_TIME;
-        enemies = []; items = []; particles = []; floatingTexts = [];
-        gameActive = true;
-        document.getElementById('start-overlay').style.display = 'none';
-        document.getElementById('result-overlay').style.display = 'none';
+        frame++;
+        gridScroll = (gridScroll + 5 + score/500) % 60;
+
+        // UI更新（爆速）
+        document.getElementById('timer-val').innerText = timeLeft.toFixed(2);
+        document.getElementById('score-val').innerText = Math.floor(score).toString().padStart(6, '0');
         
-        const timerId = setInterval(() => {
-            if(!gameActive) { clearInterval(timerId); return; }
-            timeLeft--;
-            if(timeLeft <= 0) endGame();
-            document.getElementById('timer').innerText = `TIME: ${timeLeft}`;
-        }, 1000);
-        
-        update();
+        // コンボアニメーション
+        if (combo > 0) {
+            comboScale = Math.max(1, comboScale - 0.1);
+            const cc = document.getElementById('combo-container');
+            cc.style.opacity = Math.min(1, comboScale);
+            document.getElementById('combo-num').style.transform = `scale(${comboScale})`;
+        }
+
+        // 敵・アイテム生成
+        if (frame % 15 === 0) {
+            const type = Math.random() < 0.2 ? 'GREEN' : (Math.random() < 0.4 ? 'BLUE' : 'RED');
+            entities.push({
+                x: Math.random() * V_WIDTH, y: -50,
+                type: type,
+                speed: 8 + (score / 1000)
+            });
+        }
+
+        // エンティティ更新
+        for (let i = entities.length - 1; i >= 0; i--) {
+            let e = entities[i];
+            e.y += e.speed;
+
+            const dist = Math.hypot(player.x - e.x, player.y - e.y);
+            if (dist < player.r + 20) {
+                handleCollision(e);
+                entities.splice(i, 1);
+            } else if (e.y > V_HEIGHT + 50) {
+                if (e.type !== 'RED') combo = 0; // 赤以外を逃すとコンボ切れ
+                entities.splice(i, 1);
+            }
+        }
+
+        // パーティクル更新
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+            if (p.life <= 0) particles.splice(i, 1);
+        });
+
+        // プレイヤーのトレイル
+        trail.push({x: player.x, y: player.y});
+        if(trail.length > 15) trail.shift();
     }
 
-    function spawn() {
-        frameCount++;
-        const levelMod = Math.floor(score / 2000);
-        
-        if (frameCount % Math.max(5, 15 - levelMod) === 0) {
-            enemies.push({ x: Math.random() * SYSTEM.BASE_V_WIDTH, y: -30, speed: ENTITY.RED.speed + levelMod + Math.random()*4, r: 15 });
-        }
-        if (frameCount % 25 === 0) {
-            items.push({ ...ENTITY.BLUE, x: Math.random() * SYSTEM.BASE_V_WIDTH, y: -30, r: 12 });
-        }
-        if (frameCount % 100 === 0) {
-            items.push({ ...ENTITY.GREEN, x: Math.random() * SYSTEM.BASE_V_WIDTH, y: -30, r: 16 });
-        }
-    }
-
-    function update() {
-        if (!gameActive) return;
-
-        // 1. Logic
-        spawn();
-        if (comboTimer > 0) {
-            comboTimer--;
-        } else {
+    function handleCollision(e) {
+        if (e.type === 'RED') {
+            shake = 20;
+            timeLeft -= 2;
             combo = 0;
-            document.getElementById('combo-count').style.display = 'none';
+            createExplosion(e.x, e.y, '#ff00ff');
+        } else {
+            combo++;
+            comboScale = 2.0;
+            document.getElementById('combo-num').innerText = combo;
+            document.getElementById('combo-stat').innerText = combo;
+            
+            if (e.type === 'BLUE') {
+                score += 100 + (combo * 10);
+                createExplosion(e.x, e.y, '#00f2ff');
+            } else {
+                timeLeft += 3;
+                createExplosion(e.x, e.y, '#fff200');
+            }
         }
+    }
 
-        // 2. Draw Setup
+    function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
         
-        // Screen Shake
+        // 画面揺れ
         if (shake > 0) {
             ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
             shake *= 0.9;
         }
+        
+        ctx.scale(canvas.width / V_WIDTH, canvas.height / V_HEIGHT);
 
-        ctx.scale(canvas.width / SYSTEM.BASE_V_WIDTH, canvas.height / SYSTEM.BASE_V_HEIGHT);
-
-        // --- BACKGROUND GRID ---
-        gridOffset = (gridOffset + 2 + (score/1000)) % 40;
-        ctx.strokeStyle = "rgba(0, 242, 255, 0.1)";
-        ctx.lineWidth = 1;
-        for(let i=0; i<SYSTEM.BASE_V_WIDTH; i+=40) {
-            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, SYSTEM.BASE_V_HEIGHT); ctx.stroke();
-        }
-        for(let j=gridOffset; j<SYSTEM.BASE_V_HEIGHT; j+=40) {
-            ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(SYSTEM.BASE_V_WIDTH, j); ctx.stroke();
-        }
-
-        // --- PLAYER TRAIL ---
-        player.trail.push({x: player.x, y: player.y});
-        if(player.trail.length > 10) player.trail.shift();
+        // --- サイバーグリッド背景 (3Dパース) ---
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.3)';
         ctx.lineWidth = 2;
-        player.trail.forEach((p, i) => {
-            ctx.globalAlpha = i / 10;
-            ctx.strokeStyle = ENTITY.BLUE.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, player.r * (i/10), 0, Math.PI*2); ctx.stroke();
-        });
-        ctx.globalAlpha = 1.0;
+        const horizon = V_HEIGHT * 0.3;
+        for (let i = -V_WIDTH; i <= V_WIDTH*2; i += 80) {
+            ctx.beginPath();
+            ctx.moveTo(V_WIDTH/2, horizon);
+            ctx.lineTo(i, V_HEIGHT);
+            ctx.stroke();
+        }
+        // 横線
+        for (let j = 0; j < 15; j++) {
+            const y = horizon + Math.pow(j/15, 2) * (V_HEIGHT - horizon) + gridScroll;
+            ctx.globalAlpha = (j / 15);
+            ctx.beginPath();
+            ctx.moveTo(0, y % V_HEIGHT); ctx.lineTo(V_WIDTH, y % V_HEIGHT);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
 
-        // --- PLAYER ---
-        ctx.shadowBlur = 15; ctx.shadowColor = ENTITY.BLUE.color;
-        ctx.fillStyle = "#fff";
+        // --- プレイヤー ---
+        trail.forEach((t, i) => {
+            ctx.globalAlpha = i / trail.length;
+            ctx.fillStyle = i % 2 === 0 ? varColor('--neon-blue') : varColor('--neon-pink');
+            ctx.beginPath(); ctx.arc(t.x, t.y, player.r * (i/trail.length), 0, Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 20; ctx.shadowColor = '#fff';
+        ctx.fillStyle = '#fff';
         ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
 
-        // --- ENEMIES & ITEMS ---
-        handleCollection(enemies, ENTITY.RED, true);
-        handleCollection(items, null, false);
-
-        // --- PARTICLES ---
-        particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life;
-            ctx.fillRect(p.x, p.y, p.size, p.size);
-            if(p.life <= 0) particles.splice(i, 1);
+        // --- エンティティ ---
+        entities.forEach(e => {
+            ctx.shadowBlur = 15;
+            if (e.type === 'RED') {
+                ctx.fillStyle = varColor('--neon-pink');
+                ctx.shadowColor = varColor('--neon-pink');
+                // 敵を菱形に
+                ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(frame*0.1);
+                ctx.fillRect(-15, -15, 30, 30); ctx.restore();
+            } else if (e.type === 'BLUE') {
+                ctx.fillStyle = varColor('--neon-blue');
+                ctx.shadowColor = varColor('--neon-blue');
+                ctx.fillRect(e.x-12, e.y-12, 24, 24);
+            } else {
+                ctx.fillStyle = varColor('--neon-yellow');
+                ctx.shadowColor = varColor('--neon-yellow');
+                ctx.beginPath(); ctx.arc(e.x, e.y, 18, 0, Math.PI*2); ctx.fill();
+            }
         });
 
-        // --- FLOATING TEXT ---
-        floatingTexts.forEach((t, i) => {
-            t.y += t.vy; t.life -= 0.02;
-            ctx.globalAlpha = t.life;
-            ctx.fillStyle = t.color;
-            ctx.font = "bold 24px Orbitron";
-            ctx.fillText(t.text, t.x, t.y);
-            if(t.life <= 0) floatingTexts.splice(i, 1);
+        // --- パーティクル ---
+        particles.forEach(p => {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 4, 4);
         });
 
         ctx.restore();
-        document.getElementById('score').innerText = `SCORE: ${score}`;
-        requestAnimationFrame(update);
     }
 
-    function handleCollection(list, fixedConfig, isEnemy) {
-        for(let i=list.length-1; i>=0; i--) {
-            let o = list[i];
-            o.y += o.speed;
-            let config = fixedConfig || o;
-
-            // Draw
-            ctx.shadowBlur = 10; ctx.shadowColor = config.shadow;
-            ctx.fillStyle = config.color;
-            if(config.shape === 'circle') {
-                ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
-            } else if(config.shape === 'square') {
-                ctx.fillRect(o.x-o.r, o.y-o.r, o.r*2, o.r*2);
-            } else {
-                ctx.beginPath(); ctx.moveTo(o.x, o.y-o.r); ctx.lineTo(o.x+o.r, o.y);
-                ctx.lineTo(o.x, o.y+o.r); ctx.lineTo(o.x-o.r, o.y); ctx.closePath(); ctx.fill();
-            }
-
-            // Collision
-            const dist = Math.hypot(player.x - o.x, player.y - o.y);
-            if (dist < player.r + o.r) {
-                if(isEnemy) {
-                    triggerShake(20);
-                    timeLeft = Math.max(0, timeLeft + config.time);
-                    combo = 0;
-                    document.getElementById('damage-flash').style.opacity = 1;
-                    setTimeout(()=> document.getElementById('damage-flash').style.opacity = 0, 100);
-                    createExplosion(o.x, o.y, config.color);
-                    addFloatingText(o.x, o.y, "MISS!", config.color);
-                } else {
-                    combo++;
-                    comboTimer = 60;
-                    const comboBonus = Math.min(combo * 10, 500);
-                    score += config.score + comboBonus;
-                    timeLeft += config.time;
-                    
-                    if(combo > 1) {
-                        const cb = document.getElementById('combo-count');
-                        cb.innerText = `${combo} COMBO`;
-                        cb.style.display = 'block';
-                    }
-
-                    createExplosion(o.x, o.y, config.color);
-                    addFloatingText(o.x, o.y, `+${config.score + comboBonus}`, config.color);
-                }
-                list.splice(i, 1);
-            } else if (o.y > SYSTEM.BASE_V_HEIGHT + 50) {
-                list.splice(i, 1);
-            }
-        }
-    }
-
-    function showStart() {
-        document.getElementById('result-overlay').style.display = 'none';
-        document.getElementById('start-overlay').style.display = 'flex';
-    }
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
     function endGame() {
-        gameActive = false;
         document.getElementById('result-overlay').style.display = 'flex';
-        document.getElementById('res-score').innerText = `FINAL SCORE: ${score}`;
+        document.getElementById('final-score').innerText = `RESULT: ${Math.floor(score)}`;
     }
-
 </script>
 </body>
 </html>
