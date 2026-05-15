@@ -157,12 +157,47 @@
         comboDuration: 3.0,
     };
 
-    const ITEM_CONFIG = {
-        BLUE:  { size: 12, weight: 40, scorePlus: 100, timePlus: 0, scoreMinus: 0, timeMinus: 0, comboAction: 'add', color: '--neon-blue', label: '+100' },
-        GREEN: { size: 18, weight: 20, scorePlus: 0, timePlus: 3.0, scoreMinus: 0, timeMinus: 0, comboAction: 'add', color: '--neon-yellow', label: '+3.00s' },
-        RED:   { size: 15, weight: 40, scorePlus: 0, timePlus: 0, scoreMinus: 0, timeMinus: 2.0, comboAction: 'reset', color: '--neon-pink', label: '' }
-    };
-
+    /* =========================================
+   ゲーム設定 & パラメータ (コードA準拠)
+========================================= */
+const ITEM_CONFIG = {
+    // スコアアイテム：スコア+100
+    BLUE:  { 
+        size: 12, 
+        weight: 35,      // コードAの出現頻度(25)を反映
+        scorePlus: 100, 
+        timePlus: 0, 
+        scoreMinus: 0, 
+        timeMinus: 0, 
+        comboAction: 'add', 
+        color: '--neon-blue', 
+        label: '+100' 
+    },
+    // タイムアイテム：時間+3.0s
+    GREEN: { 
+        size: 18, 
+        weight: 10,      // コードAの出現頻度(90)と確率(0.6)を考慮
+        scorePlus: 0, 
+        timePlus: 3.0, 
+        scoreMinus: 0, 
+        timeMinus: 0, 
+        comboAction: 'add', 
+        color: '--neon-yellow', 
+        label: '+3.00s' 
+    },
+    // 邪魔者：時間-0.75s (コードBでは2.0sだったので緩和)
+    RED:   { 
+        size: 15, 
+        weight: 55,      // コードAで最も頻繁に出る(12)ためウェイトを高く
+        scorePlus: 0, 
+        timePlus: 0, 
+        scoreMinus: 0, 
+        timeMinus: 0.75, // コードAの-0.75sを適用
+        comboAction: 'reset', 
+        color: '--neon-pink', 
+        label: '-0.75s' 
+    }
+};
     /* =========================================
        シード乱数・保存システム
     ========================================= */
