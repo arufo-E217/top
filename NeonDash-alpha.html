@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON DASH: FUTURE CITY - OPTIMIZED</title>
+    <title>NEON DASH 2.0 - FULL OVERDRIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -30,19 +30,18 @@
         #hud {
             position: absolute; top: 0; left: 0; width: 100%; padding: 20px;
             pointer-events: none; z-index: 10;
-            display: flex; justify-content: space-between; align-items: flex-start;
-            box-sizing: border-box;
+            display: flex; justify-content: space-between; box-sizing: border-box;
         }
-        .hud-data { text-shadow: 0 0 10px var(--neon-blue); font-size: 1.5rem; letter-spacing: 2px; }
+        .hud-data { text-shadow: 0 0 10px var(--neon-blue); font-size: 1.5rem; }
         #timer-val { color: var(--neon-pink); font-size: 2.5rem; text-shadow: 0 0 15px var(--neon-pink); }
 
-        /* Combo Positions */
+        /* Combo Position & Animation */
         #combo-container {
             position: absolute; pointer-events: none; text-align: center; z-index: 5;
-            opacity: 0; transition: opacity 0.2s, transform 0.3s;
+            opacity: 0; will-change: transform, opacity;
         }
         #combo-container.pos-center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        #combo-container.pos-bottom-right { bottom: 30px; right: 30px; transform: scale(0.6); transform-origin: bottom right; }
+        #combo-container.pos-br { bottom: 40px; right: 40px; transform-origin: bottom right; }
 
         #combo-num {
             font-size: 8rem; font-style: italic; font-weight: 900;
@@ -51,46 +50,39 @@
             filter: drop-shadow(0 0 20px var(--neon-yellow));
             margin: 0; line-height: 1;
         }
-        .combo-label { font-size: 1.5rem; color: var(--neon-yellow); letter-spacing: 10px; }
-        .combo-gauge-bg { width: 100%; height: 6px; background: rgba(255, 242, 0, 0.2); margin-top: 10px; }
+        .combo-label { font-size: 1.5rem; color: var(--neon-yellow); letter-spacing: 10px; margin: 0; }
+        .gauge-bar { width: 100%; height: 6px; background: rgba(255, 242, 0, 0.2); margin-top: 10px; overflow: hidden; }
         #combo-gauge { width: 100%; height: 100%; background: var(--neon-yellow); }
 
-        /* Settings Overlay */
+        /* Settings Menu */
         .overlay {
-            position: absolute; inset: 0; background: rgba(0,0,10,0.92);
+            position: absolute; inset: 0; background: rgba(0,0,12,0.95);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 200; backdrop-filter: blur(12px);
+            z-index: 200; backdrop-filter: blur(15px);
         }
         h1 { font-size: 3.5rem; margin: 0 0 20px; background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .settings-panel { background: rgba(255,255,255,0.05); padding: 25px; border: 1px solid rgba(0,242,255,0.3); border-radius: 10px; width: 400px; }
-        .setting-row { margin-bottom: 20px; }
-        .label { display: block; color: var(--neon-blue); font-size: 0.9rem; margin-bottom: 8px; opacity: 0.8; }
+        .panel { background: rgba(255,255,255,0.05); padding: 30px; border: 1px solid rgba(0,242,255,0.3); border-radius: 15px; width: 420px; }
+        .row { margin-bottom: 25px; }
+        .label { display: block; color: var(--neon-blue); font-size: 0.9rem; margin-bottom: 10px; letter-spacing: 2px; }
         
         input[type="text"] {
             width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--neon-blue);
-            color: #fff; font-family: inherit; font-size: 1.2rem; text-align: center; box-sizing: border-box; outline: none;
+            color: #fff; font-family: inherit; font-size: 1.4rem; text-align: center; box-sizing: border-box; outline: none;
         }
-        .toggle-group { display: flex; gap: 5px; }
-        .toggle-btn {
-            flex: 1; padding: 10px; border: 1px solid var(--neon-blue); background: transparent;
-            color: var(--neon-blue); font-family: inherit; cursor: pointer; transition: 0.2s;
+        .toggles { display: flex; gap: 10px; }
+        .t-btn {
+            flex: 1; padding: 12px; border: 1px solid var(--neon-blue); background: transparent;
+            color: var(--neon-blue); font-family: inherit; cursor: pointer; transition: 0.3s;
         }
-        .toggle-btn.active { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        .t-btn.active { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); }
 
-        .btn-start {
-            margin-top: 30px; padding: 15px 80px; border: 1px solid var(--neon-pink);
+        .start-btn {
+            margin-top: 30px; padding: 18px 80px; border: 1px solid var(--neon-pink);
             background: rgba(255, 62, 62, 0.1); color: var(--neon-pink);
-            font-family: inherit; font-size: 1.8rem; cursor: pointer; transition: 0.3s;
+            font-family: inherit; font-size: 2rem; cursor: pointer; transition: 0.4s;
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
         }
-        .btn-start:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 30px var(--neon-pink); }
-
-        #game-container::after {
-            content: ""; position: absolute; inset: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
-            background-size: 100% 4px, 3px 100%; pointer-events: none; z-index: 15;
-        }
+        .start-btn:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 40px var(--neon-pink); }
     </style>
 </head>
 <body>
@@ -107,296 +99,234 @@
     <div id="combo-container" class="pos-center">
         <p id="combo-num">0</p>
         <p class="combo-label">CHAIN</p>
-        <div class="combo-gauge-bg">
-            <div id="combo-gauge"></div>
-        </div>
+        <div class="gauge-bar"><div id="combo-gauge"></div></div>
     </div>
 
     <div id="start-overlay" class="overlay">
-        <h1>NEON DASH 2.0</h1>
-        
-        <div class="settings-panel">
-            <div class="setting-row">
-                <span class="label">SEED (RANDOM IF EMPTY)</span>
-                <input type="text" id="seed-input" maxlength="6" placeholder="------" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <h1>NEON DASH 2.1</h1>
+        <div class="panel">
+            <div class="row">
+                <span class="label">SYSTEM SEED</span>
+                <input type="text" id="seed-input" maxlength="6" placeholder="RANDOM" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
             </div>
-            <div class="setting-row">
-                <span class="label">COMBO POSITION</span>
-                <div class="toggle-group">
-                    <button class="toggle-btn active" id="btn-pos-center" onclick="setComboPos('center')">CENTER</button>
-                    <button class="toggle-btn" id="btn-pos-br" onclick="setComboPos('br')">BOTTOM RIGHT</button>
+            <div class="row">
+                <span class="label">HUD POSITION</span>
+                <div class="toggles">
+                    <button class="t-btn active" id="btn-center" onclick="setPos('center')">CENTER</button>
+                    <button class="t-btn" id="btn-br" onclick="setPos('br')">BOTTOM RIGHT</button>
                 </div>
             </div>
-            <div id="best-display" style="text-align: center; color: var(--neon-yellow); font-size: 0.8rem; opacity: 0.8;">
-                BEST: 000000 (SEED: ------ )
-            </div>
+            <div id="best-info" style="text-align: center; color: var(--neon-yellow); font-size: 0.9rem;">BEST: 000000</div>
         </div>
-
-        <button class="btn-start" onclick="startGame()">INITIALIZE</button>
+        <button class="start-btn" onclick="startGame()">ENGAGE</button>
     </div>
 
     <div id="result-overlay" class="overlay" style="display:none;">
-        <h1 style="color: var(--neon-yellow); -webkit-text-fill-color: var(--neon-yellow); font-size: 3rem;">TERMINATED</h1>
-        <div id="final-score" style="font-size: 3.5rem; margin-top: 10px; text-shadow: 0 0 20px var(--neon-yellow);">0</div>
-        <div id="result-seed" style="color: var(--neon-blue); opacity: 0.7; margin-bottom: 10px;">SEED: 000000</div>
-        <button class="btn-start" onclick="location.reload()">RE-SYNC</button>
+        <h1 style="color: var(--neon-yellow); -webkit-text-fill-color: var(--neon-yellow);">TERMINATED</h1>
+        <div id="final-score" style="font-size: 4rem; text-shadow: 0 0 25px var(--neon-yellow);">0</div>
+        <div id="final-seed" style="color: var(--neon-blue); margin: 10px 0 30px; opacity: 0.6;"></div>
+        <button class="start-btn" onclick="location.reload()">RE-BOOT</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 </div>
 
 <script>
-    /**
-     * ゲーム定数 & 最適化設定
-     */
     const CONFIG = {
-        V_WIDTH: 1280, V_HEIGHT: 720,
-        COMBO_LIMIT: 3.0,
-        LEVEL_STEP: 1500,
+        V_W: 1280, V_H: 720,
+        COMBO_MAX: 3.0,
         COLORS: { blue: '#00f2ff', pink: '#ff3e3e', yellow: '#fff200', green: '#00ff00' }
     };
 
-    const ENTITY_CONF = {
-        RED:   { spawnRate: 12, chance: 1.0, score: 0,   time: -0.75, speed: 5, color: CONFIG.COLORS.pink,   label: '-0.75s' },
-        BLUE:  { spawnRate: 25, chance: 1.0, score: 100, time: 0,     speed: 4, color: CONFIG.COLORS.blue,   label: '+100'   },
-        GREEN: { spawnRate: 90, chance: 0.6, score: 0,   time: 3.0,   speed: 6, color: CONFIG.COLORS.green,  label: '+3.00s' }
+    const ENTITY_DEFS = {
+        RED:   { rate: 12, chance: 1.0, score: 0,   time: -0.75, speed: 5, color: CONFIG.COLORS.pink,   label: '-0.75s' },
+        BLUE:  { rate: 25, chance: 1.0, score: 100, time: 0,     speed: 4, color: CONFIG.COLORS.blue,   label: '+100'   },
+        GREEN: { rate: 90, chance: 0.6, score: 0,   time: 3.0,   speed: 6, color: CONFIG.COLORS.green,  label: '+3.00s' }
     };
 
-    // 最適化用キャッシュ
-    const sprites = {};
-    const particlePool = [];
-    const MAX_PARTICLES = 150;
-
-    let score = 0, timeLeft = 30.0, combo = 0, comboTimer = 0, level = 1;
-    let frameCount = 0, gameState = 'START', comboPos = 'center';
+    let score = 0, timeLeft = 30.0, combo = 0, comboTimer = 0, comboScale = 1, level = 1;
     let entities = [], activeParticles = [], trail = [], popups = [];
-    let currentSeed = 0, rndRED, rndBLUE, rndGREEN;
-    
+    let frame = 0, gameState = 'START', posType = 'center', shake = 0, gridY = 0;
+    let seed = 0, rndRED, rndBLUE, rndGREEN, spriteCache = {};
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
     const comboCont = document.getElementById('combo-container');
     const player = { x: 640, y: 576, r: 18 };
 
-    /**
-     * 設定変更
-     */
-    function setComboPos(pos) {
-        comboPos = pos;
-        document.getElementById('btn-pos-center').classList.toggle('active', pos === 'center');
-        document.getElementById('btn-pos-br').classList.toggle('active', pos === 'br');
-        comboCont.className = pos === 'center' ? 'pos-center' : 'pos-bottom-right';
+    function setPos(p) {
+        posType = p;
+        document.getElementById('btn-center').classList.toggle('active', p === 'center');
+        document.getElementById('btn-br').classList.toggle('active', p === 'br');
+        comboCont.className = p === 'center' ? 'pos-center' : 'pos-br';
     }
 
     /**
-     * 描画の軽量化：スプライト事前作成
+     * 最適化しつつアニメーション用スプライトを生成
      */
-    function cacheSprites() {
-        const list = ['RED', 'BLUE', 'GREEN', 'PLAYER'];
-        list.forEach(t => {
+    function initSprites() {
+        const types = ['RED', 'BLUE', 'GREEN', 'PLAYER'];
+        types.forEach(t => {
             const sc = document.createElement('canvas');
             const sx = sc.getContext('2d');
-            sc.width = 64; sc.height = 64;
-            const c = 32;
-            const color = (t === 'PLAYER') ? '#fff' : ENTITY_CONF[t].color;
+            sc.width = 80; sc.height = 80; // 余白を持たせて回転に対応
+            const c = 40;
+            const col = (t === 'PLAYER') ? '#fff' : ENTITY_DEFS[t].color;
 
-            sx.shadowBlur = 15; sx.shadowColor = color;
-            sx.fillStyle = color;
-            if (t === 'RED') {
-                sx.fillRect(c-15, c-15, 30, 30);
-            } else if (t === 'BLUE') {
-                sx.fillRect(c-12, c-12, 24, 24);
-            } else {
-                sx.beginPath(); sx.arc(c, c, t === 'PLAYER' ? 18 : 16, 0, Math.PI*2); sx.fill();
-            }
-            sprites[t] = sc;
+            sx.shadowBlur = 20; sx.shadowColor = col;
+            sx.fillStyle = col;
+            if (t === 'RED') sx.fillRect(c-15, c-15, 30, 30);
+            else if (t === 'BLUE') sx.fillRect(c-12, c-12, 24, 24);
+            else { sx.beginPath(); sx.arc(c, c, t==='PLAYER'?18:16, 0, Math.PI*2); sx.fill(); }
+            spriteCache[t] = sc;
         });
-
-        for(let i=0; i<MAX_PARTICLES; i++) particlePool.push({ x:0, y:0, vx:0, vy:0, life:0, color:'' });
     }
 
-    /**
-     * 乱数生成器
-     */
-    function createPRNG(seed) {
-        return function() {
-            seed = (seed * 9301 + 49297) % 233280;
-            return seed / 233280;
-        };
+    function createRnd(s) {
+        return function() { s = (s * 9301 + 49297) % 233280; return s / 233280; };
     }
 
-    /**
-     * ゲーム初期化
-     */
     function startGame() {
-        const input = document.getElementById('seed-input').value;
-        currentSeed = input ? parseInt(input) : Math.floor(100000 + Math.random() * 899999);
+        const val = document.getElementById('seed-input').value;
+        seed = val ? parseInt(val) : Math.floor(Math.random() * 999999);
+        rndRED = createRnd(seed); rndBLUE = createRnd(seed + 1); rndGREEN = createRnd(seed + 2);
         
-        rndRED = createPRNG(currentSeed);
-        rndBLUE = createPRNG(currentSeed + 1);
-        rndGREEN = createPRNG(currentSeed + 2);
-
+        initSprites();
         document.getElementById('start-overlay').style.display = 'none';
         gameState = 'PLAYING';
-        cacheSprites();
-        lastTime = performance.now();
         loop();
     }
 
-    /**
-     * 更新処理
-     */
     function update(dt) {
         timeLeft -= dt;
         if (timeLeft <= 0) { timeLeft = 0; gameState = 'END'; endGame(); return; }
 
-        frameCount++;
-        level = Math.floor(score / CONFIG.LEVEL_STEP) + 1;
-        
-        // コードA式 独立出現
-        const rRate = Math.max(2, ENTITY_CONF.RED.spawnRate - level);
-        if (frameCount % rRate === 0 && rndRED() < ENTITY_CONF.RED.chance) spawn('RED', rndRED);
-        if (frameCount % ENTITY_CONF.BLUE.spawnRate === 0 && rndBLUE() < ENTITY_CONF.BLUE.chance) spawn('BLUE', rndBLUE);
-        if (frameCount % ENTITY_CONF.GREEN.spawnRate === 0 && rndGREEN() < ENTITY_CONF.GREEN.chance) spawn('GREEN', rndGREEN);
+        frame++;
+        level = Math.floor(score / 1500) + 1;
+        gridY = (gridY + 4 + level * 0.5) % 80; // 背景スクロール速度
 
-        // コンボ更新
+        // 出現 (コードAロジック)
+        if (frame % Math.max(2, ENTITY_DEFS.RED.rate - level) === 0 && rndRED() < ENTITY_DEFS.RED.chance) spawn('RED', rndRED);
+        if (frame % ENTITY_DEFS.BLUE.rate === 0 && rndBLUE() < ENTITY_DEFS.BLUE.chance) spawn('BLUE', rndBLUE);
+        if (frame % ENTITY_DEFS.GREEN.rate === 0 && rndGREEN() < ENTITY_DEFS.GREEN.chance) spawn('GREEN', rndGREEN);
+
+        // コンボアニメーション
         if (combo > 0) {
             comboTimer -= dt;
             if (comboTimer <= 0) { comboTimer = 0; combo = 0; }
-            document.getElementById('combo-gauge').style.width = (comboTimer / CONFIG.COMBO_LIMIT * 100) + '%';
-            comboCont.style.opacity = '1';
+            comboScale = Math.max(1, comboScale - dt * 3); // ポップして戻る
+            comboCont.style.opacity = Math.min(1, comboTimer * 2);
+            // 位置設定とアニメーションスケールを統合
+            const baseScale = posType === 'br' ? 0.6 : 1.0;
+            const finalScale = baseScale * comboScale;
+            const translate = posType === 'center' ? 'translate(-50%, -50%)' : '';
+            comboCont.style.transform = `${translate} scale(${finalScale})`;
+            document.getElementById('combo-gauge').style.width = (comboTimer / CONFIG.COMBO_MAX * 100) + '%';
             document.getElementById('combo-num').innerText = combo;
         } else {
             comboCont.style.opacity = '0';
         }
 
-        // エンティティ移動・衝突判定
+        // エンティティ更新
         for (let i = entities.length - 1; i >= 0; i--) {
             let e = entities[i];
             e.y += e.speed;
+            e.angle += 0.05; // 回転
             if (Math.hypot(player.x - e.x, player.y - e.y) < player.r + e.r) {
-                hit(e);
-                entities.splice(i, 1);
-            } else if (e.y > CONFIG.V_HEIGHT + 50) {
-                entities.splice(i, 1);
-            }
+                hit(e); entities.splice(i, 1);
+            } else if (e.y > CONFIG.V_H + 100) entities.splice(i, 1);
         }
 
-        activeParticles = activeParticles.filter(p => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
-            return p.life > 0;
-        });
-
-        popups = popups.filter(p => {
-            p.y -= 1.2; p.life -= 0.02;
-            return p.life > 0;
+        popups.forEach((p, i) => { p.y -= 2; p.life -= 0.02; if(p.life <= 0) popups.splice(i,1); });
+        activeParticles.forEach((p, i) => { 
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03; 
+            if(p.life <= 0) activeParticles.splice(i, 1);
         });
 
         trail.push({x: player.x, y: player.y});
-        if(trail.length > 10) trail.shift();
+        if(trail.length > 12) trail.shift();
+        if(shake > 0) shake *= 0.9;
     }
 
-    function spawn(type, prng) {
-        const conf = ENTITY_CONF[type];
+    function spawn(t, prng) {
         entities.push({
-            type, x: prng() * CONFIG.V_WIDTH, y: -50,
-            speed: conf.speed + (type === 'RED' ? level * 0.4 : 0) + prng() * 2,
-            r: type === 'BLUE' ? 12 : (type === 'RED' ? 15 : 18)
+            type: t, x: prng() * CONFIG.V_W, y: -60, angle: prng() * 6,
+            speed: ENTITY_DEFS[t].speed + (t==='RED'?level*0.4:0) + prng()*2,
+            r: (t==='BLUE'?12:(t==='RED'?15:18))
         });
     }
 
-    /**
-     * 衝突時処理（バグ修正済み）
-     */
     function hit(e) {
-        const conf = ENTITY_CONF[e.type];
-        let labelStr = "";
-        
+        const def = ENTITY_DEFS[e.type];
+        let label = def.label;
         if (e.type === 'RED') {
-            combo = 0; comboTimer = 0;
-            timeLeft += conf.time;
-            labelStr = conf.label;
+            combo = 0; shake = 20; timeLeft += def.time;
         } else {
             if (e.type === 'BLUE') {
-                combo++; comboTimer = CONFIG.COMBO_LIMIT;
-                const bonus = combo * 10;
-                const total = conf.score + bonus; // コンボボーナスを含めた実際の加算値
-                score += total;
-                labelStr = `+${total}`;
-            } else {
-                timeLeft += conf.time;
-                labelStr = conf.label;
-            }
+                combo++; comboTimer = CONFIG.COMBO_MAX; comboScale = 1.8;
+                const gain = def.score + (combo * 10);
+                score += gain; label = `+${gain}`;
+            } else { timeLeft += def.time; }
         }
-        
-        popups.push({ x: player.x, y: player.y - 30, text: labelStr, color: conf.color, life: 1.0 });
-        explode(e.x, e.y, conf.color);
+        popups.push({ x: player.x, y: player.y - 40, text: label, color: def.color, life: 1.0 });
+        for(let i=0; i<10; i++) activeParticles.push({
+            x: e.x, y: e.y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 1.0, color: def.color
+        });
     }
 
     /**
-     * 描画処理（最適化：整数化 & スプライト）
+     * 描画：アニメーションの復活
      */
     function draw() {
-        ctx.fillStyle = '#050510';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+        ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        ctx.scale(canvas.width / CONFIG.V_WIDTH, canvas.height / CONFIG.V_HEIGHT);
+        if(shake > 1) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+        ctx.scale(canvas.width / CONFIG.V_W, canvas.height / CONFIG.V_H);
 
-        // グリッド
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.1)'; ctx.lineWidth = 1;
-        const horizon = 220;
-        for (let i = 0; i <= CONFIG.V_WIDTH; i += 120) {
-            ctx.beginPath(); ctx.moveTo(CONFIG.V_WIDTH/2, horizon); ctx.lineTo(i, CONFIG.V_HEIGHT); ctx.stroke();
+        // 立体背景グリッド
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.2)'; ctx.lineWidth = 1;
+        const horizon = 240;
+        for (let i = -200; i <= CONFIG.V_W + 200; i += 100) {
+            ctx.beginPath(); ctx.moveTo(CONFIG.V_W/2, horizon); ctx.lineTo(i, CONFIG.V_H); ctx.stroke();
         }
-        const scroll = (frameCount * 2) % 60;
-        for (let j = 0; j < 8; j++) {
-            const y = horizon + Math.pow(j/8, 2) * (CONFIG.V_HEIGHT - horizon) + scroll;
-            ctx.beginPath(); ctx.moveTo(0, (y|0)); ctx.lineTo(CONFIG.V_WIDTH, (y|0)); ctx.stroke();
+        for (let j = 0; j < 10; j++) {
+            const y = horizon + Math.pow(j/10, 2) * (CONFIG.V_H - horizon) + gridY;
+            ctx.globalAlpha = j / 10;
+            ctx.beginPath(); ctx.moveTo(0, y|0); ctx.lineTo(CONFIG.V_W, y|0); ctx.stroke();
         }
-
-        // エンティティ描画
-        entities.forEach(e => {
-            ctx.drawImage(sprites[e.type], (e.x - 32)|0, (e.y - 32)|0);
-        });
-
-        // プレイヤー・トレイル
-        trail.forEach((t, i) => {
-            ctx.globalAlpha = i / 10;
-            ctx.fillStyle = (i % 2 === 0) ? CONFIG.COLORS.blue : CONFIG.COLORS.pink;
-            ctx.beginPath(); ctx.arc(t.x|0, t.y|0, 18 * (i/10), 0, Math.PI*2); ctx.fill();
-        });
         ctx.globalAlpha = 1;
-        ctx.drawImage(sprites.PLAYER, (player.x - 32)|0, (player.y - 32)|0);
+
+        // トレイル
+        trail.forEach((t, i) => {
+            ctx.globalAlpha = i / 12; ctx.fillStyle = (i%2===0)?CONFIG.COLORS.blue:CONFIG.COLORS.pink;
+            ctx.beginPath(); ctx.arc(t.x|0, t.y|0, player.r * (i/12), 0, Math.PI*2); ctx.fill();
+        });
+
+        // エンティティ（回転アニメーション）
+        entities.forEach(e => {
+            ctx.save(); ctx.translate(e.x|0, e.y|0);
+            if(e.type === 'RED') ctx.rotate(e.angle);
+            ctx.drawImage(spriteCache[e.type], -40, -40);
+            ctx.restore();
+        });
+
+        // プレイヤー
+        ctx.globalAlpha = 1;
+        ctx.drawImage(spriteCache.PLAYER, (player.x-40)|0, (player.y-40)|0);
 
         // エフェクト
-        activeParticles.forEach(p => {
-            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-            ctx.fillRect(p.x|0, p.y|0, 3, 3);
-        });
-        ctx.font = "bold 28px 'Share Tech Mono'";
         popups.forEach(p => {
-            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-            ctx.fillText(p.text, (p.x - 20)|0, p.y|0);
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.font = "bold 30px 'Share Tech Mono'";
+            ctx.fillText(p.text, (p.x-20)|0, p.y|0);
+        });
+        activeParticles.forEach(p => {
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x|0, p.y|0, 3, 3);
         });
 
         ctx.restore();
-
-        // UI
         document.getElementById('timer-val').innerText = timeLeft.toFixed(2);
         document.getElementById('score-val').innerText = (score|0).toString().padStart(6, '0');
         document.getElementById('level-val').innerText = level;
-    }
-
-    function explode(x, y, color) {
-        let c = 0;
-        for (let p of particlePool) {
-            if (p.life <= 0) {
-                p.x = x; p.y = y; p.vx = (Math.random()-0.5)*15; p.vy = (Math.random()-0.5)*15;
-                p.life = 1.0; p.color = color;
-                activeParticles.push(p);
-                if (++c > 10) break;
-            }
-        }
     }
 
     let lastTime = 0;
@@ -409,40 +339,33 @@
     }
 
     function endGame() {
+        gameState = 'END';
         document.getElementById('result-overlay').style.display = 'flex';
         document.getElementById('final-score').innerText = (score|0);
-        document.getElementById('result-seed').innerText = `SEED: ${currentSeed}`;
-        const best = localStorage.getItem('nd_best_2') || 0;
-        if (score > best) {
-            localStorage.setItem('nd_best_2', score);
-            localStorage.setItem('nd_seed_2', currentSeed);
-        }
+        document.getElementById('final-seed').innerText = `SEED: ${seed}`;
+        const best = localStorage.getItem('nd2_best') || 0;
+        if (score > best) localStorage.setItem('nd2_best', score|0);
     }
 
-    let rect = null;
-    function resize() {
-        const p = canvas.parentElement;
-        canvas.width = p.offsetWidth; canvas.height = p.offsetHeight;
+    window.addEventListener('resize', () => {
+        const p = canvas.parentElement; canvas.width = p.offsetWidth; canvas.height = p.offsetHeight;
         rect = canvas.getBoundingClientRect();
-    }
-    window.addEventListener('resize', resize);
+    });
+    let rect = null;
     window.onload = () => {
-        resize();
-        const best = localStorage.getItem('nd_best_2') || 0;
-        const seed = localStorage.getItem('nd_seed_2') || "------";
-        document.getElementById('best-display').innerText = `BEST: ${(best|0).toString().padStart(6, '0')} (SEED: ${seed})`;
+        window.dispatchEvent(new Event('resize'));
+        document.getElementById('best-info').innerText = `BEST: ${(localStorage.getItem('nd2_best')||0).toString().padStart(6, '0')}`;
     };
 
     const move = (e) => {
         if (gameState !== 'PLAYING' || !rect) return;
         const cx = e.clientX || (e.touches ? e.touches[0].clientX : 0);
         const cy = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-        player.x = (cx - rect.left) * (CONFIG.V_WIDTH / rect.width);
-        player.y = (cy - rect.top) * (CONFIG.V_HEIGHT / rect.height);
+        player.x = (cx - rect.left) * (CONFIG.V_W / rect.width);
+        player.y = (cy - rect.top) * (CONFIG.V_H / rect.height);
     };
     window.addEventListener('mousemove', move);
     window.addEventListener('touchmove', e => { move(e); e.preventDefault(); }, {passive:false});
-
 </script>
 </body>
 </html>
