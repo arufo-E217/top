@@ -14,13 +14,16 @@
         }
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background: var(--bg-dark); color: #fff;
+            overflow: hidden; background: #000; color: #fff;
             font-family: 'Share Tech Mono', monospace;
+            /* 中央に16:9のボックスを配置するための追記 */
+            display: flex; justify-content: center; align-items: center;
         }
         #game-container {
             position: relative; width: 100vw; max-width: calc(100vh * 16 / 9);
+            height: 100vh; max-height: calc(100vw * 9 / 16); /* 確実な16:9維持 */
             aspect-ratio: 16 / 9; background: radial-gradient(circle at 50% 50%, #101030 0%, #050510 100%);
-            overflow: hidden; margin: 0 auto;
+            overflow: hidden;
         }
         canvas { display: block; width: 100%; height: 100%; }
 
@@ -97,6 +100,9 @@
     <div id="combo-container">
         <p id="combo-num">0</p>
         <p class="combo-label">CHAIN</p>
+        <div style="width: 100%; height: 6px; background: rgba(255, 242, 0, 0.2); margin-top: 10px;">
+            <div id="combo-gauge" style="width: 100%; height: 100%; background: var(--neon-yellow);"></div>
+        </div>
     </div>
 
     <div id="countdown"></div>
@@ -104,6 +110,9 @@
     <div id="start-overlay" class="overlay">
         <h1>NEON CITY DASH</h1>
         <p style="color: var(--neon-blue); opacity: 0.6;">SYSTEM READY / NEURAL LINK ESTABLISHED</p>
+        <input type="text" id="seed-input" placeholder="ENTER SEED (OPTIONAL)" 
+               style="margin-top: 20px; padding: 10px; background: rgba(0, 242, 255, 0.1); border: 1px solid var(--neon-blue); color: var(--neon-blue); font-family: inherit; font-size: 1.2rem; text-align: center; outline: none; width: 60%; max-width: 300px;">
+        
         <button class="btn" onclick="startCountdown()">INITIALIZE</button>
     </div>
 
@@ -117,12 +126,86 @@
 </div>
 
 <script>
+    /* =========================================
+       ゲームシステム設定領域
+    ========================================= */
+    const GAME_CONFIG = {
+        comboDuration: 3.0, // コンボが切れるまでの制限時間（秒）
+    };
+
+    // 各アイテムの詳細設定（出現頻度はweightの比率で決定されます）
+    const ITEM_CONFIG = {
+        BLUE: {
+            size: 12,          // 大きさ (当たり判定・描画基準)
+            weight: 40,        // 出現頻度・確率の重み
+            scorePlus: 100,    // 増やすスコア
+            timePlus: 0,       // 増やす時間(秒)
+            scoreMinus: 0,     // ペナルティスコア (減点)
+            timeMinus: 0,      // ペナルティ時間(秒)
+            comboAction: 'add',// 'add': コンボ加算, 'reset': コンボリセット, 'none': 無影響
+            color: '--neon-blue'
+        },
+        GREEN: {
+            size: 18,
+            weight: 20,
+            scorePlus: 0,
+            timePlus: 3,
+            scoreMinus: 0,
+            timeMinus: 0,
+            comboAction: 'add',
+            color: '--neon-yellow'
+        },
+        RED: {
+            size: 15,
+            weight: 40,
+            scorePlus: 0,
+            timePlus: 0,
+            scoreMinus: 0,
+            timeMinus: 2,
+            comboAction: 'reset',
+            color: '--neon-pink'
+        }
+    };
+
+    /* =========================================
+       シード乱数システム
+    ========================================= */
+    let currentSeed = 1;
+    function initSeed(input) {
+        if (!input) input = Date.now().toString(); // 未入力時はランダム
+        let h = 0;
+        for (let i = 0; i < input.length; i++) {
+            h = Math.imul(31, h) + input.charCodeAt(i) | 0;
+        }
+        currentSeed = h || 1;
+    }
+    // シードに基づく疑似乱数ジェネレーター (0.0 ~ 1.0)
+    function seededRandom() {
+        let x = Math.sin(currentSeed++) * 10000;
+        return x - Math.floor(x);
+    }
+
+    // 重み付きでアイテム種類を抽選
+    function getRandomItemType() {
+        let totalWeight = Object.values(ITEM_CONFIG).reduce((sum, item) => sum + item.weight, 0);
+        let r = seededRandom() * totalWeight;
+        for (let type in ITEM_CONFIG) {
+            if (r < ITEM_CONFIG[type].weight) return type;
+            r -= ITEM_CONFIG[type].weight;
+        }
+        return 'BLUE'; // Fallback
+    }
+
+    /* =========================================
+       メインロジック
+    ========================================= */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const V_WIDTH = 1280, V_HEIGHT = 720;
     
     let score = 0, timeLeft = 30.00, combo = 0, comboScale = 1;
-    let gameState = 'START'; // START, COUNTDOWN, PLAYING, END
+    let comboTimer = 0; // コンボの残り時間
+    let gameState = 'START';
     let entities = [], particles = [], trail = [];
     let player = { x: V_WIDTH/2, y: V_HEIGHT * 0.8, r: 15 };
     let frame = 0, gridScroll = 0, shake = 0;
@@ -134,7 +217,6 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // マウス/タッチ位置取得
     const updatePlayerPos = (e) => {
         if (gameState !== 'PLAYING') return;
         const rect = canvas.getBoundingClientRect();
@@ -147,6 +229,10 @@
     window.addEventListener('touchmove', e => { updatePlayerPos(e); e.preventDefault(); }, {passive:false});
 
     function startCountdown() {
+        // シード値の初期化
+        const seedInput = document.getElementById('seed-input').value;
+        initSeed(seedInput);
+
         document.getElementById('start-overlay').style.display = 'none';
         gameState = 'COUNTDOWN';
         const cd = document.getElementById('countdown');
@@ -179,7 +265,7 @@
         for(let i=0; i<10; i++) {
             particles.push({
                 x, y, 
-                vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
+                vx: (seededRandom()-0.5)*20, vy: (seededRandom()-0.5)*20, // 爆発もシード管理
                 life: 1.0, color
             });
         }
@@ -203,23 +289,34 @@
         frame++;
         gridScroll = (gridScroll + 5 + score/500) % 60;
 
-        // UI更新（爆速）
+        // UI更新
         document.getElementById('timer-val').innerText = timeLeft.toFixed(2);
         document.getElementById('score-val').innerText = Math.floor(score).toString().padStart(6, '0');
         
-        // コンボアニメーション
+        // コンボ時間とゲージの更新
         if (combo > 0) {
+            comboTimer -= dt;
+            if (comboTimer <= 0) {
+                comboTimer = 0;
+                combo = 0; // 時間経過によるコンボリセット
+                document.getElementById('combo-stat').innerText = combo;
+            }
+            document.getElementById('combo-gauge').style.width = Math.max(0, (comboTimer / GAME_CONFIG.comboDuration) * 100) + '%';
+            
             comboScale = Math.max(1, comboScale - 0.1);
             const cc = document.getElementById('combo-container');
             cc.style.opacity = Math.min(1, comboScale);
             document.getElementById('combo-num').style.transform = `scale(${comboScale})`;
+        } else {
+            document.getElementById('combo-gauge').style.width = '0%';
+            document.getElementById('combo-container').style.opacity = '0';
         }
 
-        // 敵・アイテム生成
+        // 敵・アイテム生成 (Math.random -> seededRandom)
         if (frame % 15 === 0) {
-            const type = Math.random() < 0.2 ? 'GREEN' : (Math.random() < 0.4 ? 'BLUE' : 'RED');
+            const type = getRandomItemType();
             entities.push({
-                x: Math.random() * V_WIDTH, y: -50,
+                x: seededRandom() * V_WIDTH, y: -50,
                 type: type,
                 speed: 8 + (score / 1000)
             });
@@ -230,12 +327,14 @@
             let e = entities[i];
             e.y += e.speed;
 
+            const config = ITEM_CONFIG[e.type];
             const dist = Math.hypot(player.x - e.x, player.y - e.y);
-            if (dist < player.r + 20) {
+            
+            if (dist < player.r + config.size) { // 判定サイズをコンフィグ基準に
                 handleCollision(e);
                 entities.splice(i, 1);
             } else if (e.y > V_HEIGHT + 50) {
-                if (e.type !== 'RED') combo = 0; // 赤以外を逃すとコンボ切れ
+                // 取り逃がし時のコンボ切れを削除
                 entities.splice(i, 1);
             }
         }
@@ -252,32 +351,41 @@
     }
 
     function handleCollision(e) {
-        if (e.type === 'RED') {
-            shake = 20;
-            timeLeft -= 2;
-            combo = 0;
-            createExplosion(e.x, e.y, '#ff00ff');
-        } else {
+        const config = ITEM_CONFIG[e.type];
+
+        // スコア・時間の増減処理
+        score += config.scorePlus;
+        score -= config.scoreMinus;
+        if (score < 0) score = 0; // スコアがマイナスにならないように保護
+        
+        timeLeft += config.timePlus;
+        timeLeft -= config.timeMinus;
+
+        // コンボ処理
+        if (config.comboAction === 'add') {
             combo++;
             comboScale = 2.0;
+            comboTimer = GAME_CONFIG.comboDuration; // コンボ時間をリセット
+            // コンボボーナス (増やすスコアがある場合のみ加算)
+            if (config.scorePlus > 0) score += (combo * 10);
+            
             document.getElementById('combo-num').innerText = combo;
             document.getElementById('combo-stat').innerText = combo;
-            
-            if (e.type === 'BLUE') {
-                score += 100 + (combo * 10);
-                createExplosion(e.x, e.y, '#00f2ff');
-            } else {
-                timeLeft += 3;
-                createExplosion(e.x, e.y, '#fff200');
-            }
+        } else if (config.comboAction === 'reset') {
+            combo = 0;
+            comboTimer = 0;
+            shake = 20;
         }
+
+        createExplosion(e.x, e.y, varColor(config.color));
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
         
-        // 画面揺れ
+        // 画面揺れ (描画だけなのでFPS非依存の見た目処理としてMath.randomを残すか、乱数消費を防ぐため別途処理)
+        // ※seededRandomを使うとFPS違いで乱数がズレるため、揺れは標準のMath.randomを使用します
         if (shake > 0) {
             ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
             shake *= 0.9;
@@ -319,21 +427,19 @@
 
         // --- エンティティ ---
         entities.forEach(e => {
+            const config = ITEM_CONFIG[e.type];
             ctx.shadowBlur = 15;
+            ctx.fillStyle = varColor(config.color);
+            ctx.shadowColor = varColor(config.color);
+
             if (e.type === 'RED') {
-                ctx.fillStyle = varColor('--neon-pink');
-                ctx.shadowColor = varColor('--neon-pink');
-                // 敵を菱形に
                 ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(frame*0.1);
-                ctx.fillRect(-15, -15, 30, 30); ctx.restore();
+                ctx.fillRect(-config.size, -config.size, config.size*2, config.size*2); 
+                ctx.restore();
             } else if (e.type === 'BLUE') {
-                ctx.fillStyle = varColor('--neon-blue');
-                ctx.shadowColor = varColor('--neon-blue');
-                ctx.fillRect(e.x-12, e.y-12, 24, 24);
+                ctx.fillRect(e.x-config.size, e.y-config.size, config.size*2, config.size*2);
             } else {
-                ctx.fillStyle = varColor('--neon-yellow');
-                ctx.shadowColor = varColor('--neon-yellow');
-                ctx.beginPath(); ctx.arc(e.x, e.y, 18, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(e.x, e.y, config.size, 0, Math.PI*2); ctx.fill();
             }
         });
 
