@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON DASH - HYPER DRIVE</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-red: #ff3e3e;
+            --neon-green: #00ff00;
+            --neon-yellow: #ffeb3b;
+            --neon-purple: #bc13fe;
+        }
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #000; color: #fff;
+            font-family: 'Orbitron', 'Segoe UI', sans-serif;
+            display: flex; justify-content: center; align-items: flex-start;
+        }
+        #game-container {
+            position: relative; width: 100vw; max-width: calc(100vh * 16 / 9);
+            aspect-ratio: 16 / 9; background: #050508;
+            border: 2px solid #333; box-sizing: border-box; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        /* UI Styling */
+        #ui-layer { position: absolute; top: 20px; left: 20px; pointer-events: none; z-index: 10; }
+        .stat-item { margin-bottom: 5px; font-weight: bold; }
+        #timer { font-size: 2.2rem; color: var(--neon-red); text-shadow: 0 0 15px #f00; }
+        #score { font-size: 1.5rem; color: var(--neon-blue); }
+        #combo-ui { position: absolute; top: 20px; right: 20px; text-align: right; }
+        #combo-count { font-size: 3rem; color: var(--neon-yellow); text-shadow: 0 0 20px #ffeb3b; display:none; }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; text-align: center; backdrop-filter: blur(5px);
+        }
+        h1 { margin-bottom: 10px; color: var(--neon-blue); font-size: 4rem; letter-spacing: 5px; text-shadow: 0 0 20px var(--neon-blue); }
+        button {
+            background: transparent; border: 2px solid var(--neon-blue); color: var(--neon-blue);
+            padding: 15px 50px; font-size: 1.5rem; font-weight: bold; cursor: pointer;
+            border-radius: 50px; transition: 0.3s; text-transform: uppercase;
+        }
+        button:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 30px var(--neon-blue); }
+        
+        #damage-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5; transition: opacity 0.1s; opacity: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.4) 100%);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="damage-flash"></div>
+    <div id="ui-layer">
+        <div id="timer" class="stat-item">TIME: 30</div>
+        <div id="score" class="stat-item">SCORE: 0</div>
+    </div>
+    <div id="combo-ui">
+        <div id="combo-count">0 COMBO</div>
+    </div>
+
+    <div id="start-overlay" class="overlay">
+        <h1>NEON DASH</h1>
+        <p style="color:#888; margin-bottom: 20px;">AVOID RED | COLLECT BLUE & GREEN</p>
+        <button onclick="initGame()">HYPER DRIVE START</button>
+    </div>
+
+    <div id="result-overlay" class="overlay" style="display:none;">
+        <h1 id="result-title" style="color:var(--neon-yellow)">MISSION COMPLETE</h1>
+        <div id="res-score" style="font-size:3rem; color:var(--neon-blue); margin: 20px 0;">0</div>
+        <button onclick="showStart()">REBOOT SYSTEM</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    // --- 🛠 CONFIG ---
+    const SYSTEM = {
+        INITIAL_TIME: 30,
+        BASE_V_WIDTH: 1280,
+        BASE_V_HEIGHT: 720
+    };
+
+    const ENTITY = {
+        RED: { color: '#ff3e3e', score: 0, time: -2, speed: 6, shape: 'circle', shadow: '#f00' },
+        BLUE: { color: '#00f2ff', score: 100, time: 0, speed: 4, shape: 'square', shadow: '#00f2ff' },
+        GREEN: { color: '#00ff00', score: 50, time: 3, speed: 5, shape: 'diamond', shadow: '#0f0' }
+    };
+
+    // --- 🧬 STATE ---
+    let score = 0, timeLeft = 0, gameActive = false, combo = 0, comboTimer = 0;
+    let player = { x: 640, y: 360, r: 18, trail: [] };
+    let enemies = [], items = [], particles = [], floatingTexts = [];
+    let frameCount = 0, shake = 0, gridOffset = 0;
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+
+    // --- 🎨 RENDERING HELPERS ---
+    function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width; canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function getMousePos(e) {
+        const rect = container.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        return {
+            x: (clientX - rect.left) * (SYSTEM.BASE_V_WIDTH / rect.width),
+            y: (clientY - rect.top) * (SYSTEM.BASE_V_HEIGHT / rect.height)
+        };
+    }
+
+    window.addEventListener('mousemove', e => { 
+        const p = getMousePos(e); 
+        player.x = p.x; player.y = p.y; 
+    });
+    window.addEventListener('touchmove', e => {
+        const p = getMousePos(e); 
+        player.x = p.x; player.y = p.y;
+        e.preventDefault();
+    }, {passive: false});
+
+    // --- 🎇 EFFECTS ---
+    function createExplosion(x, y, color) {
+        for(let i=0; i<15; i++) {
+            particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 15,
+                vy: (Math.random() - 0.5) * 15,
+                life: 1.0,
+                color: color,
+                size: Math.random() * 4 + 2
+            });
+        }
+    }
+
+    function addFloatingText(x, y, text, color) {
+        floatingTexts.push({ x, y, text, color, life: 1.0, vy: -2 });
+    }
+
+    function triggerShake(amt) { shake = amt; }
+
+    // --- 🕹 GAME LOGIC ---
+    function initGame() {
+        score = 0; combo = 0; timeLeft = SYSTEM.INITIAL_TIME;
+        enemies = []; items = []; particles = []; floatingTexts = [];
+        gameActive = true;
+        document.getElementById('start-overlay').style.display = 'none';
+        document.getElementById('result-overlay').style.display = 'none';
+        
+        const timerId = setInterval(() => {
+            if(!gameActive) { clearInterval(timerId); return; }
+            timeLeft--;
+            if(timeLeft <= 0) endGame();
+            document.getElementById('timer').innerText = `TIME: ${timeLeft}`;
+        }, 1000);
+        
+        update();
+    }
+
+    function spawn() {
+        frameCount++;
+        const levelMod = Math.floor(score / 2000);
+        
+        if (frameCount % Math.max(5, 15 - levelMod) === 0) {
+            enemies.push({ x: Math.random() * SYSTEM.BASE_V_WIDTH, y: -30, speed: ENTITY.RED.speed + levelMod + Math.random()*4, r: 15 });
+        }
+        if (frameCount % 25 === 0) {
+            items.push({ ...ENTITY.BLUE, x: Math.random() * SYSTEM.BASE_V_WIDTH, y: -30, r: 12 });
+        }
+        if (frameCount % 100 === 0) {
+            items.push({ ...ENTITY.GREEN, x: Math.random() * SYSTEM.BASE_V_WIDTH, y: -30, r: 16 });
+        }
+    }
+
+    function update() {
+        if (!gameActive) return;
+
+        // 1. Logic
+        spawn();
+        if (comboTimer > 0) {
+            comboTimer--;
+        } else {
+            combo = 0;
+            document.getElementById('combo-count').style.display = 'none';
+        }
+
+        // 2. Draw Setup
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        
+        // Screen Shake
+        if (shake > 0) {
+            ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+            shake *= 0.9;
+        }
+
+        ctx.scale(canvas.width / SYSTEM.BASE_V_WIDTH, canvas.height / SYSTEM.BASE_V_HEIGHT);
+
+        // --- BACKGROUND GRID ---
+        gridOffset = (gridOffset + 2 + (score/1000)) % 40;
+        ctx.strokeStyle = "rgba(0, 242, 255, 0.1)";
+        ctx.lineWidth = 1;
+        for(let i=0; i<SYSTEM.BASE_V_WIDTH; i+=40) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, SYSTEM.BASE_V_HEIGHT); ctx.stroke();
+        }
+        for(let j=gridOffset; j<SYSTEM.BASE_V_HEIGHT; j+=40) {
+            ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(SYSTEM.BASE_V_WIDTH, j); ctx.stroke();
+        }
+
+        // --- PLAYER TRAIL ---
+        player.trail.push({x: player.x, y: player.y});
+        if(player.trail.length > 10) player.trail.shift();
+        ctx.lineWidth = 2;
+        player.trail.forEach((p, i) => {
+            ctx.globalAlpha = i / 10;
+            ctx.strokeStyle = ENTITY.BLUE.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, player.r * (i/10), 0, Math.PI*2); ctx.stroke();
+        });
+        ctx.globalAlpha = 1.0;
+
+        // --- PLAYER ---
+        ctx.shadowBlur = 15; ctx.shadowColor = ENTITY.BLUE.color;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
+
+        // --- ENEMIES & ITEMS ---
+        handleCollection(enemies, ENTITY.RED, true);
+        handleCollection(items, null, false);
+
+        // --- PARTICLES ---
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+            if(p.life <= 0) particles.splice(i, 1);
+        });
+
+        // --- FLOATING TEXT ---
+        floatingTexts.forEach((t, i) => {
+            t.y += t.vy; t.life -= 0.02;
+            ctx.globalAlpha = t.life;
+            ctx.fillStyle = t.color;
+            ctx.font = "bold 24px Orbitron";
+            ctx.fillText(t.text, t.x, t.y);
+            if(t.life <= 0) floatingTexts.splice(i, 1);
+        });
+
+        ctx.restore();
+        document.getElementById('score').innerText = `SCORE: ${score}`;
+        requestAnimationFrame(update);
+    }
+
+    function handleCollection(list, fixedConfig, isEnemy) {
+        for(let i=list.length-1; i>=0; i--) {
+            let o = list[i];
+            o.y += o.speed;
+            let config = fixedConfig || o;
+
+            // Draw
+            ctx.shadowBlur = 10; ctx.shadowColor = config.shadow;
+            ctx.fillStyle = config.color;
+            if(config.shape === 'circle') {
+                ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
+            } else if(config.shape === 'square') {
+                ctx.fillRect(o.x-o.r, o.y-o.r, o.r*2, o.r*2);
+            } else {
+                ctx.beginPath(); ctx.moveTo(o.x, o.y-o.r); ctx.lineTo(o.x+o.r, o.y);
+                ctx.lineTo(o.x, o.y+o.r); ctx.lineTo(o.x-o.r, o.y); ctx.closePath(); ctx.fill();
+            }
+
+            // Collision
+            const dist = Math.hypot(player.x - o.x, player.y - o.y);
+            if (dist < player.r + o.r) {
+                if(isEnemy) {
+                    triggerShake(20);
+                    timeLeft = Math.max(0, timeLeft + config.time);
+                    combo = 0;
+                    document.getElementById('damage-flash').style.opacity = 1;
+                    setTimeout(()=> document.getElementById('damage-flash').style.opacity = 0, 100);
+                    createExplosion(o.x, o.y, config.color);
+                    addFloatingText(o.x, o.y, "MISS!", config.color);
+                } else {
+                    combo++;
+                    comboTimer = 60;
+                    const comboBonus = Math.min(combo * 10, 500);
+                    score += config.score + comboBonus;
+                    timeLeft += config.time;
+                    
+                    if(combo > 1) {
+                        const cb = document.getElementById('combo-count');
+                        cb.innerText = `${combo} COMBO`;
+                        cb.style.display = 'block';
+                    }
+
+                    createExplosion(o.x, o.y, config.color);
+                    addFloatingText(o.x, o.y, `+${config.score + comboBonus}`, config.color);
+                }
+                list.splice(i, 1);
+            } else if (o.y > SYSTEM.BASE_V_HEIGHT + 50) {
+                list.splice(i, 1);
+            }
+        }
+    }
+
+    function showStart() {
+        document.getElementById('result-overlay').style.display = 'none';
+        document.getElementById('start-overlay').style.display = 'flex';
+    }
+
+    function endGame() {
+        gameActive = false;
+        document.getElementById('result-overlay').style.display = 'flex';
+        document.getElementById('res-score').innerText = `FINAL SCORE: ${score}`;
+    }
+
+</script>
+</body>
+</html>
