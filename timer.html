@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ミリ秒カウントダウン</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    :root {
+        --bg-color: #0f172a;
+        --text-color: #ffffff;
+    }
+
+    body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background: var(--bg-color);
+        color: var(--text-color);
+        font-family: sans-serif;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    /* タイトル */
+    #title {
+        position: absolute;
+        top: 20px;
+        width: 100%;
+        text-align: center;
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+
+    /* 中央カウントダウン */
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 100%;
+    }
+
+    #countdown {
+        font-size: 92px;
+        font-family: monospace;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+
+    #targetTimeText {
+        margin-top: 18px;
+        font-size: 22px;
+        opacity: 0.8;
+    }
+
+    /* 下の現在時刻 */
+    .bottom {
+        position: absolute;
+        bottom: 40px;
+        width: 100%;
+        text-align: center;
+    }
+
+    #clock {
+        font-size: 42px;
+        font-family: monospace;
+    }
+
+    /* ハンバーガー */
+    .hamburger {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    .hamburger span {
+        display: block;
+        height: 4px;
+        background: var(--text-color);
+        margin: 7px 0;
+        border-radius: 2px;
+    }
+
+    /* メニュー */
+    .menu {
+        position: fixed;
+        top: 0;
+        left: -340px;
+        width: 340px;
+        height: 100%;
+        background: rgba(30,41,59,0.98);
+        padding: 24px;
+        transition: left 0.3s;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+
+    .menu.open {
+        left: 0;
+    }
+
+    .menu h2 {
+        margin-top: 0;
+    }
+
+    .setting {
+        margin-bottom: 24px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    input[type="datetime-local"],
+    input[type="text"],
+    input[type="color"] {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        background: #3b82f6;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #2563eb;
+    }
+
+    @media (max-width: 700px) {
+        #countdown {
+            font-size: 52px;
+        }
+
+        #clock {
+            font-size: 28px;
+        }
+
+        #title {
+            font-size: 24px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<!-- ハンバーガー -->
+<div class="hamburger" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<!-- メニュー -->
+<div class="menu" id="menu">
+
+    <h2>設定</h2>
+
+    <div class="setting">
+        <label>タイトル</label>
+        <input type="text" id="titleInput" value="ミリ秒カウントダウン">
+    </div>
+
+    <div class="setting">
+        <label>目標時刻</label>
+        <input type="datetime-local" id="targetTime">
+    </div>
+
+    <div class="setting">
+        <label>背景色</label>
+        <input type="color" id="bgColor" value="#0f172a">
+    </div>
+
+    <div class="setting">
+        <label>文字色</label>
+        <input type="color" id="textColor" value="#ffffff">
+    </div>
+
+    <button onclick="applySettings()">適用</button>
+
+</div>
+
+<!-- タイトル -->
+<div id="title">
+    ミリ秒カウントダウン
+</div>
+
+<!-- 中央 -->
+<div class="center">
+    <div id="countdown">--:--:--.---</div>
+    <div id="targetTimeText">未設定</div>
+</div>
+
+<!-- 下 -->
+<div class="bottom">
+    <div id="clock">00:00:00.000</div>
+</div>
+
+<script>
+    const menu = document.getElementById("menu");
+
+    const clock = document.getElementById("clock");
+    const countdown = document.getElementById("countdown");
+    const targetTimeText = document.getElementById("targetTimeText");
+
+    const title = document.getElementById("title");
+
+    let targetTimestamp = null;
+
+    function toggleMenu() {
+        menu.classList.toggle("open");
+    }
+
+    function formatClock(date) {
+        const h = String(date.getHours()).padStart(2, "0");
+        const m = String(date.getMinutes()).padStart(2, "0");
+        const s = String(date.getSeconds()).padStart(2, "0");
+        const ms = String(date.getMilliseconds()).padStart(3, "0");
+
+        return `${h}:${m}:${s}.${ms}`;
+    }
+
+    function formatRemaining(ms) {
+
+        if (ms <= 0) {
+            return "00:00:00.000";
+        }
+
+        const hours = Math.floor(ms / 3600000);
+        ms %= 3600000;
+
+        const minutes = Math.floor(ms / 60000);
+        ms %= 60000;
+
+        const seconds = Math.floor(ms / 1000);
+        ms %= 1000;
+
+        return (
+            String(hours).padStart(2, "0") + ":" +
+            String(minutes).padStart(2, "0") + ":" +
+            String(seconds).padStart(2, "0") + "." +
+            String(ms).padStart(3, "0")
+        );
+    }
+
+    function update() {
+
+        const now = new Date();
+
+        // 現在時刻
+        clock.textContent = formatClock(now);
+
+        // カウントダウン
+        if (targetTimestamp !== null) {
+
+            const remaining =
+                targetTimestamp - now.getTime();
+
+            countdown.textContent =
+                formatRemaining(remaining);
+
+            if (remaining <= 0) {
+                countdown.textContent = "TIME UP";
+            }
+
+        }
+    }
+
+    function applySettings() {
+
+        // タイトル
+        title.textContent =
+            document.getElementById("titleInput").value;
+
+        // 時刻
+        const target =
+            document.getElementById("targetTime").value;
+
+        if (target) {
+
+            targetTimestamp =
+                new Date(target).getTime();
+
+            targetTimeText.textContent =
+                "(" +
+                new Date(targetTimestamp).toLocaleString() +
+                ")";
+        }
+
+        // 色
+        const bg =
+            document.getElementById("bgColor").value;
+
+        const text =
+            document.getElementById("textColor").value;
+
+        document.documentElement
+            .style
+            .setProperty("--bg-color", bg);
+
+        document.documentElement
+            .style
+            .setProperty("--text-color", text);
+
+        menu.classList.remove("open");
+    }
+
+    setInterval(update, 1);
+</script>
+
+</body>
+</html>
