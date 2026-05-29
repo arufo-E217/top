@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberLaunch.exe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050508;
+            --neon-green: #00ff66;
+            --neon-cyan: #00f0ff;
+            --neon-magenta: #ff0055;
+            --neon-yellow: #fffb00;
+            --dark-gray: #12131a;
+            --border-glow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Share Tech Mono', monospace;
+            color: #ffffff;
+        }
+
+        /* 全体コンテナ */
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 480px;
+            max-height: 850px;
+            margin: 0 auto;
+            border: 2px solid var(--neon-cyan);
+            box-shadow: var(--border-glow);
+            background: radial-gradient(circle at center, #0a0d1a 0%, #050508 100%);
+            overflow: hidden;
+        }
+
+        /* 画面共通スタイル */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 10;
+            background: inherit;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ヘッダー・共通UI */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px dashed rgba(0, 240, 255, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .title {
+            font-size: 24px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px var(--neon-cyan);
+            letter-spacing: 1px;
+        }
+
+        .currency-display {
+            font-size: 18px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 8px var(--neon-yellow);
+            background: rgba(255, 251, 0, 0.1);
+            padding: 4px 10px;
+            border: 1px solid var(--neon-yellow);
+            border-radius: 4px;
+        }
+
+        /* ボタン共通 */
+        .btn {
+            background: transparent;
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 16px;
+            padding: 12px 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.1s ease;
+            box-shadow: inset 0 0 5px rgba(0, 240, 255, 0.2);
+            text-align: center;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            background: rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        .btn-magenta {
+            border-color: var(--neon-magenta);
+            color: var(--neon-magenta);
+            box-shadow: inset 0 0 5px rgba(255, 0, 85, 0.2);
+        }
+        .btn-magenta:active {
+            background: rgba(255, 0, 85, 0.2);
+            box-shadow: 0 0 15px var(--neon-magenta);
+        }
+
+        .btn-green {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            box-shadow: inset 0 0 5px rgba(0, 255, 102, 0.2);
+        }
+        .btn-green:active {
+            background: rgba(0, 255, 102, 0.2);
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .btn:disabled {
+            border-color: #444;
+            color: #444;
+            box-shadow: none;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* フルスクリーンボタン */
+        #fullscreen-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 10px;
+            padding: 4px 8px;
+            z-index: 100;
+            border: 1px solid rgba(0,240,255,0.5);
+            opacity: 0.7;
+        }
+
+        /* 1. アップグレード画面 */
+        .upgrade-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .upgrade-item {
+            background: var(--dark-gray);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--neon-cyan);
+        }
+
+        .upgrade-info h3 {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .upgrade-info p {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .upgrade-btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .upgrade-cost {
+            font-size: 12px;
+            color: var(--neon-yellow);
+        }
+
+        /* 角度調整セクション */
+        .angle-setup {
+            margin: 15px 0;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 12px;
+            text-align: center;
+        }
+        .angle-title {
+            font-size: 14px;
+            color: var(--neon-cyan);
+            margin-bottom: 8px;
+        }
+        .angle-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .angle-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            background: #222;
+            height: 6px;
+            outline: none;
+            border: 1px solid var(--neon-cyan);
+        }
+        .angle-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-cyan);
+        }
+
+        /* 2. 連打チャージ画面 */
+        #charge-screen {
+            justify-content: center;
+            align-items: center;
+            background: rgba(5, 5, 8, 0.95);
+        }
+
+        .charge-timer {
+            font-size: 48px;
+            color: var(--neon-magenta);
+            text-shadow: 0 0 15px var(--neon-magenta);
+            margin-bottom: 10px;
+        }
+
+        .charge-instruction {
+            font-size: 28px;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+            margin-bottom: 30px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .charge-area {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 4px dashed var(--neon-green);
+            box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.05s ease;
+        }
+
+        .charge-gauge-container {
+            width: 80%;
+            height: 20px;
+            border: 1px solid var(--neon-green);
+            background: rgba(0,0,0,0.5);
+            margin-top: 30px;
+            padding: 2px;
+        }
+
+        .charge-gauge-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+            box-shadow: 0 0 10px var(--neon-green);
+            transition: width 0.1s linear;
+        }
+
+        /* 3. 飛行フェーズ（Canvas & HUD） */
+        #flight-screen {
+            padding: 0;
+            background: transparent;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .hud {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            right: 20px;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            background: rgba(5, 5, 8, 0.7);
+            padding: 6px 10px;
+            border-left: 3px solid var(--neon-cyan);
+            border-right: 3px solid var(--neon-cyan);
+        }
+
+        .hud-label { color: #aaa; }
+        .hud-value { color: #fff; font-weight: bold; }
+
+        .fuel-container {
+            width: 100%;
+            height: 12px;
+            border: 1px solid var(--neon-magenta);
+            background: rgba(0,0,0,0.5);
+            padding: 1px;
+        }
+        .fuel-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--neon-magenta);
+            box-shadow: 0 0 8px var(--neon-magenta);
+        }
+
+        /* 早送りボタン & 姿勢制御（飛行画面下部コントロール） */
+        .flight-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .steering-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 20px;
+        }
+        .steer-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            background: rgba(5, 5, 8, 0.6);
+        }
+
+        #fastforward-btn {
+            width: 100%;
+            display: none; /* 条件を満たすまで非表示 */
+            font-size: 18px;
+            animation: glitch-blink 0.5s infinite alternate;
+        }
+        #fastforward-btn.active-ff {
+            background: var(--neon-yellow);
+            color: #000;
+            border-color: var(--neon-yellow);
+            box-shadow: 0 0 15px var(--neon-yellow);
+        }
+
+        @keyframes glitch-blink {
+            0% { border-color: var(--neon-yellow); box-shadow: 0 0 5px var(--neon-yellow); }
+            100% { border-color: var(--neon-magenta); box-shadow: 0 0 15px var(--neon-magenta); }
+        }
+
+        /* 4. リザルト画面 */
+        #result-screen {
+            justify-content: center;
+            align-items: center;
+            background: rgba(5, 5, 8, 0.95);
+            z-index: 20;
+        }
+
+        .glitch-title {
+            font-size: 36px;
+            color: var(--neon-magenta);
+            text-shadow: 2px 2px var(--neon-cyan);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .result-stats {
+            width: 80%;
+            background: var(--dark-gray);
+            border: 1px solid var(--neon-cyan);
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+        }
+
+        .result-total {
+            border-top: 1px dashed rgba(255,255,255,0.2);
+            padding-top: 10px;
+            font-size: 20px;
+            color: var(--neon-yellow);
+        }
+
+        /* 画面振動クラス用 */
+        .shake {
+            animation: shake-anim 0.1s infinite;
+        }
+        @keyframes shake-anim {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -2px) rotate(-1deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <button id="fullscreen-btn" class="btn">FULLSCREEN</button>
+
+    <div id="upgrade-screen" class="screen">
+        <div class="header">
+            <h1 class="title">CYBERLAUNCH.EXE</h1>
+            <div id="wallet-display" class="currency-display">0 N-CHIPS</div>
+        </div>
+
+        <div class="upgrade-list">
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>[01] FUEL CAPACITY</h3>
+                    <p>推進時間を延長する</p>
+                    <p id="lvl-fuel">LV: 1</p>
+                </div>
+                <div class="upgrade-btn-container">
+                    <span id="cost-fuel" class="upgrade-cost">10 N-CHIPS</span>
+                    <button id="btn-upgrade-fuel" class="btn btn-green" onclick="buyUpgrade('fuel')">UPGRADE</button>
+                </div>
+            </div>
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>[02] ENGINE THRUST</h3>
+                    <p>加速力を上昇させる</p>
+                    <p id="lvl-engine">LV: 1</p>
+                </div>
+                <div class="upgrade-btn-container">
+                    <span id="cost-engine" class="upgrade-cost">15 N-CHIPS</span>
+                    <button id="btn-upgrade-engine" class="btn btn-green" onclick="buyUpgrade('engine')">UPGRADE</button>
+                </div>
+            </div>
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>[03] AERODYNAMICS</h3>
+                    <p>飛行中の減速を抑える</p>
+                    <p id="lvl-aero">LV: 1</p>
+                </div>
+                <div class="upgrade-btn-container">
+                    <span id="cost-aero" class="upgrade-cost">20 N-CHIPS</span>
+                    <button id="btn-upgrade-aero" class="btn btn-green" onclick="buyUpgrade('aero')">UPGRADE</button>
+                </div>
+            </div>
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>[04] CHIP MULTIPLIER</h3>
+                    <p>獲得チップの倍率を上げる</p>
+                    <p id="lvl-mult">LV: 1</p>
+                </div>
+                <div class="upgrade-btn-container">
+                    <span id="cost-mult" class="upgrade-cost">30 N-CHIPS</span>
+                    <button id="btn-upgrade-mult" class="btn btn-green" onclick="buyUpgrade('mult')">UPGRADE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="angle-setup">
+            <div class="angle-title">LAUNCH ANGLE: <span id="angle-value">45</span>°</div>
+            <div class="angle-controls">
+                <button class="btn" style="padding: 5px 12px;" onclick="adjustAngle(-5)">-5°</button>
+                <input type="range" id="angle-slider" class="angle-slider" min="0" max="90" value="45">
+                <button class="btn" style="padding: 5px 12px;" onclick="adjustAngle(5)">+5°</button>
+            </div>
+        </div>
+
+        <button id="launch-init-btn" class="btn btn-magenta" style="font-size: 20px; padding: 15px;">INITIALIZE LAUNCH SEQUENCER</button>
+    </div>
+
+    <div id="charge-screen" class="screen hidden">
+        <div id="charge-timer" class="charge-timer">10.00s</div>
+        <div id="charge-instruction" class="charge-instruction">TAP TO CHARGE!</div>
+        
+        <div id="charge-tap-area" class="charge-area">
+            <span>[ PRESS ]</span>
+        </div>
+
+        <div class="charge-gauge-container">
+            <div id="charge-gauge-bar" class="charge-gauge-bar"></div>
+        </div>
+        <p style="margin-top: 10px; font-size: 14px; color: var(--neon-cyan);">ENERGY MULTIPLIER: <span id="energy-val">0</span>%</p>
+    </div>
+
+    <div id="flight-screen" class="screen hidden">
+        <div class="hud">
+            <div class="hud-row">
+                <div><span class="hud-label">ALTITUDE:</span> <span id="hud-alt" class="hud-value">0m</span></div>
+                <div><span class="hud-label">DISTANCE:</span> <span id="hud-dist" class="hud-value">0m</span></div>
+            </div>
+            <div class="hud-row">
+                <div><span class="hud-label">SPEED:</span> <span id="hud-speed" class="hud-value">0m/s</span></div>
+                <div><span class="hud-label">ANGLE:</span> <span id="hud-angle" class="hud-value">0°</span></div>
+            </div>
+            <div class="fuel-container">
+                <div id="fuel-bar" class="fuel-bar"></div>
+            </div>
+        </div>
+
+        <canvas id="game-canvas"></canvas>
+
+        <div class="flight-controls">
+            <button id="fastforward-btn" class="btn">FAST FORWARD &gt;&gt; (30x)</button>
+
+            <div class="steering-container">
+                <button id="steer-left" class="btn steer-btn">&lt; STEER LEFT</button>
+                <button id="steer-right" class="btn steer-btn">STEER RIGHT &gt;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen hidden">
+        <h1 class="glitch-title">MISSION COMPLETE</h1>
+        
+        <div class="result-stats">
+            <div class="result-row">
+                <span>MAX DISTANCE:</span>
+                <span id="res-dist" style="color: var(--neon-cyan);">0m</span>
+            </div>
+            <div class="result-row">
+                <span>CHIP MULTIPLIER:</span>
+                <span id="res-mult" style="color: var(--neon-green);">x1.0</span>
+            </div>
+            <div class="result-row result-total">
+                <span>CREDITS EARNED:</span>
+                <span id="res-earned">+0 N-CHIPS</span>
+            </div>
+        </div>
+
+        <button id="result-close-btn" class="btn btn-green" style="width: 80%; font-size: 18px;">RETURN TO HANGAR</button>
+    </div>
+</div>
+
+<script>
+    // --- ゲームステート＆セーブデータ ---
+    let state = {
+        chips: 20, // 初期チップ数（最初のアップグレードが数回買える設定）
+        upgrades: {
+            fuel: { level: 1, baseCost: 10, costGrowth: 1.5 },
+            engine: { level: 1, baseCost: 15, costGrowth: 1.6 },
+            aero: { level: 1, baseCost: 20, costGrowth: 1.7 },
+            mult: { level: 1, baseCost: 30, costGrowth: 1.9 }
+        },
+        launchAngle: 45
+    };
+
+    // 物理パラメータ定数・変数
+    let rocket = {
+        x: 0, y: 0,
+        vx: 0, vy: 0,
+        angle: 45, // 孤度法に随時変換
+        fuel: 100,
+        maxFuel: 100,
+        thrust: 0.5,
+        dragCoeff: 0.05,
+        isDead: false
+    };
+
+    // 環境定数
+    const GRAVITY = 0.15;
+    const CANVAS_WIDTH = 480;
+    const CANVAS_HEIGHT = 850;
+
+    // ゲーム内システム変数
+    let chargeEnergy = 0;
+    let chargeTimer = 10;
+    let chargeActive = false;
+    let chargeStarted = false;
+    let chargeInterval = null;
+
+    let timeScale = 1; // 時間加速用 (1倍速〜30倍速)
+    let isFastForwardActive = false;
+    let fuelDepletedTime = 0; // 燃料が切れた時刻
+    let animationFrameId = null;
+
+    // 星・グリッド背景用オブジェクト群
+    let stars = [];
+    function initStars() {
+        stars = [];
+        for(let i=0; i<60; i++) {
+            stars.push({
+                x: Math.random() * CANVAS_WIDTH,
+                y: Math.random() * CANVAS_HEIGHT,
+                size: Math.random() * 2 + 1,
+                color: Math.random() > 0.5 ? '#00f0ff' : '#ff0055'
+            });
+        }
+    }
+
+    // --- DOM要素取得 ---
+    const container = document.getElementById('game-container');
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // スクリューリサイズ対応
+    function resizeCanvas() {
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+    }
+    resizeCanvas();
+    initStars();
+
+    // --- 1. アップグレード画面ロジック ---
+    function getUpgradeCost(type) {
+        let upg = state.upgrades[type];
+        return Math.floor(upg.baseCost * Math.pow(upg.costGrowth, upg.level - 1));
+    }
+
+    function updateUpgradeUI() {
+        document.getElementById('wallet-display').innerText = `${state.chips} N-CHIPS`;
+        
+        for(let key in state.upgrades) {
+            let upg = state.upgrades[key];
+            let cost = getUpgradeCost(key);
+            document.getElementById(`lvl-${key}`).innerText = `LV: ${upg.level}`;
+            document.getElementById(`cost-${key}`).innerText = `${cost} N-CHIPS`;
+            
+            // 所持金不足でボタンを無効化
+            document.getElementById(`btn-upgrade-${key}`).disabled = (state.chips < cost);
+        }
+    }
+
+    function buyUpgrade(type) {
+        let cost = getUpgradeCost(type);
+        if(state.chips >= cost) {
+            state.chips -= cost;
+            state.upgrades[type].level++;
+            updateUpgradeUI();
+            triggerVisualFeedback();
+        }
+    }
+
+    // 視覚的フィードバック（クリック時の瞬間フラッシュなど）
+    function triggerVisualFeedback() {
+        container.style.borderColor = 'var(--neon-green)';
+        setTimeout(() => { container.style.borderColor = 'var(--neon-cyan)'; }, 100);
+    }
+
+    // 角度調整スライダー
+    const angleSlider = document.getElementById('angle-slider');
+    const angleValue = document.getElementById('angle-value');
+    angleSlider.addEventListener('input', (e) => {
+        state.launchAngle = parseInt(e.target.value);
+        angleValue.innerText = state.launchAngle;
+    });
+
+    function adjustAngle(val) {
+        let newVal = Math.max(0, Math.min(90, state.launchAngle + val));
+        state.launchAngle = newVal;
+        angleSlider.value = newVal;
+        angleValue.innerText = newVal;
+    }
+
+    // フルスクリーンAPI
+    document.getElementById('fullscreen-btn').addEventListener('pointerdown', () => {
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {});
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // 2. 連打チャージシーケンスへの移行
+    document.getElementById('launch-init-btn').addEventListener('pointerdown', () => {
+        switchScreen('upgrade-screen', 'charge-screen');
+        resetChargePhase();
+    });
+
+    function switchScreen(from, to) {
+        document.getElementById(from).classList.add('hidden');
+        document.getElementById(to).classList.remove('hidden');
+    }
+
+    // --- 2. 連打チャージフェーズ ---
+    const tapArea = document.getElementById('charge-tap-area');
+    const chargeBar = document.getElementById('charge-gauge-bar');
+    const timerText = document.getElementById('charge-timer');
+    const energyVal = document.getElementById('energy-val');
+
+    function resetChargePhase() {
+        chargeEnergy = 0;
+        chargeTimer = 10.00;
+        chargeStarted = false;
+        chargeActive = true;
+        chargeBar.style.width = '0%';
+        timerText.innerText = '10.00s';
+        timerText.style.color = 'var(--neon-magenta)';
+        energyVal.innerText = '0';
+        document.getElementById('charge-instruction').innerText = "TAP TO CHARGE!";
+    }
+
+    // 物理的な連打イベント検知（PointerEventによる超高速応答）
+    tapArea.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if(!chargeActive) return;
+
+        // 最初の1タップ目でタイマースタート
+        if(!chargeStarted) {
+            chargeStarted = true;
+            startChargeTimer();
+        }
+
+        // エネルギー増加（上限200%）
+        chargeEnergy = Math.min(200, chargeEnergy + 2.5);
+        chargeBar.style.width = `${Math.min(100, (chargeEnergy / 200) * 100)}%`;
+        energyVal.innerText = Math.floor(chargeEnergy);
+
+        // サイバー打撃演出（画面を瞬間激震）
+        container.classList.add('shake');
+        tapArea.style.transform = 'scale(0.92)';
+        setTimeout(() => { 
+            container.classList.remove('shake'); 
+            tapArea.style.transform = 'scale(1)';
+        }, 60);
+    });
+
+    function startChargeTimer() {
+        let lastTime = Date.now();
+        document.getElementById('charge-instruction').innerText = "CHARGING PROCESS ACTIVE";
+        
+        chargeInterval = setInterval(() => {
+            let now = Date.now();
+            let dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            chargeTimer -= dt;
+            if(chargeTimer <= 0) {
+                chargeTimer = 0;
+                clearInterval(chargeInterval);
+                endChargePhase();
+            }
+            timerText.innerText = chargeTimer.toFixed(2) + 's';
+        }, 30);
+    }
+
+    function endChargePhase() {
+        chargeActive = false;
+        timerText.innerText = "0.00s LOCKED";
+        timerText.style.color = 'var(--neon-green)';
+        
+        setTimeout(() => {
+            switchScreen('charge-screen', 'flight-screen');
+            initFlightPhase();
+        }, 1200);
+    }
+
+    // --- 3. 発射・飛行フェーズ物理演算演算ループ ---
+    let keys = { left: false, right: false };
+    
+    // 姿勢制御UIイベント
+    const btnLeft = document.getElementById('steer-left');
+    const btnRight = document.getElementById('steer-right');
+    
+    btnLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.left = true; });
+    btnLeft.addEventListener('pointerup', () => keys.left = false);
+    btnLeft.addEventListener('pointerleave', () => keys.left = false);
+    btnRight.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.right = true; });
+    btnRight.addEventListener('pointerup', () => keys.right = false);
+    btnRight.addEventListener('pointerleave', () => keys.right = false);
+
+    // キーボード操作のサポート
+    window.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = true;
+        if(e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        if(e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = false;
+        if(e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.false = false;
+        if(e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
+    });
+
+    // 早送り倍速ボタンロジック
+    const ffBtn = document.getElementById('fastforward-btn');
+    ffBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        isFastForwardActive = !isFastForwardActive;
+        if(isFastForwardActive) {
+            timeScale = 30; // 30倍速
+            ffBtn.classList.add('active-ff');
+            ffBtn.innerText = "FAST FORWARD >> ACTIVE (30x)";
+        } else {
+            timeScale = 1;
+            ffBtn.classList.remove('active-ff');
+            ffBtn.innerText = "FAST FORWARD >> (30x)";
+        }
+    });
+
+    function initFlightPhase() {
+        // 各アップグレードレベルから物理諸元算出
+        let fuelLvl = state.upgrades.fuel.level;
+        let engineLvl = state.upgrades.engine.level;
+        let aeroLvl = state.upgrades.aero.level;
+
+        rocket.x = 50;
+        rocket.y = 0; // 地面ベース(y=0は接地)
+        rocket.angle = state.launchAngle;
+        
+        // チャージエネルギーに基づく初速決定
+        let initialVelocity = 5 + (chargeEnergy / 15); 
+        let rad = rocket.angle * Math.PI / 180;
+        rocket.vx = Math.cos(rad) * initialVelocity;
+        rocket.vy = Math.sin(rad) * initialVelocity;
+
+        rocket.maxFuel = 60 + (fuelLvl - 1) * 25;
+        rocket.fuel = rocket.maxFuel;
+        rocket.thrust = 0.3 + (engineLvl - 1) * 0.12;
+        // 空気抵抗：レベルが上がるほど係数が下がる
+        rocket.dragCoeff = Math.max(0.005, 0.04 * Math.pow(0.82, aeroLvl - 1));
+        
+        rocket.isDead = false;
+        timeScale = 1;
+        isFastForwardActive = false;
+        fuelDepletedTime = 0;
+        
+        ffBtn.style.display = 'none';
+        ffBtn.classList.remove('active-ff');
+        ffBtn.innerText = "FAST FORWARD >> (30x)";
+
+        if(animationFrameId) cancelAnimationFrame(animationFrameId);
+        lastLoopTime = Date.now();
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    let lastLoopTime = Date.now();
+
+    function gameLoop() {
+        let now = Date.now();
+        let dt = (now - lastLoopTime) / 16.666; // 60fps標準を1としたデルタタイム
+        if(dt > 3) dt = 3; // スパイク防止
+        lastLoopTime = now;
+
+        // 早送り倍速シミュレーション（時間軸のみにスケール反映）
+        let iterations = Math.round(timeScale);
+        for(let step = 0; step < iterations; step++) {
+            updatePhysics(dt / iterations);
+            if(rocket.isDead) break;
+        }
+
+        renderFlight();
+
+        if(!rocket.isDead) {
+            animationFrameId = requestAnimationFrame(gameLoop);
+        } else {
+            endFlightPhase();
+        }
+    }
+
+    function updatePhysics(dt) {
+        if(rocket.isDead) return;
+
+        // 姿勢制御（角度変更）
+        if(keys.left) rocket.angle = Math.min(180, rocket.angle + 1.5 * dt);
+        if(keys.right) rocket.angle = Math.max(-90, rocket.angle - 1.5 * dt);
+
+        // 推進システム
+        let isThrusting = false;
+        if(rocket.fuel > 0) {
+            rocket.fuel -= 0.25 * dt;
+            isThrusting = true;
+            if(rocket.fuel <= 0) {
+                rocket.fuel = 0;
+                fuelDepletedTime = Date.now(); // 燃料切れタイムスタンプ
+            }
+        }
+
+        let rad = rocket.angle * Math.PI / 180;
+
+        // 推進力ベクトル
+        let fx = isThrusting ? Math.cos(rad) * rocket.thrust : 0;
+        let fy = isThrusting ? Math.sin(rad) * rocket.thrust : 0;
+
+        // 総速度（空気抵抗計算用）
+        let speed = Math.sqrt(rocket.vx * rocket.vx + rocket.vy * rocket.vy);
+        
+        // 空気抵抗：抗力 = -C * v * vec(v)
+        let dx = -rocket.dragCoeff * speed * rocket.vx;
+        let dy = -rocket.dragCoeff * speed * rocket.vy;
+
+        // 重力
+        let gy = -GRAVITY;
+
+        // 加速度適用
+        let ax = fx + dx;
+        let ay = fy + dy + gy;
+
+        rocket.vx += ax * dt;
+        rocket.vy += ay * dt;
+
+        // 位置更新
+        rocket.x += rocket.vx * dt;
+        rocket.y += rocket.vy * dt;
+
+        // 地面衝突判定
+        if(rocket.y <= 0) {
+            rocket.y = 0;
+            // 完全に停止したか判定
+            if(Math.abs(rocket.vy) < 0.2 && Math.abs(rocket.vx) < 0.2) {
+                rocket.vx = 0;
+                rocket.vy = 0;
+                rocket.isDead = true;
+            } else {
+                // 地面バウンド（軽い反発）
+                rocket.vy = -rocket.vy * 0.2;
+                rocket.vx *= 0.7; // 地面摩擦
+                if(Math.abs(rocket.vy) < 0.2) rocket.vy = 0;
+            }
+        }
+
+        // 早送り出現ロジック：燃料が完全にゼロになり、3秒以上経過した場合
+        if(rocket.fuel === 0 && fuelDepletedTime > 0 && !rocket.isDead) {
+            if(Date.now() - fuelDepletedTime > 3000) {
+                ffBtn.style.display = 'block';
+            }
+        }
+    }
+
+    function renderFlight() {
+        // HUD表示更新
+        document.getElementById('hud-alt').innerText = Math.floor(rocket.y) + 'm';
+        document.getElementById('hud-dist').innerText = Math.floor(rocket.x) + 'm';
+        let speedMetric = Math.sqrt(rocket.vx*rocket.vx + rocket.vy*rocket.vy);
+        document.getElementById('hud-speed').innerText = (speedMetric * 10).toFixed(1) + 'm/s';
+        document.getElementById('hud-angle').innerText = Math.floor(rocket.angle) + '°';
+
+        // 燃料ゲージ
+        let fuelPct = (rocket.fuel / rocket.maxFuel) * 100;
+        document.getElementById('fuel-bar').style.width = `${fuelPct}%`;
+
+        // Canvas描画クリア
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // カメラワーク設定
+        // ロケットを中心に据えるが、地面付近では地面が映るように制限
+        let cameraX = rocket.x - 120;
+        let cameraY = rocket.y - 300;
+        if(cameraY < -500) cameraY = -500; // 限界線
+
+        // グリッド線背景描画（仮想空間の表現）
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+        ctx.lineWidth = 1;
+        let gridSpacing = 80;
+        
+        let startX = - (cameraX % gridSpacing);
+        let startY = - (cameraY % gridSpacing);
+
+        for(let x = startX; x < CANVAS_WIDTH; x += gridSpacing) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_HEIGHT); ctx.stroke();
+        }
+        for(let y = startY; y < CANVAS_HEIGHT; y += gridSpacing) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_WIDTH, y); ctx.stroke();
+        }
+
+        // 満天の星々をカメラ連動スクロール描画
+        stars.forEach(star => {
+            // 背景差分スクロール（パララックス効果）
+            let sx = (star.x - cameraX * 0.3) % CANVAS_WIDTH;
+            let sy = (star.y + cameraY * 0.3) % CANVAS_HEIGHT;
+            if(sx < 0) sx += CANVAS_WIDTH;
+            if(sy < 0) sy += CANVAS_HEIGHT;
+            ctx.fillStyle = star.color;
+            ctx.fillRect(sx, sy, star.size, star.size);
+        });
+
+        // 地平線（グラウンドライン）
+        let screenGroundY = CANVAS_HEIGHT - (0 - cameraY);
+        ctx.strokeStyle = 'var(--neon-magenta)';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'var(--neon-magenta)';
+        ctx.beginPath();
+        ctx.moveTo(0, screenGroundY);
+        ctx.lineTo(CANVAS_WIDTH, screenGroundY);
+        ctx.stroke();
+        ctx.shadowBlur = 0; // シャドウクリア
+
+        // 100mおきの距離インジケータ
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.font = '10px "Share Tech Mono"';
+        let markStart = Math.floor(cameraX / 200) * 200;
+        for(let m = markStart; m < markStart + CANVAS_WIDTH + 200; m += 200) {
+            if(m >= 0) {
+                let mx = m - cameraX;
+                ctx.fillText(`| ${m}m`, mx, screenGroundY - 6);
+            }
+        }
+
+        // ロケット描画
+        let rx = rocket.x - cameraX;
+        let ry = CANVAS_HEIGHT - (rocket.y - cameraY);
+
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(-rocket.angle * Math.PI / 180); // ラジアン変換して反転回転
+
+        // 推進エフェクト（炎）
+        if(rocket.fuel > 0) {
+            ctx.fillStyle = Math.random() > 0.5 ? 'var(--neon-magenta)' : 'var(--neon-yellow)';
+            ctx.beginPath();
+            ctx.moveTo(-16, 0);
+            ctx.lineTo(-35 - Math.random()*15, -6);
+            ctx.lineTo(-35 - Math.random()*15, 6);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ロケット本体構造
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = 'var(--neon-cyan)';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'var(--neon-cyan)';
+
+        // 菱形シャープなサイバーシャトル形状
+        ctx.beginPath();
+        ctx.moveTo(25, 0);     // 舳先
+        ctx.lineTo(-10, -10);  // 左翼先端
+        ctx.lineTo(-15, 0);    // 後部中央
+        ctx.lineTo(-10, 10);   // 右翼先端
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // コックピット窓（ネオングリーン）
+        ctx.fillStyle = 'var(--neon-green)';
+        ctx.beginPath();
+        ctx.moveTo(12, 0);
+        ctx.lineTo(2, -4);
+        ctx.lineTo(-3, 0);
+        ctx.lineTo(2, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // --- 4. リザルトフェーズ ---
+    function endFlightPhase() {
+        // チップ報酬計算: 飛距離 × 倍率
+        let multLvl = state.upgrades.mult.level;
+        let multiplier = 1.0 + (multLvl - 1) * 0.5;
+        let finalDistance = Math.floor(rocket.x);
+        let earned = Math.floor(finalDistance * multiplier);
+
+        state.chips += earned;
+
+        // リザルト画面への代入
+        document.getElementById('res-dist').innerText = finalDistance + 'm';
+        document.getElementById('res-mult').innerText = 'x' + multiplier.toFixed(1);
+        document.getElementById('res-earned').innerText = '+' + earned + ' N-CHIPS';
+
+        // 画面転換
+        switchScreen('flight-screen', 'result-screen');
+    }
+
+    document.getElementById('result-close-btn').addEventListener('pointerdown', () => {
+        switchScreen('result-screen', 'upgrade-screen');
+        updateUpgradeUI();
+    });
+
+    // 初期化実行
+    updateUpgradeUI();
+</script>
+
+</body>
+</html>
