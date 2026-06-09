@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30秒ダンジョン・チキンレース</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        #game-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #162447;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .status-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        .status-box {
+            background: #1f4068;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+        .bar-outer {
+            width: 100%;
+            background: #0f172a;
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .bar-inner {
+            height: 100%;
+            width: 100%;
+            transition: width 0.2s, background-color 0.2s;
+        }
+        #hp-bar { background-color: #e94560; }
+        #time-bar { background-color: #4ecca3; }
+
+        /* カードエリア */
+        #card-area {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 20px 0;
+            min-height: 160px;
+        }
+        .card {
+            flex: 1;
+            background: #1f4068;
+            border: 2px solid #4ecca3;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            background: #244d7a;
+        }
+        .card:active {
+            transform: scale(0.95);
+        }
+        .card-icon { font-size: 2.5rem; margin-bottom: 5px; }
+        .card-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+        .card-effect { font-size: 0.8rem; color: #ccc; text-align: center; }
+
+        /* ボタン */
+        button {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            width: 80%;
+        }
+        #start-btn { background-color: #4ecca3; color: #1a1a2e; }
+        #escape-btn { background-color: #e94560; color: #fff; display: none; }
+        
+        #result {
+            font-size: 1.2rem;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+        .highlight { color: #4ecca3; font-weight: bold; }
+        .danger { color: #e94560; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h2>⏳ 30秒ダンジョン・チキンレース</h2>
+    <p style="font-size: 0.85rem; color: #bbb; margin-top: -10px;">欲張って死ぬか、安全に帰還するか！？</p>
+
+    <div class="status-container">
+        <div class="status-box">
+            ❤️ HP: <span id="hp-text">100</span>/100
+            <div class="bar-outer"><div id="hp-bar" class="bar-inner"></div></div>
+        </div>
+        <div class="status-box">
+            ⏱️ 残り時間: <span id="time-text">30</span>秒
+            <div class="bar-outer"><div id="time-bar" class="bar-inner"></div></div>
+        </div>
+        <div class="status-box">🪙 スコア: <span id="score-text" class="highlight">0</span></div>
+        <div class="status-box">⚔️ 攻撃力: <span id="atk-text">1</span></div>
+    </div>
+
+    <div id="card-area">
+        <!-- ここにJavaScriptでカードが生成されます -->
+    </div>
+
+    <button id="start-btn" onclick="startGame()">探索を開始する！</button>
+    <button id="escape-btn" onclick="escapeDungeon()">🚪 街へ帰還する（スコア確定）</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    let hp = 100;
+    let score = 0;
+    let atk = 1;
+    let timeLeft = 30;
+    let gameInterval;
+    let isPlaying = false;
+
+    // カードのプール定義
+    const cardPool = [
+        { type: 'enemy_easy', icon: '👿', name: 'ゴブリン', desc: '中リスク・低リターン' },
+        { type: 'enemy_hard', icon: '🐉', name: 'ドラゴン', desc: '大リスク・高リターン' },
+        { type: 'treasure', icon: '💎', name: '宝箱', desc: 'ノーリスク・中リターン' },
+        { type: 'heal', icon: '🧪', name: 'ポーション', desc: 'HPを回復する' },
+        { type: 'weapon', icon: '⚔️', name: '砥石', desc: '攻撃力UP(被ダメ軽減)' }
+    ];
+
+    function startGame() {
+        if (isPlaying) return;
+        isPlaying = true;
+        hp = 100;
+        score = 0;
+        atk = 1;
+        timeLeft = 30;
+
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('escape-btn').style.display = 'inline-block';
+        document.getElementById('result').textContent = '';
+        
+        updateUI();
+        nextTurn();
+
+        // 1秒ごとのカウントダウン
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                endGame('timeover');
+            }
+            updateUI();
+        }, 1000);
+    }
+
+    function updateUI() {
+        document.getElementById('hp-text').textContent = hp;
+        document.getElementById('time-text').textContent = timeLeft;
+        document.getElementById('score-text').textContent = score;
+        document.getElementById('atk-text').textContent = atk;
+
+        document.getElementById('hp-bar').style.width = `${Math.max(0, hp)}%`;
+        document.getElementById('time-bar').style.width = `${(timeLeft / 30) * 100}%`;
+    }
+
+    // 3枚の選択肢カードをランダムに生成
+    function nextTurn() {
+        const cardArea = document.getElementById('card-area');
+        cardArea.innerHTML = '';
+
+        // ランダムに3種類選ぶ
+        for (let i = 0; i < 3; i++) {
+            const baseCard = cardPool[Math.floor(Math.random() * cardPool.length)];
+            const cardData = calculateCardEffect(baseCard);
+
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.innerHTML = `
+                <div class="card-icon">${cardData.icon}</div>
+                <div class="card-name">${cardData.name}</div>
+                <div class="card-effect">${cardData.effectText}</div>
+            `;
+            
+            cardEl.onclick = () => selectCard(cardData);
+            cardArea.appendChild(cardEl);
+        }
+    }
+
+    // プレイヤーのステータス（攻撃力）に応じてダメージなどを計算
+    function calculateCardEffect(card) {
+        let effectText = '';
+        let hpChange = 0;
+        let scoreChange = 0;
+        let atkChange = 0;
+
+        if (card.type === 'enemy_easy') {
+            hpChange = -Math.max(0, 20 - atk * 4); // 攻撃力が高いほど被ダメ減
+            scoreChange = 25;
+            effectText = `HP <span class="danger">${hpChange}</span><br>スコア <span class="highlight">+${scoreChange}</span>`;
+        } else if (card.type === 'enemy_hard') {
+            hpChange = -Math.max(5, 50 - atk * 8);
+            scoreChange = 70;
+            effectText = `HP <span class="danger">${hpChange}</span><br>スコア <span class="highlight">+${scoreChange}</span>`;
+        } else if (card.type === 'treasure') {
+            scoreChange = 35;
+            effectText = `スコア <span class="highlight">+${scoreChange}</span>`;
+        } else if (card.type === 'heal') {
+            hpChange = 30;
+            effectText = `HP <span class="highlight">+${hpChange}</span><br>(最大100)`;
+        } else if (card.type === 'weapon') {
+            atkChange = 1;
+            effectText = `攻撃力 <span class="highlight">+1</span><br>戦闘が楽になる`;
+        }
+
+        return { ...card, hpChange, scoreChange, atkChange, effectText };
+    }
+
+    function selectCard(card) {
+        if (!isPlaying) return;
+
+        // 効果適用
+        hp = Math.min(100, hp + card.hpChange);
+        score += card.scoreChange;
+        atk += card.atkChange;
+
+        updateUI();
+
+        // 死亡判定
+        if (hp <= 0) {
+            endGame('dead');
+            return;
+        }
+
+        // 次のカードへ
+        nextTurn();
+    }
+
+    // プレイヤーが自発的に帰還した場合
+    function escapeDungeon() {
+        if (!isPlaying) return;
+        endGame('escaped');
+    }
+
+    function endGame(reason) {
+        isPlaying = false;
+        clearInterval(gameInterval);
+
+        document.getElementById('start-btn').style.display = 'inline-block';
+        document.getElementById('start-btn').textContent = 'もう一度潜る！';
+        document.getElementById('escape-btn').style.display = 'none';
+        document.getElementById('card-area').innerHTML = '';
+
+        const resultEl = document.getElementById('result');
+        
+        if (reason === 'escaped') {
+            let rank = '銅の冒険者';
+            if (score >= 400) rank = '👑 伝説の英雄';
+            else if (score >= 250) rank = '⚔️ 一流のナイト';
+            else if (score >= 120) rank = '🏹 熟練のハンター';
+
+            resultEl.innerHTML = `🎉 <span class="highlight">無事に帰還しました！</span><br>獲得スコア: <strong>${score} 点</strong><br>称号: <span class="highlight">${rank}</span>`;
+        } else if (reason === 'dead') {
+            resultEl.innerHTML = `💀 <span class="danger">ダンジョン内で力尽きた...</span><br>欲張りすぎました。スコアは <strong class="danger">0 点</strong> です。`;
+        } else if (reason === 'timeover') {
+            resultEl.innerHTML = `⏳ <span class="danger">タイムアップ！ダンジョンが崩落した！</span><br>帰還が間に合わず、スコアは <strong class="danger">0 点</strong> です。`;
+        }
+    }
+</script>
+
+</body>
+</html>
