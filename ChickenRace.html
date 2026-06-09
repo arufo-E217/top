@@ -157,10 +157,10 @@
         const resultBox = document.getElementById('resultBox');
 
         // --- 物理・ゲーム設定 ---
-        const maxSpeed = 100;       // m/s
-        const accel = 30;           // m/s^2
-        const brakePower = 60;      // m/s^2
-        let totalDistance = 0;      // m
+        const maxSpeed = 100;       // 最高速度 (表示上は km/h としても扱う)
+        const accel = 30;           // 加速力
+        const brakePower = 60;      // ブレーキ減速力
+        let totalDistance = 0;      // 全体の距離(m)
         
         // --- 状態変数 ---
         let carPos = 0;
@@ -172,8 +172,9 @@
         let cameraX = 0;
         let state = 'INIT';
         let stateTimer = 0;
+        let gameTimer = 0;          // プレイ開始時からの経過時間
         let trees = [];
-        let PPU = 10; // Pixels Per Unit (m)
+        let PPU = 10;               // Pixels Per Unit (m)
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -191,6 +192,7 @@
             carSpeed = 0;
             fallVelocity = 0;
             isBraking = false;
+            gameTimer = 0;
             
             // 手前の遮蔽物（木）をランダム配置
             trees = [];
@@ -211,11 +213,13 @@
             if (state === 'COUNTDOWN') {
                 mainMsg.innerText = '3';
                 mainMsg.classList.add('visible');
+                gameTimer = 0; // カウントダウン開始で一旦リセット
             } else if (state === 'PLAYING') {
                 mainMsg.innerText = 'GO!';
                 mainMsg.classList.add('visible');
                 setTimeout(() => mainMsg.classList.remove('visible'), 1000);
                 brakeBtn.style.display = 'block';
+                gameTimer = 0; // 走行開始時から計測開始
             } else if (state === 'RESULT' || state === 'GAMEOVER') {
                 brakeBtn.style.display = 'none';
                 setTimeout(showResult, 500); // 演出の余韻
@@ -232,7 +236,7 @@
             switch (state) {
                 case 'CLIFF_ZOOM':
                     // 限界ライン（崖）をクローズアップ
-                    cameraX = totalDistance - 80; // 右側に崖が見える位置
+                    cameraX = totalDistance - 80;
                     if (stateTimer > 2.0) {
                         changeState('PANNING');
                         mainMsg.innerText = `STAGE DISTANCE\n${totalDistance}m`;
@@ -265,6 +269,8 @@
                     
                 case 'PLAYING':
                 case 'BRAKING':
+                    gameTimer += dt; // プレイ中の時間を計測
+
                     if (state === 'PLAYING') {
                         carSpeed += accel * dt;
                         if (carSpeed > maxSpeed) carSpeed = maxSpeed;
@@ -316,6 +322,89 @@
             }
             ctx.lineTo(canvas.width, canvas.height);
             ctx.fill();
+        }
+
+        // --- UI描画: 速度アナログメーター ---
+        function drawMeter(x, y, radius, speed, maxS) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // 半円背景
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, Math.PI, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fill();
+            
+            // 目盛り
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i <= 10; i++) {
+                let angle = Math.PI + (i / 10) * Math.PI;
+                ctx.beginPath();
+                let innerR = (i % 5 === 0) ? radius - 15 : radius - 8;
+                ctx.moveTo(Math.cos(angle) * innerR, Math.sin(angle) * innerR);
+                ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                ctx.stroke();
+            }
+            
+            // 針
+            let speedRatio = Math.min(speed / maxS, 1.0);
+            let needleAngle = Math.PI + speedRatio * Math.PI;
+            ctx.strokeStyle = '#ff3d00';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(needleAngle) * (radius - 10), Math.sin(needleAngle) * (radius - 10));
+            ctx.stroke();
+            
+            // 中心点
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            
+            // テキスト表示 (〇〇 km/h)
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px "Arial Black", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 4;
+            ctx.fillText(`${Math.floor(speed)} km/h`, 0, 10);
+            
+            ctx.restore();
+        }
+
+        // --- UI描画: 残り距離 (フェードアウト演出付き) ---
+        function drawDistance(dist, timer) {
+            // ゲーム開始前や結果画面では表示しない
+            if (state === 'INIT' || state === 'CLIFF_ZOOM' || state === 'PANNING' || state === 'COUNTDOWN') return;
+
+            // 4秒まで通常表示、4〜5秒でフェードアウト、5秒以降は消滅
+            let alpha = 1.0;
+            if (timer > 4.0 && timer <= 5.0) {
+                alpha = 1.0 - (timer - 4.0);
+            } else if (timer > 5.0) {
+                alpha = 0.0;
+            }
+
+            if (alpha <= 0) return;
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 36px "Arial Black", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            let remain = Math.max(0, dist);
+            ctx.fillText(`残り: ${Math.floor(remain)} m`, canvas.width / 2, 40);
+            ctx.restore();
         }
 
         function draw() {
@@ -407,13 +496,13 @@
             ctx.restore();
             
             // 6. 手前の遮蔽物（視差効果・最前面レイヤー）
-            let fgParallax = 2.0; // 自車より2倍の速度で流れる
+            let fgParallax = 2.0; 
             for (let tree of trees) {
                 let screenX = (tree - cameraX) * PPU * fgParallax;
                 if (screenX > -10 * PPU && screenX < canvas.width + 10 * PPU) {
-                    ctx.fillStyle = '#3e2723'; // 幹
+                    ctx.fillStyle = '#3e2723'; 
                     ctx.fillRect(screenX - 0.2*PPU, groundY - 6*PPU, 0.4*PPU, 6*PPU);
-                    ctx.fillStyle = '#2e7d32'; // 葉
+                    ctx.fillStyle = '#2e7d32'; 
                     ctx.beginPath();
                     ctx.arc(screenX, groundY - 6*PPU, 2*PPU, 0, Math.PI*2);
                     ctx.fill();
@@ -425,6 +514,14 @@
                     ctx.fill();
                 }
             }
+
+            // 7. UI描画（アナログメーター & 残り距離）
+            let meterRadius = 70;
+            let meterX = 90;
+            let meterY = 90;
+            drawMeter(meterX, meterY, meterRadius, carSpeed, maxSpeed);
+            
+            drawDistance(totalDistance - carPos, gameTimer);
         }
 
         function showResult() {
@@ -439,7 +536,6 @@
                 distText.innerText = "";
             } else {
                 let remain = totalDistance - carPos;
-                // スコア計算: 距離が長いほど1mあたりの減点率が下がる
                 let deduction = remain * (100000 / totalDistance);
                 let score = Math.max(0, Math.floor(10000 - deduction));
                 
@@ -453,7 +549,7 @@
 
         // --- 入力・イベント処理 ---
         const handleBrake = (e) => {
-            if (e) e.preventDefault(); // モバイルでの予期せぬ挙動・ズーム防止
+            if (e) e.preventDefault();
             if (state === 'PLAYING' && !isBraking) {
                 isBraking = true;
                 changeState('BRAKING');
@@ -472,7 +568,7 @@
         function loop(timestamp) {
             if (!lastTime) lastTime = timestamp;
             let dt = (timestamp - lastTime) / 1000;
-            if (dt > 0.1) dt = 0.1; // タブ切り替え時の異常値防止
+            if (dt > 0.1) dt = 0.1;
             lastTime = timestamp;
             
             update(dt);
