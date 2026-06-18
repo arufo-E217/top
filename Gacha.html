@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ガチャシミュレーター</title>
+</head>
+<body>
+
+<h1>ガチャシミュレーター</h1>
+
+<h2>レア度設定</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>名前</th>
+            <th>出現確率</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="rarities"></tbody>
+</table>
+
+<br>
+
+<button onclick="addRarity()">レア度追加</button>
+
+<hr>
+
+ガチャ回数：
+<input id="count" type="number" value="100" min="1">
+
+<button onclick="simulate()">
+シミュレート
+</button>
+
+<hr>
+
+<h2>結果一覧</h2>
+
+<div id="results"></div>
+
+<hr>
+
+<h2>集計</h2>
+
+<div id="summary"></div>
+
+<script>
+
+function addRarity(name="SSR", prob=1){
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>
+            <input class="name" value="${name}">
+        </td>
+        <td>
+            <input class="prob" type="number" step="0.01" value="${prob}">
+        </td>
+        <td>
+            <button onclick="this.parentElement.parentElement.remove()">削除</button>
+        </td>
+    `;
+
+    document.getElementById("rarities").appendChild(row);
+}
+
+addRarity("SSR", 1);
+addRarity("SR", 9);
+addRarity("R", 30);
+addRarity("N", 60);
+
+function getRarities(){
+
+    const rows =
+        document.querySelectorAll("#rarities tr");
+
+    const list = [];
+
+    rows.forEach(row=>{
+
+        const name =
+            row.querySelector(".name").value;
+
+        const prob =
+            Number(
+                row.querySelector(".prob").value
+            );
+
+        if(name && prob > 0){
+
+            list.push({
+                name,
+                prob
+            });
+        }
+    });
+
+    return list;
+}
+
+function roll(rarities){
+
+    const total =
+        rarities.reduce(
+            (s,r)=>s+r.prob,
+            0
+        );
+
+    const rand =
+        Math.random() * total;
+
+    let cur = 0;
+
+    for(const r of rarities){
+
+        cur += r.prob;
+
+        if(rand <= cur){
+            return r.name;
+        }
+    }
+
+    return rarities[rarities.length - 1].name;
+}
+
+function simulate(){
+
+    const rarities = getRarities();
+
+    if(rarities.length === 0){
+        alert("レア度を設定してください");
+        return;
+    }
+
+    const count =
+        Math.max(
+            1,
+            Number(
+                document.getElementById("count").value
+            )
+        );
+
+    const resultCount = {};
+
+    rarities.forEach(r=>{
+        resultCount[r.name] = 0;
+    });
+
+    let html = `
+    <table border="1">
+        <tr>
+            <th>No</th>
+            <th>結果</th>
+        </tr>
+    `;
+
+    for(let i=1;i<=count;i++){
+
+        const result =
+            roll(rarities);
+
+        resultCount[result]++;
+
+        html += `
+        <tr>
+            <td>${i}</td>
+            <td>${result}</td>
+        </tr>
+        `;
+    }
+
+    html += "</table>";
+
+    document.getElementById("results").innerHTML =
+        html;
+
+    let summaryHtml = `
+    <table border="1">
+        <tr>
+            <th>レア度</th>
+            <th>設定確率</th>
+            <th>個数</th>
+            <th>実際の出現率</th>
+        </tr>
+    `;
+
+    for(const r of rarities){
+
+        const cnt =
+            resultCount[r.name];
+
+        const actual =
+            (cnt / count * 100);
+
+        const faded =
+            cnt === 0
+            ? 'style="color:gray"'
+            : "";
+
+        summaryHtml += `
+        <tr ${faded}>
+            <td>${r.name}</td>
+            <td>${r.prob.toFixed(2)}%</td>
+            <td>${cnt}</td>
+            <td>${actual.toFixed(2)}%</td>
+        </tr>
+        `;
+    }
+
+    summaryHtml += "</table>";
+
+    document.getElementById("summary").innerHTML =
+        summaryHtml;
+}
+
+</script>
+
+</body>
+</html>
