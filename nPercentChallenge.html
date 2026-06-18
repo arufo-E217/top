@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>n%の試練</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --box-color: #2a2a2a;
+            --accent-color: #ff5252;
+            --border-color: #444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation; /* ダブルタップによるズーム拡大を防止 */
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- メニュー画面 --- */
+        #menu-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .menu-btn {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            transition: background-color 0.2s, transform 0.1s;
+            text-align: center;
+        }
+
+        .menu-btn:hover {
+            background-color: #222;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        #start-choices {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        #resume-btn {
+            display: none;
+            border-color: var(--accent-color);
+            background-color: rgba(255, 82, 82, 0.1);
+        }
+
+        /* --- ゲーム画面 --- */
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-left {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 1rem;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            gap: 35px;
+            padding: 20px;
+        }
+
+        /* くじ引き用の箱 */
+        .box {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(145deg, #333, #222);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 2px 5px rgba(255, 255, 255, 0.1);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* 箱の投入口（スリット） */
+        .box::after {
+            content: '';
+            width: 90px;
+            height: 10px;
+            background: #000;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        /* アクションボタン（くじを引く / 閉じる 兼用） */
+        #action-btn {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            border: none;
+            border-radius: 8px;
+            padding: 16px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            max-width: 260px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            z-index: 25;
+            transition: transform 0.05s, background-color 0.2s;
+        }
+
+        #action-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 途中でやめるボタン */
+        .quit-btn {
+            background-color: transparent;
+            color: #777;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px 24px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+            margin-top: 10px;
+        }
+        .quit-btn:transparent:hover {
+            color: #ddd;
+            border-color: #555;
+        }
+
+        /* --- くじ表示用オーバーレイ --- */
+        #lot-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 20;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* 下にあるアクションボタンのクリックを通す */
+        }
+
+        /* くじのアニメーションラッパー */
+        #lot-wrapper {
+            will-change: transform, opacity;
+            margin-bottom: 120px; /* アクションボタンと被らないように上に配置 */
+        }
+
+        /* ひし形のくじ */
+        .diamond {
+            width: 120px;
+            height: 120px;
+            background-color: #f9f9f9;
+            transform: rotate(45deg);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ひし形の中の文字 */
+        .diamond-text {
+            transform: rotate(-45deg);
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .text-win {
+            color: var(--accent-color);
+        }
+
+        /* --- あたり専用ウィンドウのダイアログ --- */
+        #win-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 30;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #win-window {
+            background: rgba(25, 25, 25, 0.98);
+            border: 2px solid var(--accent-color);
+            border-radius: 14px;
+            padding: 45px 30px 35px 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(255, 82, 82, 0.3);
+            position: relative;
+            width: 85%;
+            max-width: 320px;
+            animation: popIn 0.3s ease-out forwards;
+        }
+
+        #win-window h2 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+
+        #win-window p {
+            margin-bottom: 5px;
+            color: #ddd;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* あたりウィンドウの右上閉じるボタン */
+        .win-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #222;
+            color: #aaa;
+            border: 1px solid #444;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+            transition: background-color 0.2s;
+        }
+        .win-close-btn:active {
+            background-color: #444;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- メニュー画面 -->
+    <div id="menu-screen">
+        <div class="title">n%の試練</div>
+        
+        <!-- つづきからボタン（データがあるときのみ表示） -->
+        <button id="resume-btn" class="menu-btn" onclick="resumeGame()">つづきから</button>
+
+        <!-- はじめから選択肢（データがないときのみ表示） -->
+        <div id="start-choices">
+            <button class="menu-btn" onclick="startGame(10)">10%の試練</button>
+            <button class="menu-btn" onclick="startGame(1)">1%の試練</button>
+            <button class="menu-btn" onclick="startGame(0.001)">0.001%の試練</button>
+        </div>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="game-screen">
+        <div class="header">
+            <div class="header-left" id="trial-title">--%の試練</div>
+            <div class="header-right">
+                <div id="attempt-count">試行回数: 0回</div>
+                <div id="timer-display">経過時間: 00:00:00</div>
+            </div>
+        </div>
+        
+        <div class="main-area">
+            <!-- 箱 -->
+            <div class="box"></div>
+
+            <!-- くじ表示用オーバーレイ（ボタンの入力を邪魔しない） -->
+            <div id="lot-overlay">
+                <div id="lot-wrapper">
+                    <div class="diamond">
+                        <div id="lot-text" class="diamond-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 明示的な進捗兼アクションボタン -->
+            <button id="action-btn" onclick="handleAction()">くじを引く</button>
+
+            <!-- 途中でやめるボタン -->
+            <button class="quit-btn" onclick="quitGame()">途中でやめる</button>
+        </div>
+
+        <!-- あたり専用ウィンドウ（オーバーレイ） -->
+        <div id="win-overlay">
+            <div id="win-window">
+                <!-- 右上に配置された閉じるボタン -->
+                <button class="win-close-btn" onclick="closeWinWindow()">×</button>
+                <h2>見事クリア！</h2>
+                <p id="win-stats-attempts"></p>
+                <p id="win-stats-time"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ボタン状態の定数
+        const BTN_STATE_READY = 'READY';
+        const BTN_STATE_RESULT = 'RESULT';
+
+        // ゲーム全体のステート
+        let state = {
+            prob: 0,
+            attempts: 0,
+            elapsedSeconds: 0,
+            msCounter: 0,
+            isPlaying: false
+        };
+
+        let currentBtnState = BTN_STATE_READY;
+        let timerInterval = null;
+        let lastTickTime = null;
+
+        // DOM要素のキャッシュ
+        const menuScreen = document.getElementById('menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startChoices = document.getElementById('start-choices');
+        const resumeBtn = document.getElementById('resume-btn');
+        
+        const trialTitle = document.getElementById('trial-title');
+        const attemptCountText = document.getElementById('attempt-count');
+        const timerDisplay = document.getElementById('timer-display');
+        
+        const actionBtn = document.getElementById('action-btn');
+        const lotOverlay = document.getElementById('lot-overlay');
+        const lotWrapper = document.getElementById('lot-wrapper');
+        const lotText = document.getElementById('lot-text');
+        
+        const winOverlay = document.getElementById('win-overlay');
+        const winStatsAttempts = document.getElementById('win-stats-attempts');
+        const winStatsTime = document.getElementById('win-stats-time');
+
+        // アプリ起動時の初期化
+        initMenu();
+
+        /**
+         * メニュー画面の表示制御（データチェック）
+         */
+        function initMenu() {
+            loadGameData();
+            if (state.isPlaying) {
+                startChoices.style.display = 'none';
+                resumeBtn.style.display = 'block';
+                resumeBtn.innerText = `つづきから (${state.prob}%)`;
+            } else {
+                startChoices.style.display = 'flex';
+                resumeBtn.style.display = 'none';
+            }
+        }
+
+        /**
+         * 新しくゲームを始める
+         */
+        function startGame(prob) {
+            state.prob = prob;
+            state.attempts = 0;
+            state.elapsedSeconds = 0;
+            state.msCounter = 0;
+            state.isPlaying = true;
+            
+            saveGameData();
+            runGame();
+        }
+
+        /**
+         * 保存されたデータから再開する
+         */
+        function resumeGame() {
+            runGame();
+        }
+
+        /**
+         * ゲーム画面への切り替えと初期描画
+         */
+        function runGame() {
+            menuScreen.style.display = 'none';
+            gameScreen.style.display = 'flex';
+            
+            trialTitle.innerText = `${state.prob}%の試練`;
+            updateAttemptsDisplay();
+            updateTimerDisplay();
+            
+            // ボタン状態の初期化
+            currentBtnState = BTN_STATE_READY;
+            actionBtn.innerText = 'くじを引く';
+            actionBtn.style.display = 'block';
+            
+            lotOverlay.style.display = 'none';
+            winOverlay.style.display = 'none';
+            
+            startTimer();
+        }
+
+        /**
+         * タイマーの開始（非アクティブ時間を考慮する高精度な仕組み）
+         */
+        function startTimer() {
+            lastTickTime = Date.now();
+            if (!timerInterval) {
+                timerInterval = setInterval(tick, 100); // 100ms周期で細かくチェック
+            }
+        }
+
+        /**
+         * タイマーの停止
+         */
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        /**
+         * 毎フレームのタイマー加算処理
+         */
+        function tick() {
+            const now = Date.now();
+            const delta = now - lastTickTime;
+            lastTickTime = now;
+
+            // ブラウザが非アクティブ（バックグラウンド等）の時は時間を進めない
+            if (document.hidden) {
+                return;
+            }
+
+            state.msCounter += delta;
+            if (state.msCounter >= 1000) {
+                const secondsToAdd = Math.floor(state.msCounter / 1000);
+                state.elapsedSeconds += secondsToAdd;
+                state.msCounter %= 1000;
+                updateTimerDisplay();
+            }
+        }
+
+        // 画面の視認状態が変わったときに差分計測用タイムスタンプをリセット
+        document.addEventListener('visibilitychange', () => {
+            lastTickTime = Date.now();
+        });
+
+        /**
+         * 時間表示の更新
+         */
+        function updateTimerDisplay() {
+            const h = String(Math.floor(state.elapsedSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((state.elapsedSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(state.elapsedSeconds % 60).padStart(2, '0');
+            timerDisplay.innerText = `経過時間: ${h}:${m}:${s}`;
+        }
+
+        /**
+         * 試行回数の更新
+         */
+        function updateAttemptsDisplay() {
+            attemptCountText.innerText = `試行回数: ${state.attempts}回`;
+        }
+
+        /**
+         * アクションボタンが押されたときの振り分け
+         */
+        function handleAction() {
+            if (currentBtnState === BTN_STATE_READY) {
+                drawLot();
+            } else if (currentBtnState === BTN_STATE_RESULT) {
+                closeLot();
+            }
+        }
+
+        /**
+         * くじを引く処理
+         */
+        function drawLot() {
+            // 即座にボタン状態を「閉じる」に変更（連打に対応）
+            currentBtnState = BTN_STATE_RESULT;
+            actionBtn.innerText = '閉じる';
+            
+            lotOverlay.style.display = 'flex';
+
+            // 当たり判定
+            const isWin = Math.random() < (state.prob / 100);
+
+            // アニメーション時間の設定（0.1秒〜0.3秒）
+            const duration = (Math.random() * 0.2 + 0.1).toFixed(2);
+            // ランダムな開始位置（スライド・フェードイン用）
+            const startX = (Math.random() - 0.5) * 150;
+            const startY = (Math.random() - 0.5) * 150;
+
+            // アニメーション初期化
+            lotWrapper.style.transition = 'none';
+            lotWrapper.style.transform = `translate(${startX}px, ${startY}px) scale(0.5)`;
+            lotWrapper.style.opacity = '0';
+
+            if (isWin) {
+                lotText.innerText = "あたり";
+                lotText.className = "diamond-text text-win";
+                
+                // あたりの場合は連打で消えないようにアクションボタンを隠す
+                actionBtn.style.display = 'none';
+                stopTimer();
+                
+                state.attempts++;
+                updateAttemptsDisplay();
+                clearGameData(); // クリアしたので保存データを削除
+
+                // アニメーション実行
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        lotWrapper.style.transition = `all ${duration}s ease-out`;
+                        lotWrapper.style.transform = `translate(0, 0) scale(1)`;
+                        lotWrapper.style.opacity = '1';
+                        
+                        // アニメーション完了後にあたり画面を表示
+                        setTimeout(showWinWindow, duration * 1000);
+                    });
+                });
+            } else {
+                lotText.innerText = "はずれ";
+                lotText.className = "diamond-text";
+
+                // アニメーション実行
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        lotWrapper.style.transition = `all ${duration}s ease-out`;
+                        lotWrapper.style.transform = `translate(0, 0) scale(1)`;
+                        lotWrapper.style.opacity = '1';
+                    });
+                });
+            }
+        }
+
+        /**
+         * はずれくじを閉じて箱に戻る処理
+         */
+        function closeLot() {
+            // 閉じるタイミングで試行回数をカウントアップ
+            state.attempts++;
+            updateAttemptsDisplay();
+            saveGameData(); // くじを引く（結果を確認する）たびに進捗を保存
+
+            // 状態を「くじを引く」に戻す
+            currentBtnState = BTN_STATE_READY;
+            actionBtn.innerText = 'くじを引く';
+            lotOverlay.style.display = 'none';
+        }
+
+        /**
+         * あたりウィンドウの表示
+         */
+        function showWinWindow() {
+            const h = String(Math.floor(state.elapsedSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((state.elapsedSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(state.elapsedSeconds % 60).padStart(2, '0');
+            
+            winStatsAttempts.innerText = `試行回数: ${state.attempts}回`;
+            winStatsTime.innerText = `経過時間: ${h}:${m}:${s}`;
+            winOverlay.style.display = 'flex';
+        }
+
+        /**
+         * あたりウィンドウを閉じてタイトルに戻る（右上のボタン）
+         */
+        function closeWinWindow() {
+            winOverlay.style.display = 'none';
+            gameScreen.style.display = 'none';
+            menuScreen.style.display = 'flex';
+            initMenu();
+        }
+
+        /**
+         * 途中でやめる処理
+         */
+        function quitGame() {
+            stopTimer();
+            saveGameData(); // 現在の進捗（回数・時間）を確実に保存
+            gameScreen.style.display = 'none';
+            menuScreen.style.display = 'flex';
+            initMenu();
+        }
+
+        /* --- データ管理用関数 --- */
+        function saveGameData() {
+            localStorage.setItem('n_percent_trial_v2_data', JSON.stringify(state));
+        }
+
+        function loadGameData() {
+            const data = localStorage.getItem('n_percent_trial_v2_data');
+            if (data) {
+                state = JSON.parse(data);
+            }
+        }
+
+        function clearGameData() {
+            localStorage.removeItem('n_percent_trial_v2_data');
+            state.isPlaying = false;
+        }
+    </script>
+</body>
+</html>
