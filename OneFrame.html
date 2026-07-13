@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1フレーム タッチシミュレーター</title>
+    <title>1フレーム遅延 連打バグシミュレーター</title>
     <style>
         :root {
             --bg-color: #121214;
@@ -12,6 +12,7 @@
             --primary: #3b82f6;
             --danger: #ef4444;
             --success: #10b981;
+            --warning: #f59e0b;
             --border: #334155;
         }
 
@@ -37,7 +38,7 @@
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin-top: 0;
             text-align: center;
             color: #fff;
@@ -47,7 +48,7 @@
             font-size: 0.9rem;
             color: #94a3b8;
             margin-bottom: 20px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .panel {
@@ -74,7 +75,7 @@
             font-size: 0.95rem;
         }
 
-        select, button.btn-toggle {
+        select {
             background: #2d3748;
             color: white;
             border: 1px solid var(--border);
@@ -103,6 +104,23 @@
             font-size: 1.3rem;
             font-weight: bold;
             font-family: monospace;
+        }
+
+        .status-state {
+            grid-column: span 2;
+            background: #1a1a1e;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            border: 1px solid var(--border);
+        }
+        .state-idle { color: #94a3b8; }
+        .state-processing { color: var(--warning); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
         }
 
         .action-zone {
@@ -145,7 +163,7 @@
             background: #0f172a;
             border-radius: 8px;
             padding: 12px;
-            height: 180px;
+            height: 200px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 0.85rem;
@@ -159,7 +177,7 @@
         }
 
         .log-success { color: var(--success); }
-        .log-bug { color: var(--danger); font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 2px 4px; border-radius: 2px;}
+        .log-bug { color: var(--danger); font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 2px 4px; border-radius: 2px;}
         .log-system { color: #64748b; }
         .log-ignored { color: #a855f7; }
 
@@ -168,6 +186,7 @@
             justify-content: space-around;
             margin-top: 10px;
             font-size: 0.85rem;
+            margin-bottom: 15px;
         }
         .count-success { color: var(--success); }
         .count-bug { color: var(--danger); }
@@ -176,9 +195,9 @@
 <body>
 
 <div class="container">
-    <h1>1フレーム タッチシミュレーター</h1>
+    <h1>1フレーム遅延 連打バグシミュレーター</h1>
     <p class="desc">
-        Unity等のUpdate（フレーム）処理の合間に、タッチイベントが同一フレーム内で複数回発火することで発生する「二重検出バグ」の実験場です。
+        UnityのUI処理等でありがちな、ボタンを押して処理（通信や画面遷移）が始まっているのに、<b>「ロック処理の反映が次のフレームまで遅れる」</b>ことで、2フレーム連続（Frame N と N+1）で叩かれたときに二重発火するバグの再現サイトです。
     </p>
 
     <div class="panel">
@@ -192,31 +211,34 @@
         <div class="setting-group">
             <label>バグ対策 (ロジック):</label>
             <select id="fixSelect">
-                <option value="none">対策なし (同一フレーム内で何回でも即時実行)</option>
-                <option value="frameLock">対策あり (1フレームにつき1回のみ実行)</option>
+                <option value="none">対策なし (ロック反映が1フレーム遅れる)</option>
+                <option value="immediate">対策あり (押された瞬間に即時完全ロック)</option>
             </select>
         </div>
     </div>
 
     <div class="status-display">
         <div class="status-card">
-            <div>現在の仮想フレーム</div>
+            <div>現在のフレーム</div>
             <div class="status-val" id="frameDisplay">0</div>
         </div>
         <div class="status-card">
-            <div>現フレーム内の検出数</div>
-            <div class="status-val" id="currentFrameClicks">0</div>
+            <div>最後に押されたフレーム</div>
+            <div class="status-val" id="lastPressedDisplay">-</div>
+        </div>
+        <div class="status-state" id="stateDisplay">
+            状態: <span class="state-idle">待機中 (ボタン有効)</span>
         </div>
     </div>
 
     <div class="action-zone">
-        <button id="tapBtn" class="btn-main btn-normal">ここを連打！（自力で挑戦）</button>
-        <button id="cheatBtn" class="btn-main btn-cheat">【検証用】1フレーム内に2回同時タップ</button>
+        <button id="tapBtn" class="btn-main btn-normal">ここを限界連打！</button>
+        <button id="cheatBtn" class="btn-main btn-cheat">【検証】2フレーム連続タップ (Frame N と N+1)</button>
     </div>
 
     <div class="counter-box">
-        <div>正常処理回数: <span id="successCount" class="count-success">0</span></div>
-        <div>バグ（二重反応）発生: <span id="bugCount" class="count-bug">0</span></div>
+        <div>正常な処理開始: <span id="successCount" class="count-success">0</span></div>
+        <div>二重処理バグ発生: <span id="bugCount" class="count-bug">0</span></div>
     </div>
 
     <h3>処理ログ</h3>
@@ -232,9 +254,14 @@
     let currentFrame = 0;
     let lastFrameTime = performance.now();
     
-    // 1フレーム内でのカウント
-    let clicksInCurrentFrame = 0;
-    let hasProcessedThisFrame = false; // 対策用フラグ
+    // 処理の状態
+    let isProcessing = false;
+    let processEndFrame = 0;
+    let firstPressedFrame = -1; // 処理が始まったフレーム
+    let actualLockEffectiveFrame = -1; // 実際にロックが有効化されるフレーム
+
+    // 自動テスト用フラグ
+    let triggerNextFrameTap = false;
 
     // 統計カウント
     let totalSuccess = 0;
@@ -244,96 +271,111 @@
     const fpsSelect = document.getElementById('fpsSelect');
     const fixSelect = document.getElementById('fixSelect');
     const frameDisplay = document.getElementById('frameDisplay');
-    const currentFrameClicks = document.getElementById('currentFrameClicks');
+    const lastPressedDisplay = document.getElementById('lastPressedDisplay');
+    const stateDisplay = document.getElementById('stateDisplay');
     const tapBtn = document.getElementById('tapBtn');
     const cheatBtn = document.getElementById('cheatBtn');
     const logConsole = document.getElementById('logConsole');
     const successCountDisp = document.getElementById('successCount');
     const bugCountDisp = document.getElementById('bugCount');
 
-    // 設定変更イベント
     fpsSelect.addEventListener('change', (e) => {
         targetFps = parseInt(e.target.value);
         frameLength = 1000 / targetFps;
         addLog(`FPSモードを ${targetFps} FPS に変更しました。`, 'system');
     });
 
-    // 仮想ゲームループ (UnityのUpdate風の管理)
+    // 仮想ゲームループ
     function gameLoop(timestamp) {
         const elapsed = timestamp - lastFrameTime;
 
-        // 指定FPSの時間が経過したら1フレーム進める
         if (elapsed >= frameLength) {
             currentFrame++;
-            // 新しいフレームになったのでフレーム内のカウントとフラグをリセット
-            clicksInCurrentFrame = 0;
-            hasProcessedThisFrame = false;
-
-            // UI更新
             frameDisplay.textContent = currentFrame;
-            currentFrameClicks.textContent = clicksInCurrentFrame;
 
-            // 誤差を考慮して時間を調整
+            // 非同期処理の終了判定（処理開始から60フレーム経ったらアイドルに戻る）
+            if (isProcessing && currentFrame >= processEndFrame) {
+                isProcessing = false;
+                stateDisplay.innerHTML = `状態: <span class="state-idle">待機中 (ボタン有効)</span>`;
+                addLog(`[Frame ${currentFrame}] ── 処理（通信/画面遷移等）が完了しました ──`, 'system');
+            }
+
+            // 【検証用】前フレームでボタンが押され、次フレームでの自動実行が予約されている場合
+            if (triggerNextFrameTap) {
+                triggerNextFrameTap = false;
+                processTap();
+            }
+
             lastFrameTime = timestamp - (elapsed % frameLength);
         }
 
         requestAnimationFrame(gameLoop);
     }
-    // ループ開始
     requestAnimationFrame(gameLoop);
 
-    // タップ処理のコアロジック
-    function processTap(isSimulated = false) {
-        clicksInCurrentFrame++;
-        currentFrameClicks.textContent = clicksInCurrentFrame;
-
+    // タップされた時の処理
+    function processTap() {
+        lastPressedDisplay.textContent = currentFrame;
         const fixType = fixSelect.value;
 
-        if (fixType === 'none') {
-            // 【対策なし】イベントが来たらそのまま毎回通してしまう（Unityでありがちなバグ原因）
-            if (clicksInCurrentFrame > 1) {
+        // すでに処理中の場合
+        if (isProcessing) {
+            // ロックが有効なフレームに達しているかチェック
+            if (currentFrame >= actualLockEffectiveFrame) {
+                // 対策あり、または対策なしでも2フレーム以上離れている場合は安全にブロック
+                addLog(`[Frame ${currentFrame}] 🛡️ガード: 処理中のため入力を無視しました。`, 'ignored');
+                return;
+            } else {
+                // 【バグ発生】処理中なのに、ロック有効フレームに達していない（1フレームの隙を突かれた）
                 totalBugs++;
                 bugCountDisp.textContent = totalBugs;
-                addLog(`[Frame ${currentFrame}] ⚠️二重反応バグ！同一フレーム内で ${clicksInCurrentFrame} 回目の入力を検出 (処理が重複して実行されました)`, 'bug');
-            } else {
-                totalSuccess++;
-                successCountDisp.textContent = totalSuccess;
-                addLog(`[Frame ${currentFrame}] 正常に処理されました (アイテム購入/画面遷移 等)`, 'success');
+                addLog(`[Frame ${currentFrame}] ⚠️二重反応バグ！前フレーム(Frame ${firstPressedFrame})の処理がまだ走っているのに、もう一度処理が実行されてしまいました！`, 'bug');
+                return;
             }
-        } 
-        else if (fixType === 'frameLock') {
-            // 【対策あり】同じフレームで既に処理が走っていれば弾く
-            if (hasProcessedThisFrame) {
-                addLog(`[Frame ${currentFrame}] 🛡️ブロック：同一フレーム内の2回目以降の入力を無視しました`, 'ignored');
-            } else {
-                hasProcessedThisFrame = true;
-                totalSuccess++;
-                successCountDisp.textContent = totalSuccess;
-                addLog(`[Frame ${currentFrame}] 正常に処理されました（後続の同フレーム入力はロックされます）`, 'success');
-            }
+        }
+
+        // 新規処理の開始
+        isProcessing = true;
+        firstPressedFrame = currentFrame;
+        processEndFrame = currentFrame + 60; // 60フレーム間は「処理中」にする
+        
+        stateDisplay.innerHTML = `状態: <span class="state-processing">処理中... (Frame ${firstPressedFrame}～${processEndFrame})</span>`;
+        
+        totalSuccess++;
+        successCountDisp.textContent = totalSuccess;
+        addLog(`[Frame ${currentFrame}] 🟢新規処理を開始しました（通信・シーン遷移要求など）`, 'success');
+
+        // ロックが「いつ有効になるか」を設定
+        if (fixType === 'none') {
+            // 【対策なし】ロックがかかるのが「次の次のフレーム」からになる（1フレーム遅れる）
+            // つまり、Frame N で押した場合、Lockされるのは Frame N+2 から。Frame N+1 は素通りする。
+            actualLockEffectiveFrame = currentFrame + 2; 
+        } else {
+            // 【対策あり】押した次のフレーム（あるいは即時）から完璧にロックされる
+            actualLockEffectiveFrame = currentFrame + 1;
         }
     }
 
-    // イベントリスナー (PC・スマホ両対応のため pointerdown を使用)
+    // イベントリスナー
     tapBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        processTap(false);
+        processTap();
     });
 
-    // 【検証用】1フレーム（同一JavaScriptコールスタック内）で同時に2回呼び出す
+    // 【検証用】2フレーム連続タップをシミュレート
     cheatBtn.addEventListener('click', () => {
-        addLog(`--- 1フレーム内 2連打検証ボタンが押されました ---`, 'system');
-        processTap(true);
-        processTap(true);
+        addLog(`--- 2フレーム連続タップ検証（Frame N と N+1）を開始 ---`, 'system');
+        // 1回目のタップ（現フレーム）
+        processTap();
+        // 次のフレームのループで2回目を実行するように予約
+        triggerNextFrameTap = true;
     });
 
-    // ログ出力関数
     function addLog(message, type) {
         const div = document.createElement('div');
         div.className = `log-entry log-${type}`;
         div.textContent = message;
         logConsole.appendChild(div);
-        // 最下部へスクロール
         logConsole.scrollTop = logConsole.scrollHeight;
     }
 </script>
