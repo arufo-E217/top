@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1フレーム遅延 連打バグシミュレーター</title>
+    <title>【完全再現】1フレーム遅延 連打バグシミュレーター</title>
     <style>
         :root {
             --bg-color: #121214;
@@ -163,7 +163,7 @@
             background: #0f172a;
             border-radius: 8px;
             padding: 12px;
-            height: 200px;
+            height: 220px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 0.85rem;
@@ -180,6 +180,7 @@
         .log-bug { color: var(--danger); font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 2px 4px; border-radius: 2px;}
         .log-system { color: #64748b; }
         .log-ignored { color: #a855f7; }
+        .log-unity-ignore { color: #94a3b8; font-style: italic; }
 
         .counter-box {
             display: flex;
@@ -197,7 +198,7 @@
 <div class="container">
     <h1>1フレーム遅延 連打バグシミュレーター</h1>
     <p class="desc">
-        UnityのUI処理等でありがちな、ボタンを押して処理（通信や画面遷移）が始まっているのに、<b>「ロック処理の反映が次のフレームまで遅れる」</b>ことで、2フレーム連続（Frame N と N+1）で叩かれたときに二重発火するバグの再現サイトです。
+        UnityのEventSystemに準拠した検証サイトです。同一フレーム内での複数入力は完全に破棄されますが、<b>「Frame NとN+1（次のフレーム）」で連続してタッチ</b>された際、ロック処理が間に合わずに発生するバグを再現します。
     </p>
 
     <div class="panel">
@@ -260,8 +261,11 @@
     let firstPressedFrame = -1; // 処理が始まったフレーム
     let actualLockEffectiveFrame = -1; // 実際にロックが有効化されるフレーム
 
-    // 自動テスト用フラグ
-    let triggerNextFrameTap = false;
+    // Unity仕様：同一フレーム内での重複タッチを防ぐためのフラグ
+    let lastProcessedFrame = -1; 
+
+    // 検証用：次のフレームでタップを発生させるためのターゲットフレーム
+    let nextFrameTapFrame = -1;
 
     // 統計カウント
     let totalSuccess = 0;
@@ -285,7 +289,7 @@
         addLog(`FPSモードを ${targetFps} FPS に変更しました。`, 'system');
     });
 
-    // 仮想ゲームループ
+    // 仮想ゲームループ (UnityのUpdate処理に相当)
     function gameLoop(timestamp) {
         const elapsed = timestamp - lastFrameTime;
 
@@ -293,16 +297,16 @@
             currentFrame++;
             frameDisplay.textContent = currentFrame;
 
-            // 非同期処理の終了判定（処理開始から60フレーム経ったらアイドルに戻る）
+            // 非同期処理の終了判定（60フレーム経過でアイドルに戻る）
             if (isProcessing && currentFrame >= processEndFrame) {
                 isProcessing = false;
                 stateDisplay.innerHTML = `状態: <span class="state-idle">待機中 (ボタン有効)</span>`;
                 addLog(`[Frame ${currentFrame}] ── 処理（通信/画面遷移等）が完了しました ──`, 'system');
             }
 
-            // 【検証用】前フレームでボタンが押され、次フレームでの自動実行が予約されている場合
-            if (triggerNextFrameTap) {
-                triggerNextFrameTap = false;
+            // 【検証用】フレームが正確に 1コマ 進んだタイミングで、次の独立したタッチイベントを走らせる
+            if (currentFrame === nextFrameTapFrame) {
+                nextFrameTapFrame = -1;
                 processTap();
             }
 
@@ -315,21 +319,31 @@
 
     // タップされた時の処理
     function processTap() {
+        // 【Unity仕様の再現】
+        // UnityのEventSystemは1フレームに1回しかボタンイベントを処理しない。
+        // 同一フレーム（Frame N）内での複数回のタップは完全に破棄される。
+        if (currentFrame === lastProcessedFrame) {
+            addLog(`[Frame ${currentFrame}] (無視) 同一フレーム内での連打はUnityのEventSystemにより破棄されました。`, 'unity-ignore');
+            return;
+        }
+        lastProcessedFrame = currentFrame;
+
         lastPressedDisplay.textContent = currentFrame;
         const fixType = fixSelect.value;
 
         // すでに処理中の場合
         if (isProcessing) {
-            // ロックが有効なフレームに達しているかチェック
+            // ロックがすでに有効なフレームに達しているか
             if (currentFrame >= actualLockEffectiveFrame) {
-                // 対策あり、または対策なしでも2フレーム以上離れている場合は安全にブロック
-                addLog(`[Frame ${currentFrame}] 🛡️ガード: 処理中のため入力を無視しました。`, 'ignored');
+                // 安全にガード
+                addLog(`[Frame ${currentFrame}] 🛡️ガード: 処理中のためボタン入力を無視しました。`, 'ignored');
                 return;
             } else {
-                // 【バグ発生】処理中なのに、ロック有効フレームに達していない（1フレームの隙を突かれた）
+                // 【1フレーム遅延バグ発生！】
+                // 前のフレームで処理が始まったのに、このフレーム（Frame N+1）の時点ではロックが間に合っていない
                 totalBugs++;
                 bugCountDisp.textContent = totalBugs;
-                addLog(`[Frame ${currentFrame}] ⚠️二重反応バグ！前フレーム(Frame ${firstPressedFrame})の処理がまだ走っているのに、もう一度処理が実行されてしまいました！`, 'bug');
+                addLog(`[Frame ${currentFrame}] ⚠️二重反応バグ！前フレーム(Frame ${firstPressedFrame})の処理中ですが、ロック反映の遅れ(隙)により、再度処理が走ってしまいました！`, 'bug');
                 return;
             }
         }
@@ -343,32 +357,32 @@
         
         totalSuccess++;
         successCountDisp.textContent = totalSuccess;
-        addLog(`[Frame ${currentFrame}] 🟢新規処理を開始しました（通信・シーン遷移要求など）`, 'success');
+        addLog(`[Frame ${currentFrame}] 🟢新規処理を開始しました（通信・シーン遷移など）`, 'success');
 
-        // ロックが「いつ有効になるか」を設定
+        // ロックが有効化されるフレームの決定
         if (fixType === 'none') {
-            // 【対策なし】ロックがかかるのが「次の次のフレーム」からになる（1フレーム遅れる）
-            // つまり、Frame N で押した場合、Lockされるのは Frame N+2 から。Frame N+1 は素通りする。
+            // 【バグ：対策なし】ロック処理の反映が次のフレームのUpdateを挟むため、ロックが有効になるのは「次の次のフレーム(N+2)」からになる
+            // つまり、Frame N で押した場合、Frame N+1 ではまだロックが有効化されておらず、すり抜ける。
             actualLockEffectiveFrame = currentFrame + 2; 
         } else {
-            // 【対策あり】押した次のフレーム（あるいは即時）から完璧にロックされる
+            // 【対策あり】押されたそのフレーム内で即座に、または次のフレーム（N+1）の入力評価より前に完璧にロックされる
             actualLockEffectiveFrame = currentFrame + 1;
         }
     }
 
-    // イベントリスナー
+    // ボタンのイベント
     tapBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         processTap();
     });
 
-    // 【検証用】2フレーム連続タップをシミュレート
+    // 【検証用】2フレーム連続タップ (Frame N と N+1)
     cheatBtn.addEventListener('click', () => {
         addLog(`--- 2フレーム連続タップ検証（Frame N と N+1）を開始 ---`, 'system');
-        // 1回目のタップ（現フレーム）
+        // 1回目のタップ（現フレーム：Frame N）
         processTap();
-        // 次のフレームのループで2回目を実行するように予約
-        triggerNextFrameTap = true;
+        // 先行入力ではなく、ゲームループが「次のフレーム（Frame N+1）」に進むのを正確に待ってから2回目を実行
+        nextFrameTapFrame = currentFrame + 1;
     });
 
     function addLog(message, type) {
