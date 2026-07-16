@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infinity Tap: 1.8e308への挑戦</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Infinity Tap Extreme: 1.8e308への挑戦</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -12,41 +12,88 @@
             --accent-main: #38bdf8;
             --accent-prestige: #a855f7;
             --accent-supremacy: #ef4444;
+            --accent-auto: #10b981;
             --disabled: #64748b;
+        }
+
+        /* ズーム防止 & モバイル向け調整 */
+        html, body {
+            touch-action: manipulation;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
         }
 
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+
+        /* エフェクト描画用 Canvas */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
         }
 
         .container {
             max-width: 800px;
             width: 100%;
             text-align: center;
+            z-index: 10;
         }
 
         header {
             margin-bottom: 20px;
+            position: relative;
         }
 
         h1 {
             font-size: 2.5rem;
             color: var(--accent-main);
-            margin: 0 0 10px 0;
+            margin: 0 0 5px 0;
             text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
         }
 
         .target-info {
             font-size: 0.9rem;
             color: #94a3b8;
+        }
+
+        /* セーブ系ユーティリティボタン */
+        .system-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .sys-btn {
+            background: #334155;
+            border: none;
+            color: #94a3b8;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sys-btn:hover {
+            background: #475569;
+            color: #f8fafc;
         }
 
         /* メインリソース表示 */
@@ -72,11 +119,16 @@
             color: var(--accent-main);
             margin-top: 5px;
         }
+        .auto-power {
+            font-size: 0.95rem;
+            color: var(--accent-auto);
+            margin-top: 2px;
+        }
 
-        /* 巨大タップボタン */
+        /* 巨大タップボタン (ダブルタップズームをCSSで明示的にブロック) */
         .tap-button {
-            width: 200px;
-            height: 200px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
             background: linear-gradient(135deg, #0284c7, #0369a1);
             border: 4px solid var(--accent-main);
@@ -84,21 +136,23 @@
             font-size: 1.8rem;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
             transition: transform 0.05s, box-shadow 0.1s;
             margin: 20px auto;
             display: flex;
             align-items: center;
             justify-content: center;
             outline: none;
+            touch-action: none; /* タップボタン上のあらゆるズーム/スクロールを禁止 */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .tap-button:active {
-            transform: scale(0.95);
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            transform: scale(0.92);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
         }
 
-        /* 各種レイヤーのコンテナ */
+        /* セクション設計 */
         .grid-sections {
             display: grid;
             grid-template-columns: 1fr;
@@ -117,6 +171,7 @@
             border-radius: 12px;
             padding: 15px;
             border: 1px solid #334155;
+            text-align: left;
         }
 
         .section.prestige { border-color: var(--accent-prestige); }
@@ -124,38 +179,43 @@
 
         .section h2 {
             margin-top: 0;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             border-bottom: 2px solid #334155;
             padding-bottom: 8px;
         }
+        .section.normal h2 { color: var(--accent-main); }
         .section.prestige h2 { color: var(--accent-prestige); border-color: rgba(168, 85, 247, 0.3); }
         .section.supremacy h2 { color: var(--accent-supremacy); border-color: rgba(239, 68, 68, 0.3); }
 
         .currency-info {
             font-weight: bold;
             margin-bottom: 10px;
+            font-size: 0.95rem;
         }
 
-        /* ボタン類 */
+        /* アップグレードボタン */
         .btn {
             width: 100%;
             padding: 12px;
             margin: 8px 0;
             border-radius: 8px;
             border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             cursor: pointer;
             color: white;
             transition: background 0.2s, opacity 0.2s;
-            text-align: left;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-sizing: border-box;
+            touch-action: manipulation;
         }
 
         .btn-main { background: #0284c7; }
         .btn-main:hover:not(:disabled) { background: #0369a1; }
+        .btn-auto { background: #059669; }
+        .btn-auto:hover:not(:disabled) { background: #047857; }
         .btn-prestige { background: #7c3aed; }
         .btn-prestige:hover:not(:disabled) { background: #6d28d9; }
         .btn-supremacy { background: #dc2626; }
@@ -169,19 +229,34 @@
 
         .btn .cost {
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             background: rgba(0,0,0,0.2);
             padding: 2px 6px;
             border-radius: 4px;
         }
 
-        /* クリア画面 */
+        /* トースト通知 */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10000;
+        }
+
+        /* 勝利画面 */
         #victory-screen {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 100;
+            background: rgba(15, 23, 42, 0.98);
+            z-index: 100000;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -189,9 +264,9 @@
         }
 
         #victory-screen h1 {
-            font-size: 4rem;
+            font-size: 3.5rem;
             color: #f59e0b;
-            text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+            text-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
             animation: pulse 2s infinite;
         }
 
@@ -204,33 +279,42 @@
 </head>
 <body>
 
+<canvas id="particle-canvas"></canvas>
+
 <div class="container">
     <header>
-        <h1>Infinity Tap</h1>
+        <h1>Infinity Tap Extreme</h1>
         <div class="target-info">目標: Doubleの限界値 1.79e+308 を超えて「Infinity」へ到達せよ</div>
+        <div class="system-controls">
+            <button class="sys-btn" id="save-btn">手動セーブ</button>
+            <button class="sys-btn" id="reset-btn">データをリセット</button>
+        </div>
     </header>
 
     <div class="resource-display">
         <div id="points-display" class="amount">0</div>
         <div style="color: #94a3b8; font-size: 0.9rem; margin-top: 4px;">Points</div>
         <div id="click-power-display" class="click-power">Tap Power: +1</div>
+        <div id="auto-power-display" class="auto-power">Auto Power: +0/sec</div>
     </div>
 
     <button id="tap-btn" class="tap-button">TAP!</button>
 
     <div class="grid-sections">
-        <div class="section">
-            <h2>Upgrades</h2>
+        <div class="section normal">
+            <h2>Upgrades & Automation</h2>
             <button id="upg1" class="btn btn-main"><span>手動強化 (+1)</span><span class="cost" id="upg1-cost">10 P</span></button>
             <button id="upg2" class="btn btn-main"><span>倍率強化 (x2)</span><span class="cost" id="upg2-cost">150 P</span></button>
             <button id="upg3" class="btn btn-main"><span>指数加速 (x1.5/Lv)</span><span class="cost" id="upg3-cost">5,000 P</span></button>
+            <button id="auto1" class="btn btn-auto"><span>オートクリッカー (秒間10%分タップ)</span><span class="cost" id="auto1-cost">300 P</span></button>
+            <button id="auto2" class="btn btn-auto"><span>オートターボ (自動生産を強化)</span><span class="cost" id="auto2-cost">10,000 P</span></button>
         </div>
 
         <div class="section prestige">
             <h2>Prestige (階位)</h2>
             <div class="currency-info">
                 Prestige Points (PP): <span id="pp-display" style="color: var(--accent-prestige); font-family: monospace;">0</span><br>
-                <small style="color: #94a3b8; font-weight: normal;">(PPはタップ力を乗算で強化します)</small>
+                <small style="color: #94a3b8; font-weight: normal;">(PPはタップ・自動力を乗算強化します)</small>
             </div>
             <button id="prestige-btn" class="btn btn-prestige">
                 <span>Prestigeを実行</span>
@@ -258,74 +342,109 @@
     </div>
 </div>
 
+<div id="toast">セーブされました！</div>
+
 <div id="victory-screen">
     <h1>INFINITY ATTAINED!</h1>
     <p style="font-size: 1.5rem; color: #cbd5e1; max-width: 600px; padding: 0 20px;">
         おめでとうございます！あなたはタップを極め、JavaScriptの限界数値である <span style="color: var(--accent-main); font-family: monospace;">1.8e308</span> を突破し、概念上の無限（Infinity）へ到達しました！
     </p>
     <p id="time-taken" style="color: #94a3b8; font-size: 1.2rem;"></p>
-    <button onclick="location.reload()" class="btn btn-main" style="width: auto; padding: 15px 30px; margin-top: 20px; text-align: center; display: inline-block;">もう一度遊ぶ</button>
+    <button id="restart-btn" class="btn btn-main" style="width: auto; padding: 15px 30px; margin-top: 20px; text-align: center; display: inline-block;">もう一度遊ぶ（セーブ消去）</button>
 </div>
 
 <script>
-    // ゲームデータ構造
-    let game = {
+    // --- 初期ゲームデータ構造 ---
+    const INITIAL_GAME = {
         points: 0,
         clickPowerBase: 1,
         
-        // 通常アップグレードのレベル
         upg1: 0,
         upg2: 0,
         upg3: 0,
+        auto1: 0, // オートクリッカーLv
+        auto2: 0, // オートターボLv
         
-        // プレステージ
         prestigePoints: 0,
         prestigeCount: 0,
         pupg1: 0,
         pupg2: 0,
         pupg3: 0,
         
-        // サプレマシー
         supremacyPoints: 0,
         supg1: 0,
         supg2: 0,
         supg3: 0,
         
-        // 時間計測
         startTime: Date.now()
     };
 
-    // フォーマット関数 (大きな数をきれいに表示)
+    let game = JSON.parse(JSON.stringify(INITIAL_GAME));
+
+    // --- セーブ/ロードシステム ---
+    const SAVE_KEY = "InfinityTapExtreme_Save_v1";
+
+    function saveGame(showToast = false) {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+        if (showToast) {
+            const toast = document.getElementById("toast");
+            toast.style.opacity = 1;
+            setTimeout(() => toast.style.opacity = 0, 1500);
+        }
+    }
+
+    function loadGame() {
+        const saved = localStorage.getItem(SAVE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // セーブデータに新規キーが足りない場合のためにマージする
+                game = Object.assign({}, INITIAL_GAME, parsed);
+                // 指数表記でシリアライズされた場合の安全対策
+                if (typeof game.points === 'string') game.points = parseFloat(game.points);
+                return true;
+            } catch (e) {
+                console.error("セーブデータの読み込みに失敗しました", e);
+            }
+        }
+        return false;
+    }
+
+    function resetGame() {
+        if (confirm("本当にリセットしますか？ すべての進行状況が失われます。")) {
+            localStorage.removeItem(SAVE_KEY);
+            game = JSON.parse(JSON.stringify(INITIAL_GAME));
+            game.startTime = Date.now();
+            updateUI();
+        }
+    }
+
+    // --- フォーマット ---
     function format(num) {
         if (!isFinite(num) || num >= Number.MAX_VALUE) return "Infinity";
         if (num < 10000) return Math.floor(num).toLocaleString();
         return num.toExponential(3).replace("e+", "e");
     }
 
-    // 計算ロジック: 現在のタップ力を算出
+    // --- 数値計算ロジック ---
     function getClickPower() {
         // 1. 通常アップグレード
         let power = (game.clickPowerBase + game.upg1) * Math.pow(2, game.upg2) * Math.pow(1.5, game.upg3);
         
         // 2. プレステージによるバフ
-        // パッシブ効果: 1 PP につき +20%
         let ppMultiplier = 1 + game.prestigePoints * 0.2;
-        // プレステージアップグレード
         ppMultiplier *= Math.pow(10, game.pupg2);
         if (game.pupg3 > 0 && game.points > 0) {
-            // 現在のPointsの桁数に応じて強化 (最大+308なので強烈)
             let digits = Math.max(0, Math.log10(game.points));
             ppMultiplier *= (1 + digits * game.pupg3 * 5);
         }
         power *= ppMultiplier;
 
         // 3. サプレマシーによるバフ
-        // パッシブ効果: 1 SP につき x10倍
         let spMultiplier = 1 + game.supremacyPoints * 9;
         spMultiplier *= Math.pow(100, game.supg1);
         spMultiplier *= Math.pow(1e10, game.supg2);
         if (game.supg3 > 0) {
-            // 所持SPの数に応じて指数関数的に上昇
             spMultiplier *= Math.pow(10, game.supremacyPoints * game.supg3 * 2);
         }
         power *= spMultiplier;
@@ -333,10 +452,18 @@
         return power;
     }
 
-    // 次の獲得量を計算
+    // 自動生産(毎秒)を計算
+    function getAutoPower() {
+        if (game.auto1 === 0) return 0;
+        // オートタップ1Lvにつき、現在の手動タップ力の10%を毎秒生産
+        let baseAuto = getClickPower() * 0.1 * game.auto1;
+        // オートターボによる倍率強化
+        baseAuto *= Math.pow(2.5, game.auto2);
+        return baseAuto;
+    }
+
     function getPendingPP() {
         if (game.points < 1e6) return 0;
-        // ポイントのルートに比例してPP獲得量が増える
         let basePP = Math.floor(Math.sqrt(game.points / 1e6));
         return basePP * (1 + game.pupg1);
     }
@@ -346,11 +473,13 @@
         return Math.floor(Math.pow(game.prestigePoints / 1e5, 0.4));
     }
 
-    // 各種コスト計算
+    // 各コスト計算
     const costs = {
         upg1: () => 10 * Math.pow(1.4, game.upg1),
         upg2: () => 150 * Math.pow(1.8, game.upg2),
         upg3: () => 5000 * Math.pow(2.5, game.upg3),
+        auto1: () => 300 * Math.pow(1.5, game.auto1),
+        auto2: () => 10000 * Math.pow(3, game.auto2),
         pupg1: () => 5 * Math.pow(3, game.pupg1),
         pupg2: () => 20 * Math.pow(5, game.pupg2),
         pupg3: () => 500 * Math.pow(10, game.pupg3),
@@ -359,19 +488,24 @@
         supg3: () => 50 * Math.pow(10, game.supg3)
     };
 
-    // UIの更新
+    // --- UIの更新 ---
     function updateUI() {
         document.getElementById("points-display").innerText = format(game.points);
         
         let cp = getClickPower();
         document.getElementById("click-power-display").innerText = "Tap Power: +" + format(cp);
+        
+        let ap = getAutoPower();
+        document.getElementById("auto-power-display").innerText = "Auto Power: +" + format(ap) + "/sec";
 
-        // 通常アップグレード
+        // 通常・自動化
         updateBtn("upg1", game.points, costs.upg1(), "P");
         updateBtn("upg2", game.points, costs.upg2(), "P");
         updateBtn("upg3", game.points, costs.upg3(), "P");
+        updateBtn("auto1", game.points, costs.auto1(), "P");
+        updateBtn("auto2", game.points, costs.auto2(), "P");
 
-        // プレステージ関係
+        // プレステージ
         document.getElementById("pp-display").innerText = format(game.prestigePoints);
         let pPP = getPendingPP();
         document.getElementById("pp-gain").innerText = "+" + format(pPP) + " PP";
@@ -381,7 +515,7 @@
         updateBtn("pupg2", game.prestigePoints, costs.pupg2(), "PP");
         updateBtn("pupg3", game.prestigePoints, costs.pupg3(), "PP");
 
-        // サプレマシー関係
+        // サプレマシー
         document.getElementById("sp-display").innerText = format(game.supremacyPoints);
         let pSP = getPendingSP();
         document.getElementById("sp-gain").innerText = "+" + format(pSP) + " SP";
@@ -391,38 +525,179 @@
         updateBtn("supg2", game.supremacyPoints, costs.supg2(), "SP");
         updateBtn("supg3", game.supremacyPoints, costs.supg3(), "SP");
 
-        // クリア判定
+        // 終了条件
         if (!isFinite(game.points) || game.points >= Number.MAX_VALUE) {
             endGame();
         }
     }
 
     function updateBtn(id, currency, cost, unit) {
-        let btn = document.getElementById(id);
-        let costSpan = document.getElementById(id + "-cost");
+        const btn = document.getElementById(id);
+        const costSpan = document.getElementById(id + "-cost");
         costSpan.innerText = format(cost) + " " + unit;
         btn.disabled = (currency < cost);
     }
 
+    // --- Canvas タップ演出システム ---
+    const canvas = document.getElementById("particle-canvas");
+    const ctx = canvas.getContext("2d");
+
+    let particles = [];
+    let floatingTexts = [];
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // エフェクトクラス群
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 8 + 4;
+            this.speedX = (Math.random() - 0.5) * 12;
+            this.speedY = (Math.random() - 0.5) * 12 - 5; // 上方向に飛び散りやすく
+            this.gravity = 0.25;
+            this.color = color;
+            this.alpha = 1;
+            this.decay = Math.random() * 0.03 + 0.02;
+        }
+        update() {
+            this.x += this.speedX;
+            this.speedY += this.gravity;
+            this.y += this.speedY;
+            this.alpha -= this.decay;
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class FloatingText {
+        constructor(x, y, text, color) {
+            this.x = x;
+            this.y = y - 20;
+            this.text = text;
+            this.color = color;
+            this.alpha = 1;
+            this.speedY = -3.5;
+            this.scale = 1;
+        }
+        update() {
+            this.y += this.speedY;
+            this.speedY *= 0.96; // 次第に減速
+            this.alpha -= 0.025;
+            this.scale += 0.01;
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = this.color;
+            ctx.font = `italic bold ${Math.floor(20 * this.scale)}px sans-serif`;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+            ctx.textAlign = "center";
+            ctx.fillText(this.text, this.x, this.y);
+            ctx.restore();
+        }
+    }
+
+    // エフェクト発動
+    function triggerTapEffect(e) {
+        // タップされた位置を取得（タッチイベント対応）
+        let clientX, clientY;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        // 進行度に応じて色と形がド派手になる
+        let color = "var(--accent-main)"; // 青
+        if (game.supremacyPoints > 0) {
+            color = "#f59e0b"; // 覇権に到達した金
+        } else if (game.prestigePoints > 0) {
+            color = "var(--accent-prestige)"; // 紫
+        }
+
+        // 1. 数値ポップアップ
+        const clickPowerVal = getClickPower();
+        floatingTexts.push(new FloatingText(clientX, clientY, "+" + format(clickPowerVal), color));
+
+        // 2. 飛び散るパーティクル（タップごとに20個）
+        for (let i = 0; i < 20; i++) {
+            particles.push(new Particle(clientX, clientY, color));
+        }
+    }
+
+    // アニメーションループ
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // パーティクルの更新と描画
+        particles.forEach((p, idx) => {
+            p.update();
+            p.draw();
+            if (p.alpha <= 0) particles.splice(idx, 1);
+        });
+
+        // テキストの更新と描画
+        floatingTexts.forEach((t, idx) => {
+            t.update();
+            t.draw();
+            if (t.alpha <= 0) floatingTexts.splice(idx, 1);
+        });
+
+        requestAnimationFrame(animate);
+    }
+    animate();
+
     // --- アクション処理 ---
 
-    // タップ
-    document.getElementById("tap-btn").addEventListener("click", () => {
-        game.points += getClickPower();
+    // タップボタン（MouseEvent + TouchEvent両対応）
+    const tapBtn = document.getElementById("tap-btn");
+    
+    function handleTap(e) {
+        e.preventDefault(); // ダブルタップズーム等の余計なブラウザ動作を完全遮断
+        
+        const cp = getClickPower();
+        game.points += cp;
+        
+        triggerTapEffect(e);
         updateUI();
+    }
+
+    tapBtn.addEventListener("touchstart", handleTap, { passive: false });
+    tapBtn.addEventListener("mousedown", (e) => {
+        // タッチ非対応デバイス（PC）でのクリック時のみ発火させる
+        if ('ontouchstart' in window) return;
+        handleTap(e);
     });
 
-    // 通常アップグレード購入
+    // 各アップグレード購入
     document.getElementById("upg1").addEventListener("click", () => buyUpgrade("points", "upg1"));
     document.getElementById("upg2").addEventListener("click", () => buyUpgrade("points", "upg2"));
     document.getElementById("upg3").addEventListener("click", () => buyUpgrade("points", "upg3"));
+    document.getElementById("auto1").addEventListener("click", () => buyUpgrade("points", "auto1"));
+    document.getElementById("auto2").addEventListener("click", () => buyUpgrade("points", "auto2"));
 
-    // プレステージアップグレード購入
     document.getElementById("pupg1").addEventListener("click", () => buyUpgrade("prestigePoints", "pupg1"));
     document.getElementById("pupg2").addEventListener("click", () => buyUpgrade("prestigePoints", "pupg2"));
     document.getElementById("pupg3").addEventListener("click", () => buyUpgrade("prestigePoints", "pupg3"));
 
-    // サプレマシーアップグレード購入
     document.getElementById("supg1").addEventListener("click", () => buyUpgrade("supremacyPoints", "supg1"));
     document.getElementById("supg2").addEventListener("click", () => buyUpgrade("supremacyPoints", "supg2"));
     document.getElementById("supg3").addEventListener("click", () => buyUpgrade("supremacyPoints", "supg3"));
@@ -436,45 +711,77 @@
         }
     }
 
-    // プレステージの実行
+    // プレステージ
     document.getElementById("prestige-btn").addEventListener("click", () => {
         let gain = getPendingPP();
         if (gain > 0) {
             game.prestigePoints += gain;
             game.prestigeCount++;
             
-            // 通常リソースとアップグレードを初期化
+            // リセットされるもの
             game.points = 0;
             game.upg1 = 0;
             game.upg2 = 0;
             game.upg3 = 0;
+            game.auto1 = 0;
+            game.auto2 = 0;
             
+            saveGame();
             updateUI();
         }
     });
 
-    // サプレマシーの実行
+    // サプレマシー
     document.getElementById("supremacy-btn").addEventListener("click", () => {
         let gain = getPendingSP();
         if (gain > 0) {
             game.supremacyPoints += gain;
             
-            // 通常 & プレステージの一部を初期化
+            // リセットされるもの（通常 & プレステージの一部）
             game.points = 0;
             game.upg1 = 0;
             game.upg2 = 0;
             game.upg3 = 0;
+            game.auto1 = 0;
+            game.auto2 = 0;
             
             game.prestigePoints = 0;
             game.pupg1 = 0;
             game.pupg2 = 0;
             game.pupg3 = 0;
             
+            saveGame();
             updateUI();
         }
     });
 
-    // ゲーム終了
+    // システムボタン
+    document.getElementById("save-btn").addEventListener("click", () => saveGame(true));
+    document.getElementById("reset-btn").addEventListener("click", resetGame);
+    document.getElementById("restart-btn").addEventListener("click", () => {
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+    });
+
+    // --- メインループ (オートクリッカーの稼働 100ms周期) ---
+    setInterval(() => {
+        let ap = getAutoPower();
+        if (ap > 0) {
+            // 0.1秒ごとの増加
+            game.points += ap * 0.1;
+            updateUI();
+        }
+    }, 100);
+
+    // 自動セーブ（30秒ごと）
+    setInterval(() => {
+        saveGame();
+    }, 30000);
+
+    // --- ゲーム開始初期化 ---
+    loadGame();
+    updateUI();
+
     function endGame() {
         let totalTime = Math.floor((Date.now() - game.startTime) / 1000);
         let mins = Math.floor(totalTime / 60);
@@ -483,18 +790,6 @@
         document.getElementById("time-taken").innerText = `クリア時間: ${mins}分 ${secs}秒`;
         document.getElementById("victory-screen").style.display = "flex";
     }
-
-    // 初期化実行
-    updateUI();
-
-    // 稀に発生する端数計算用の秒間パッシブ更新 (完全に詰まるのを防ぐ保険)
-    setInterval(() => {
-        if (game.pupg3 > 0 || game.supremacyPoints > 0) {
-            // 微量ながら自動で増えることで、後半のタップ効率を後押し
-            game.points += getClickPower() * 0.1;
-            updateUI();
-        }
-    }, 1000);
 </script>
 </body>
 </html>
