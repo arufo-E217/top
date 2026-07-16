@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>超・無駄エフェクト電卓 MAX</title>
+    <title>超・無駄エフェクト電卓 MAX：HACKER EDITION</title>
     <style>
         * {
             box-sizing: border-box;
@@ -54,6 +54,7 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
             overflow: hidden;
             z-index: 1;
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
         .calculator::before {
@@ -301,6 +302,113 @@
             font-size: 0.8rem;
             color: #666;
             text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transition: opacity 0.5s ease;
+        }
+
+        /* 🏆 ハッキング勝利オーバーレイ 🏆 */
+        #victoryOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #victoryOverlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 背景を流れるバイナリデータ */
+        #victoryOverlay::before {
+            content: "101010110100101010010101011010010101001\n010101010111110001010101010111110001\n1101010101010101010111010101010101010101\n01010110100101010010101011010010101001";
+            position: absolute;
+            top: -10%; left: -10%; width: 120%; height: 120%;
+            color: rgba(57, 255, 20, 0.05);
+            font-size: 14px;
+            line-height: 14px;
+            white-space: pre;
+            z-index: -1;
+            animation: binary-scroll 10s linear infinite;
+        }
+
+        @keyframes binary-scroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100px); }
+        }
+
+        /* 勝利メッセージ */
+        #victoryMessage {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #39ff14;
+            text-shadow: 0 0 10px #39ff14, 0 0 30px #39ff14;
+            margin-bottom: 20px;
+            animation: glitched-text 0.2s infinite;
+            text-transform: uppercase;
+        }
+
+        /* 超巨大な結果数値 */
+        #victoryResult {
+            font-size: 10rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #fff, 0 0 50px #ff00ff, 0 0 100px #ff00ff;
+            animation: victory-result-anim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90vw;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        @keyframes victory-result-anim {
+            0% { transform: scale(0.1); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* グリッチノイズ効果 */
+        @keyframes glitched-text {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        /* 勝利オーバーレイの閉じるボタン（無駄に） */
+        #victoryOverlay button {
+            margin-top: 50px;
+            padding: 10px 30px;
+            font-size: 1rem;
+            background: transparent;
+            border: 2px solid #39ff14;
+            color: #39ff14;
+            text-shadow: 0 0 5px #39ff14;
+            box-shadow: none;
+            transition: all 0.2s ease;
+        }
+
+        #victoryOverlay button:hover {
+            background: #39ff14;
+            color: #000;
+        }
+
+        /* 電卓が沈むアニメーション */
+        .calculator.victory-fade {
+            opacity: 0.1;
+            transform: scale(0.8) translateY(100px);
+            pointer-events: none;
+        }
+
+        .volume-notice.victory-fade {
+            opacity: 0;
         }
     </style>
 </head>
@@ -341,6 +449,12 @@
         </div>
     </div>
 
+    <div id="victoryOverlay">
+        <div id="victoryMessage">ACCESS GRANTED<br>SYSTEM POWNED</div>
+        <div id="victoryResult">0</div>
+        <button onclick="hideVictoryOverlay()">CLEAR DATA AND RETURN</button>
+    </div>
+
     <div class="volume-notice">⚠️ 音が出ます。音量にご注意ください！</div>
 
     <script>
@@ -356,7 +470,7 @@
             }
         }
 
-        function playTone(freq, type, duration) {
+        function playTone(freq, type, duration, gainValue = 0.04) {
             initAudio();
             if (!audioCtx) return;
             try {
@@ -365,7 +479,7 @@
                 osc.type = type || 'sine';
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
                 
-                gain.gain.setValueAtTime(0.04, audioCtx.currentTime); // マイルドな音量
+                gain.gain.setValueAtTime(gainValue, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
                 
                 osc.connect(gain);
@@ -385,7 +499,6 @@
                 freq = 659.25; // E5
                 type = 'triangle';
             } else {
-                // 数字ごとにキー音のスケールを変更
                 const scale = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
                 const num = parseInt(char);
                 if (!isNaN(num)) freq = scale[num];
@@ -431,6 +544,36 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.4);
             } catch(e){}
+        }
+
+        // 勝利音（ハッキング成功ファンファーレ）
+        function playVictorySound() {
+            initAudio();
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            // 爆発音からスタート
+            playExplosion();
+
+            // アルペジオ
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C Major scale
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, now + 0.1 + i * 0.05);
+                
+                gain.gain.setValueAtTime(0.06, now + 0.1 + i * 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.1 + i * 0.05 + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + 0.1 + i * 0.05);
+                osc.stop(now + 0.1 + i * 0.05 + 0.3);
+            });
+
+            // 高音のピー音
+            setTimeout(() => playTone(2093.00, 'sine', 0.5, 0.08), 500);
         }
 
         // --- 画面シェイク ---
@@ -523,6 +666,33 @@
             }, 40);
         }
 
+        // --- 🏆 ハッキング勝利オーバーレイの制御 🏆 ---
+        function showVictoryOverlay(result) {
+            const overlay = document.getElementById('victoryOverlay');
+            const resultDiv = document.getElementById('victoryResult');
+            const calc = document.querySelector('.calculator');
+            const notice = document.querySelector('.volume-notice');
+            
+            resultDiv.innerText = result;
+            overlay.classList.add('active');
+            calc.classList.add('victory-fade');
+            notice.classList.add('victory-fade');
+            playVictorySound();
+            triggerFlash();
+        }
+
+        function hideVictoryOverlay() {
+            const overlay = document.getElementById('victoryOverlay');
+            const calc = document.querySelector('.calculator');
+            const notice = document.querySelector('.volume-notice');
+            
+            overlay.classList.remove('active');
+            calc.classList.remove('victory-fade');
+            notice.classList.remove('victory-fade');
+            playLaser(); // 閉じる時の音
+            handleInput('C', { target: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }) } }); // データをクリア
+        }
+
         // --- メインロジック ---
         function handleInput(char, event) {
             const rect = event.target.getBoundingClientRect();
@@ -541,8 +711,7 @@
                 triggerGlitchDisplay();
             } else if (char === '=') {
                 if (!formula) return;
-                playExplosion();
-                triggerFlash();
+                triggerFlash(); // とりあえずフラッシュ
                 
                 try {
                     // 入力文字を置換
@@ -561,15 +730,12 @@
                     
                     lastResult = String(Number(result.toFixed(8))); // 小数点丸め
                     
-                    // 成功時エフェクト
-                    spawnWord(x, y);
-                    const displayText = document.getElementById('displayText');
-                    displayText.classList.add('success-flash');
-                    setTimeout(() => displayText.classList.remove('success-flash'), 500);
+                    // 🏆 成功時：ハッキング勝利オーバーレイ表示！ 🏆
+                    showVictoryOverlay(lastResult);
                     
                 } catch (e) {
                     lastResult = 'ERROR';
-                    // 失敗時エフェクト
+                    playExplosion(); // 失敗時の爆発
                     spawnWord(x, y, true);
                     const displayText = document.getElementById('displayText');
                     displayText.classList.add('error-flash');
