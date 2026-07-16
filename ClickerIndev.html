@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Tap: 1.8e308への挑戦</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-main: #38bdf8;
+            --accent-prestige: #a855f7;
+            --accent-supremacy: #ef4444;
+            --disabled: #64748b;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--accent-main);
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .target-info {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        /* メインリソース表示 */
+        .resource-display {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+
+        .amount {
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: #ffffff;
+            word-wrap: break-word;
+        }
+
+        .click-power {
+            font-size: 1.1rem;
+            color: var(--accent-main);
+            margin-top: 5px;
+        }
+
+        /* 巨大タップボタン */
+        .tap-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border: 4px solid var(--accent-main);
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            transition: transform 0.05s, box-shadow 0.1s;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .tap-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+        }
+
+        /* 各種レイヤーのコンテナ */
+        .grid-sections {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grid-sections {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .section {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid #334155;
+        }
+
+        .section.prestige { border-color: var(--accent-prestige); }
+        .section.supremacy { border-color: var(--accent-supremacy); }
+
+        .section h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 8px;
+        }
+        .section.prestige h2 { color: var(--accent-prestige); border-color: rgba(168, 85, 247, 0.3); }
+        .section.supremacy h2 { color: var(--accent-supremacy); border-color: rgba(239, 68, 68, 0.3); }
+
+        .currency-info {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* ボタン類 */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: background 0.2s, opacity 0.2s;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-main { background: #0284c7; }
+        .btn-main:hover:not(:disabled) { background: #0369a1; }
+        .btn-prestige { background: #7c3aed; }
+        .btn-prestige:hover:not(:disabled) { background: #6d28d9; }
+        .btn-supremacy { background: #dc2626; }
+        .btn-supremacy:hover:not(:disabled) { background: #b91c1c; }
+
+        .btn:disabled {
+            background: var(--disabled) !important;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn .cost {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* クリア画面 */
+        #victory-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #victory-screen h1 {
+            font-size: 4rem;
+            color: #f59e0b;
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Infinity Tap</h1>
+        <div class="target-info">目標: Doubleの限界値 1.79e+308 を超えて「Infinity」へ到達せよ</div>
+    </header>
+
+    <div class="resource-display">
+        <div id="points-display" class="amount">0</div>
+        <div style="color: #94a3b8; font-size: 0.9rem; margin-top: 4px;">Points</div>
+        <div id="click-power-display" class="click-power">Tap Power: +1</div>
+    </div>
+
+    <button id="tap-btn" class="tap-button">TAP!</button>
+
+    <div class="grid-sections">
+        <div class="section">
+            <h2>Upgrades</h2>
+            <button id="upg1" class="btn btn-main"><span>手動強化 (+1)</span><span class="cost" id="upg1-cost">10 P</span></button>
+            <button id="upg2" class="btn btn-main"><span>倍率強化 (x2)</span><span class="cost" id="upg2-cost">150 P</span></button>
+            <button id="upg3" class="btn btn-main"><span>指数加速 (x1.5/Lv)</span><span class="cost" id="upg3-cost">5,000 P</span></button>
+        </div>
+
+        <div class="section prestige">
+            <h2>Prestige (階位)</h2>
+            <div class="currency-info">
+                Prestige Points (PP): <span id="pp-display" style="color: var(--accent-prestige); font-family: monospace;">0</span><br>
+                <small style="color: #94a3b8; font-weight: normal;">(PPはタップ力を乗算で強化します)</small>
+            </div>
+            <button id="prestige-btn" class="btn btn-prestige">
+                <span>Prestigeを実行</span>
+                <span class="cost" id="pp-gain">+0 PP</span>
+            </button>
+            <button id="pupg1" class="btn btn-prestige"><span>PP獲得量増加 (+100%)</span><span class="cost" id="pupg1-cost">5 PP</span></button>
+            <button id="pupg2" class="btn btn-prestige"><span>タップ力超絶強化 (x10)</span><span class="cost" id="pupg2-cost">20 PP</span></button>
+            <button id="pupg3" class="btn btn-prestige"><span>次元の歪み (桁数ベースバフ)</span><span class="cost" id="pupg3-cost">500 PP</span></button>
+        </div>
+
+        <div class="section supremacy">
+            <h2>Supremacy (覇権)</h2>
+            <div class="currency-info">
+                Supremacy Points (SP): <span id="sp-display" style="color: var(--accent-supremacy); font-family: monospace;">0</span><br>
+                <small style="color: #94a3b8; font-weight: normal;">(SPはゲーム全体の次元を書き換えます)</small>
+            </div>
+            <button id="supremacy-btn" class="btn btn-supremacy">
+                <span>Supremacyを実行</span>
+                <span class="cost" id="sp-gain">+0 SP</span>
+            </button>
+            <button id="supg1" class="btn btn-supremacy"><span>SPの加護 (全リソースx100)</span><span class="cost" id="supg1-cost">1 SP</span></button>
+            <button id="supg2" class="btn btn-supremacy"><span>ハイパーインフレ (x1.0e10)</span><span class="cost" id="supg2-cost">5 SP</span></button>
+            <button id="supg3" class="btn btn-supremacy"><span>終焉の特異点 (指数爆発)</span><span class="cost" id="supg3-cost">50 SP</span></button>
+        </div>
+    </div>
+</div>
+
+<div id="victory-screen">
+    <h1>INFINITY ATTAINED!</h1>
+    <p style="font-size: 1.5rem; color: #cbd5e1; max-width: 600px; padding: 0 20px;">
+        おめでとうございます！あなたはタップを極め、JavaScriptの限界数値である <span style="color: var(--accent-main); font-family: monospace;">1.8e308</span> を突破し、概念上の無限（Infinity）へ到達しました！
+    </p>
+    <p id="time-taken" style="color: #94a3b8; font-size: 1.2rem;"></p>
+    <button onclick="location.reload()" class="btn btn-main" style="width: auto; padding: 15px 30px; margin-top: 20px; text-align: center; display: inline-block;">もう一度遊ぶ</button>
+</div>
+
+<script>
+    // ゲームデータ構造
+    let game = {
+        points: 0,
+        clickPowerBase: 1,
+        
+        // 通常アップグレードのレベル
+        upg1: 0,
+        upg2: 0,
+        upg3: 0,
+        
+        // プレステージ
+        prestigePoints: 0,
+        prestigeCount: 0,
+        pupg1: 0,
+        pupg2: 0,
+        pupg3: 0,
+        
+        // サプレマシー
+        supremacyPoints: 0,
+        supg1: 0,
+        supg2: 0,
+        supg3: 0,
+        
+        // 時間計測
+        startTime: Date.now()
+    };
+
+    // フォーマット関数 (大きな数をきれいに表示)
+    function format(num) {
+        if (!isFinite(num) || num >= Number.MAX_VALUE) return "Infinity";
+        if (num < 10000) return Math.floor(num).toLocaleString();
+        return num.toExponential(3).replace("e+", "e");
+    }
+
+    // 計算ロジック: 現在のタップ力を算出
+    function getClickPower() {
+        // 1. 通常アップグレード
+        let power = (game.clickPowerBase + game.upg1) * Math.pow(2, game.upg2) * Math.pow(1.5, game.upg3);
+        
+        // 2. プレステージによるバフ
+        // パッシブ効果: 1 PP につき +20%
+        let ppMultiplier = 1 + game.prestigePoints * 0.2;
+        // プレステージアップグレード
+        ppMultiplier *= Math.pow(10, game.pupg2);
+        if (game.pupg3 > 0 && game.points > 0) {
+            // 現在のPointsの桁数に応じて強化 (最大+308なので強烈)
+            let digits = Math.max(0, Math.log10(game.points));
+            ppMultiplier *= (1 + digits * game.pupg3 * 5);
+        }
+        power *= ppMultiplier;
+
+        // 3. サプレマシーによるバフ
+        // パッシブ効果: 1 SP につき x10倍
+        let spMultiplier = 1 + game.supremacyPoints * 9;
+        spMultiplier *= Math.pow(100, game.supg1);
+        spMultiplier *= Math.pow(1e10, game.supg2);
+        if (game.supg3 > 0) {
+            // 所持SPの数に応じて指数関数的に上昇
+            spMultiplier *= Math.pow(10, game.supremacyPoints * game.supg3 * 2);
+        }
+        power *= spMultiplier;
+
+        return power;
+    }
+
+    // 次の獲得量を計算
+    function getPendingPP() {
+        if (game.points < 1e6) return 0;
+        // ポイントのルートに比例してPP獲得量が増える
+        let basePP = Math.floor(Math.sqrt(game.points / 1e6));
+        return basePP * (1 + game.pupg1);
+    }
+
+    function getPendingSP() {
+        if (game.prestigePoints < 1e5) return 0;
+        return Math.floor(Math.pow(game.prestigePoints / 1e5, 0.4));
+    }
+
+    // 各種コスト計算
+    const costs = {
+        upg1: () => 10 * Math.pow(1.4, game.upg1),
+        upg2: () => 150 * Math.pow(1.8, game.upg2),
+        upg3: () => 5000 * Math.pow(2.5, game.upg3),
+        pupg1: () => 5 * Math.pow(3, game.pupg1),
+        pupg2: () => 20 * Math.pow(5, game.pupg2),
+        pupg3: () => 500 * Math.pow(10, game.pupg3),
+        supg1: () => 1 * Math.pow(2, game.supg1),
+        supg2: () => 5 * Math.pow(4, game.supg2),
+        supg3: () => 50 * Math.pow(10, game.supg3)
+    };
+
+    // UIの更新
+    function updateUI() {
+        document.getElementById("points-display").innerText = format(game.points);
+        
+        let cp = getClickPower();
+        document.getElementById("click-power-display").innerText = "Tap Power: +" + format(cp);
+
+        // 通常アップグレード
+        updateBtn("upg1", game.points, costs.upg1(), "P");
+        updateBtn("upg2", game.points, costs.upg2(), "P");
+        updateBtn("upg3", game.points, costs.upg3(), "P");
+
+        // プレステージ関係
+        document.getElementById("pp-display").innerText = format(game.prestigePoints);
+        let pPP = getPendingPP();
+        document.getElementById("pp-gain").innerText = "+" + format(pPP) + " PP";
+        document.getElementById("prestige-btn").disabled = (game.points < 1e6);
+        
+        updateBtn("pupg1", game.prestigePoints, costs.pupg1(), "PP");
+        updateBtn("pupg2", game.prestigePoints, costs.pupg2(), "PP");
+        updateBtn("pupg3", game.prestigePoints, costs.pupg3(), "PP");
+
+        // サプレマシー関係
+        document.getElementById("sp-display").innerText = format(game.supremacyPoints);
+        let pSP = getPendingSP();
+        document.getElementById("sp-gain").innerText = "+" + format(pSP) + " SP";
+        document.getElementById("supremacy-btn").disabled = (game.prestigePoints < 1e5);
+
+        updateBtn("supg1", game.supremacyPoints, costs.supg1(), "SP");
+        updateBtn("supg2", game.supremacyPoints, costs.supg2(), "SP");
+        updateBtn("supg3", game.supremacyPoints, costs.supg3(), "SP");
+
+        // クリア判定
+        if (!isFinite(game.points) || game.points >= Number.MAX_VALUE) {
+            endGame();
+        }
+    }
+
+    function updateBtn(id, currency, cost, unit) {
+        let btn = document.getElementById(id);
+        let costSpan = document.getElementById(id + "-cost");
+        costSpan.innerText = format(cost) + " " + unit;
+        btn.disabled = (currency < cost);
+    }
+
+    // --- アクション処理 ---
+
+    // タップ
+    document.getElementById("tap-btn").addEventListener("click", () => {
+        game.points += getClickPower();
+        updateUI();
+    });
+
+    // 通常アップグレード購入
+    document.getElementById("upg1").addEventListener("click", () => buyUpgrade("points", "upg1"));
+    document.getElementById("upg2").addEventListener("click", () => buyUpgrade("points", "upg2"));
+    document.getElementById("upg3").addEventListener("click", () => buyUpgrade("points", "upg3"));
+
+    // プレステージアップグレード購入
+    document.getElementById("pupg1").addEventListener("click", () => buyUpgrade("prestigePoints", "pupg1"));
+    document.getElementById("pupg2").addEventListener("click", () => buyUpgrade("prestigePoints", "pupg2"));
+    document.getElementById("pupg3").addEventListener("click", () => buyUpgrade("prestigePoints", "pupg3"));
+
+    // サプレマシーアップグレード購入
+    document.getElementById("supg1").addEventListener("click", () => buyUpgrade("supremacyPoints", "supg1"));
+    document.getElementById("supg2").addEventListener("click", () => buyUpgrade("supremacyPoints", "supg2"));
+    document.getElementById("supg3").addEventListener("click", () => buyUpgrade("supremacyPoints", "supg3"));
+
+    function buyUpgrade(currencyKey, upgKey) {
+        let cost = costs[upgKey]();
+        if (game[currencyKey] >= cost) {
+            game[currencyKey] -= cost;
+            game[upgKey]++;
+            updateUI();
+        }
+    }
+
+    // プレステージの実行
+    document.getElementById("prestige-btn").addEventListener("click", () => {
+        let gain = getPendingPP();
+        if (gain > 0) {
+            game.prestigePoints += gain;
+            game.prestigeCount++;
+            
+            // 通常リソースとアップグレードを初期化
+            game.points = 0;
+            game.upg1 = 0;
+            game.upg2 = 0;
+            game.upg3 = 0;
+            
+            updateUI();
+        }
+    });
+
+    // サプレマシーの実行
+    document.getElementById("supremacy-btn").addEventListener("click", () => {
+        let gain = getPendingSP();
+        if (gain > 0) {
+            game.supremacyPoints += gain;
+            
+            // 通常 & プレステージの一部を初期化
+            game.points = 0;
+            game.upg1 = 0;
+            game.upg2 = 0;
+            game.upg3 = 0;
+            
+            game.prestigePoints = 0;
+            game.pupg1 = 0;
+            game.pupg2 = 0;
+            game.pupg3 = 0;
+            
+            updateUI();
+        }
+    });
+
+    // ゲーム終了
+    function endGame() {
+        let totalTime = Math.floor((Date.now() - game.startTime) / 1000);
+        let mins = Math.floor(totalTime / 60);
+        let secs = totalTime % 60;
+        
+        document.getElementById("time-taken").innerText = `クリア時間: ${mins}分 ${secs}秒`;
+        document.getElementById("victory-screen").style.display = "flex";
+    }
+
+    // 初期化実行
+    updateUI();
+
+    // 稀に発生する端数計算用の秒間パッシブ更新 (完全に詰まるのを防ぐ保険)
+    setInterval(() => {
+        if (game.pupg3 > 0 || game.supremacyPoints > 0) {
+            // 微量ながら自動で増えることで、後半のタップ効率を後押し
+            game.points += getClickPower() * 0.1;
+            updateUI();
+        }
+    }, 1000);
+</script>
+</body>
+</html>
