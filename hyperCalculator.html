@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超・無駄エフェクト電卓 MAX</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #050508;
+            background-image: 
+                radial-gradient(circle at center, rgba(35, 15, 60, 0.8) 0%, rgba(5, 5, 8, 1) 100%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+
+        /* 背後の巨大なネオンオーラ */
+        .calculator-glow {
+            position: absolute;
+            width: 500px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(255, 0, 128, 0.2) 0%, rgba(0, 255, 255, 0.2) 50%, transparent 100%);
+            filter: blur(60px);
+            z-index: -3;
+            pointer-events: none;
+            animation: glow-pulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow-pulse {
+            0% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+            100% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+        }
+
+        /* 電卓外枠（ゲーミングRGB） */
+        .calculator {
+            position: relative;
+            width: 380px;
+            background: #0f0f13;
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .calculator::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff, #ff0000
+            );
+            animation: rotate-rainbow 3s linear infinite;
+            z-index: -2;
+        }
+
+        .calculator::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            background: #111116;
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        @keyframes rotate-rainbow {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 激しい振動アニメーション */
+        .shake {
+            animation: shake-anim 0.2s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake-anim {
+            10%, 90% { transform: translate3d(-2px, 2px, 0) rotate(-0.5deg); }
+            20%, 80% { transform: translate3d(3px, -3px, 0) rotate(1deg); }
+            30%, 50%, 70% { transform: translate3d(-6px, 4px, 0) rotate(-1.5deg); }
+            40%, 60% { transform: translate3d(6px, -4px, 0) rotate(1.5deg); }
+        }
+
+        /* ディスプレイ（CRTモニター風） */
+        .display-container {
+            position: relative;
+            background: #050508;
+            border: 3px solid #ff00ff;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            padding: 15px;
+            height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-end;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.6);
+        }
+
+        /* 走査線とフリッカー */
+        .display-container::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .display-container::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(18, 16, 16, 0.1);
+            z-index: 2;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.95; }
+            50% { opacity: 1; }
+            100% { opacity: 0.95; }
+        }
+
+        .display-formula {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff;
+            height: 1.5rem;
+            width: 100%;
+            text-align: right;
+            overflow: hidden;
+        }
+
+        .display-text {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 2.3rem;
+            color: #39ff14;
+            text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
+            font-weight: bold;
+            width: 100%;
+            text-align: right;
+            white-space: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox用 */
+        }
+
+        .display-text::-webkit-scrollbar {
+            display: none; /* Chrome, Safari用 */
+        }
+
+        /* ボタン配置 */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            position: relative;
+            background: #1c1c24;
+            border: 2px solid #333;
+            color: #fff;
+            padding: 18px;
+            font-size: 1.6rem;
+            font-weight: 900;
+            border-radius: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.05s ease, box-shadow 0.05s ease;
+            box-shadow: 0 6px 0 #000;
+            user-select: none;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #000;
+        }
+
+        /* ボタンカテゴリ別ネオンカラー */
+        button.number {
+            border-color: #00f0ff;
+            color: #00f0ff;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+        }
+
+        button.operator {
+            border-color: #ff00ff;
+            color: #ff00ff;
+            text-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
+        }
+
+        button.clear {
+            border-color: #ffcc00;
+            color: #ffcc00;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
+        }
+
+        button.equal {
+            grid-column: span 2;
+            background: linear-gradient(45deg, #ff0055, #ffcc00);
+            border-color: #fff;
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+            animation: pulse-equal 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-equal {
+            0% { box-shadow: 0 6px 0 #000, 0 0 5px rgba(255, 0, 85, 0.5); }
+            100% { box-shadow: 0 6px 0 #000, 0 0 20px rgba(255, 204, 0, 0.8); }
+        }
+
+        /* パーティクルエフェクト */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 0 10px currentColor;
+            animation: explode 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* 漫画風テキストポップアップ */
+        .pop-word {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10000;
+            color: #fff;
+            font-weight: 900;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 26px;
+            text-shadow: 0 0 4px #000, 3px 3px 0 #ff00ff, -3px -3px 0 #00ffcc;
+            animation: pop-word-anim 0.5s ease-out forwards;
+        }
+
+        @keyframes pop-word-anim {
+            0% { transform: scale(0.3) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.6) rotate(var(--rot)); }
+            100% { transform: scale(1) rotate(var(--rot)) translateY(-60px); opacity: 0; }
+        }
+
+        /* フラッシュエフェクト */
+        .flash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #fff;
+            z-index: 99999;
+            pointer-events: none;
+            animation: flash-anim 0.35s ease-out forwards;
+        }
+
+        @keyframes flash-anim {
+            0% { opacity: 0.9; }
+            100% { opacity: 0; }
+        }
+
+        /* 計算成功・失敗の明滅 */
+        .success-flash { animation: success-flash-anim 0.5s ease-out; }
+        @keyframes success-flash-anim {
+            0% { color: #fff; text-shadow: 0 0 40px #39ff14; }
+            50% { color: #39ff14; text-shadow: 0 0 60px #39ff14; }
+        }
+
+        .error-flash { animation: error-flash-anim 0.5s ease-out; }
+        @keyframes error-flash-anim {
+            0% { color: #fff; text-shadow: 0 0 40px #ff0055; }
+            50% { color: #ff0055; text-shadow: 0 0 60px #ff0055; }
+        }
+
+        /* 注意書き用 */
+        .volume-notice {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.8rem;
+            color: #666;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-glow"></div>
+
+    <div class="calculator">
+        <div class="display-container">
+            <div class="display-formula" id="displayFormula">0</div>
+            <div class="display-text" id="displayText">0</div>
+        </div>
+
+        <div class="buttons">
+            <button class="clear" onclick="handleInput('C', event)">C</button>
+            <button class="operator" onclick="handleInput('(', event)">(</button>
+            <button class="operator" onclick="handleInput(')', event)">)</button>
+            <button class="operator" onclick="handleInput('÷', event)">÷</button>
+            
+            <button class="number" onclick="handleInput('7', event)">7</button>
+            <button class="number" onclick="handleInput('8', event)">8</button>
+            <button class="number" onclick="handleInput('9', event)">9</button>
+            <button class="operator" onclick="handleInput('×', event)">×</button>
+            
+            <button class="number" onclick="handleInput('4', event)">4</button>
+            <button class="number" onclick="handleInput('5', event)">5</button>
+            <button class="number" onclick="handleInput('6', event)">6</button>
+            <button class="operator" onclick="handleInput('-', event)">-</button>
+            
+            <button class="number" onclick="handleInput('1', event)">1</button>
+            <button class="number" onclick="handleInput('2', event)">2</button>
+            <button class="number" onclick="handleInput('3', event)">3</button>
+            <button class="operator" onclick="handleInput('+', event)">+</button>
+            
+            <button class="number" style="grid-column: span 2;" onclick="handleInput('0', event)">0</button>
+            <button class="number" onclick="handleInput('.', event)">.</button>
+            <button class="equal" onclick="handleInput('=', event)">=</button>
+        </div>
+    </div>
+
+    <div class="volume-notice">⚠️ 音が出ます。音量にご注意ください！</div>
+
+    <script>
+        let formula = '';
+        let lastResult = '';
+        let isEvaluated = false;
+
+        // --- Web Audio API (無駄なレトロシンセ効果音) ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(freq, type, duration) {
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.04, audioCtx.currentTime); // マイルドな音量
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function playBeep(char) {
+            let freq = 440;
+            let type = 'sine';
+            if (['+', '-', '×', '÷', '(', ')'].includes(char)) {
+                freq = 587.33; // D5
+                type = 'square';
+            } else if (char === '.') {
+                freq = 659.25; // E5
+                type = 'triangle';
+            } else {
+                // 数字ごとにキー音のスケールを変更
+                const scale = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
+                const num = parseInt(char);
+                if (!isNaN(num)) freq = scale[num];
+            }
+            playTone(freq, type, 0.12);
+        }
+
+        function playExplosion() {
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.7);
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.7);
+            } catch(e){}
+        }
+
+        function playLaser() {
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+                
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch(e){}
+        }
+
+        // --- 画面シェイク ---
+        function triggerShake() {
+            const calc = document.querySelector('.calculator');
+            calc.classList.add('shake');
+            calc.addEventListener('animationend', () => {
+                calc.classList.remove('shake');
+            }, { once: true });
+        }
+
+        // --- フラッシュエフェクト ---
+        function triggerFlash() {
+            const flash = document.createElement('div');
+            flash.className = 'flash-screen';
+            document.body.appendChild(flash);
+            flash.addEventListener('animationend', () => {
+                flash.remove();
+            });
+        }
+
+        // --- パーティクル (スパーク) ---
+        function createParticles(x, y) {
+            const colors = ['#ff0055', '#00ffcc', '#ffcc00', '#ff00ff', '#39ff14', '#00f0ff'];
+            for (let i = 0; i < 24; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 8 + 4;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.color = colors[Math.floor(Math.random() * colors.length)];
+                p.style.background = p.style.color;
+                p.style.left = `${x}px`;
+                p.style.top = `${y}px`;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 140 + 60;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                
+                p.style.setProperty('--tx', `${tx}px`);
+                p.style.setProperty('--ty', `${ty}px`);
+                
+                document.body.appendChild(p);
+                p.addEventListener('animationend', () => p.remove());
+            }
+        }
+
+        // --- アメコミ風飛び出すテキスト ---
+        const words = ['BAM!', 'ZAP!', 'CRASH!', 'MEGA!', 'AWESOME!', 'KABOOM!', 'YEAH!', 'CRITICAL!', 'EPIC!', 'GIGA!'];
+        const errorWords = ['ERRR!', 'OOF!', 'NOOO!', 'FAIL!', 'NULL!', 'BAAAKA!'];
+
+        function spawnWord(x, y, isError = false) {
+            const w = document.createElement('div');
+            w.className = 'pop-word';
+            w.innerText = isError 
+                ? errorWords[Math.floor(Math.random() * errorWords.length)]
+                : words[Math.floor(Math.random() * words.length)];
+            w.style.left = `${x}px`;
+            w.style.top = `${y - 40}px`;
+            
+            const rot = (Math.random() - 0.5) * 50;
+            w.style.setProperty('--rot', `${rot}deg`);
+            
+            document.body.appendChild(w);
+            w.addEventListener('animationend', () => w.remove());
+        }
+
+        // --- C (クリア) 時のデジタルバグ演出 ---
+        function triggerGlitchDisplay() {
+            const display = document.getElementById('displayText');
+            const originalText = display.innerText;
+            let count = 0;
+            const chars = '!?@#$%^&*()_+=-[]{}|;:<>';
+            const interval = setInterval(() => {
+                let glitchText = '';
+                for (let i = 0; i < originalText.length; i++) {
+                    glitchText += chars[Math.floor(Math.random() * chars.length)];
+                }
+                display.innerText = glitchText;
+                display.style.color = '#ff00ff';
+                display.style.textShadow = '0 0 15px #ff00ff';
+                count++;
+                if (count > 6) {
+                    clearInterval(interval);
+                    display.innerText = formula || '0';
+                    display.style.color = '#39ff14';
+                    display.style.textShadow = '0 0 10px #39ff14';
+                }
+            }, 40);
+        }
+
+        // --- メインロジック ---
+        function handleInput(char, event) {
+            const rect = event.target.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            
+            // 共通アクション（シェイク＆スパーク）
+            createParticles(x, y);
+            triggerShake();
+
+            if (char === 'C') {
+                playLaser();
+                formula = '';
+                lastResult = '';
+                isEvaluated = false;
+                triggerGlitchDisplay();
+            } else if (char === '=') {
+                if (!formula) return;
+                playExplosion();
+                triggerFlash();
+                
+                try {
+                    // 入力文字を置換
+                    let evalExpr = formula.replace(/×/g, '*').replace(/÷/g, '/');
+                    
+                    // 安全性のための文字フィルタ
+                    if (!/^[0-9+\-*/.() ]+$/.test(evalExpr)) {
+                        throw new Error();
+                    }
+                    
+                    // 評価
+                    let result = eval(evalExpr);
+                    if (result === Infinity || isNaN(result)) {
+                        throw new Error();
+                    }
+                    
+                    lastResult = String(Number(result.toFixed(8))); // 小数点丸め
+                    
+                    // 成功時エフェクト
+                    spawnWord(x, y);
+                    const displayText = document.getElementById('displayText');
+                    displayText.classList.add('success-flash');
+                    setTimeout(() => displayText.classList.remove('success-flash'), 500);
+                    
+                } catch (e) {
+                    lastResult = 'ERROR';
+                    // 失敗時エフェクト
+                    spawnWord(x, y, true);
+                    const displayText = document.getElementById('displayText');
+                    displayText.classList.add('error-flash');
+                    setTimeout(() => displayText.classList.remove('error-flash'), 500);
+                }
+                isEvaluated = true;
+            } else {
+                playBeep(char);
+                spawnWord(x, y);
+                
+                if (isEvaluated) {
+                    if (['+', '-', '×', '÷'].includes(char)) {
+                        formula = lastResult + char;
+                    } else {
+                        formula = char;
+                    }
+                    isEvaluated = false;
+                    lastResult = '';
+                } else {
+                    formula += char;
+                }
+            }
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const formulaDiv = document.getElementById('displayFormula');
+            const textDiv = document.getElementById('displayText');
+            
+            formulaDiv.innerText = formula || '0';
+            textDiv.innerText = lastResult || formula || '0';
+        }
+    </script>
+</body>
+</html>
