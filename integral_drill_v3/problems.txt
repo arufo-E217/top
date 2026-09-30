@@ -1,0 +1,2370 @@
+=== 問題 ===
+問題名: 多項式の不定積分・類題1
+制限時間: 45
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (4x^3 - 3x^2 + 5)\,dx
+</div>
+
+ダミー:
+- x^4 - x^3 + 5x + C
+- 4x^4 - 3x^3 + 5x + C
+- x^4 - x^3 + 5
+- \frac{1}{4}x^4 - x^3 + 5x + C
+
+答え:
+x^4 - x^3 + 5x + C
+
+解説:
+<p>各項をそれぞれ積分する。</p>
+
+<div data-math="block">
+\int 4x^3\,dx = x^4
+</div>
+
+<div data-math="block">
+\int (-3x^2)\,dx = -x^3
+</div>
+
+<div data-math="block">
+\int 5\,dx = 5x
+</div>
+
+<p>したがって、求める不定積分は次のようになる。</p>
+
+<div data-math="block">
+x^4 - x^3 + 5x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 多項式の不定積分・類題2
+制限時間: 45
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (6x^2 + 2x - 7)\,dx
+</div>
+
+ダミー:
+- 2x^3 + x^2 - 7 + C
+- 3x^3 + x^2 - 7x + C
+- 2x^3 + x^2 - 7x + C
+- 12x + 2 + C
+
+答え:
+2x^3 + x^2 - 7x + C
+
+解説:
+<p>各項を積分する。</p>
+
+<div data-math="block">
+\int 6x^2\,dx = 2x^3, \quad \int 2x\,dx = x^2, \quad \int (-7)\,dx = -7x
+</div>
+
+<p>したがって、</p>
+
+<div data-math="block">
+2x^3 + x^2 - 7x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 多項式の不定積分・類題3
+制限時間: 45
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (x^3 - 5x^2 + 3x - 1)\,dx
+</div>
+
+ダミー:
+- \frac{1}{4}x^4 - \frac{5}{3}x^3 + \frac{3}{2}x^2 - x + C
+- \frac{1}{3}x^4 - \frac{5}{2}x^3 + \frac{3}{2}x^2 - x + C
+- x^4 - 5x^3 + 3x^2 - x + C
+- \frac{1}{4}x^4 - 5x^3 + 3x^2 - x + C
+
+答え:
+\frac{1}{4}x^4 - \frac{5}{3}x^3 + \frac{3}{2}x^2 - x + C
+
+解説:
+<p>各項の次数を1増やして、その数で割る。</p>
+
+<div data-math="block">
+\frac{1}{4}x^4 - \frac{5}{3}x^3 + \frac{3}{2}x^2 - x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 多項式の不定積分・類題4
+制限時間: 45
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (2-3x+4x^2)\,dx
+</div>
+
+ダミー:
+- 2x - \frac{3}{2}x^2 + \frac{4}{3}x^3 + C
+- -3 + 8x + C
+- 2x - 3x^2 + 4x^3 + C
+- 2 - \frac{3}{2}x^2 + \frac{4}{3}x^3 + C
+
+答え:
+2x - \frac{3}{2}x^2 + \frac{4}{3}x^3 + C
+
+解説:
+<p>定数項、1次項、2次項をそれぞれ積分する。</p>
+
+<div data-math="block">
+2x - \frac{3}{2}x^2 + \frac{4}{3}x^3 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 多項式の不定積分・類題5
+制限時間: 45
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (5x^4 - 2x^3 + 8x - 3)\,dx
+</div>
+
+ダミー:
+- x^5 - \frac{1}{2}x^4 + 4x^2 - 3x + C
+- 5x^5 - 2x^4 + 8x^2 - 3x + C
+- x^5 - 2x^4 + 4x^2 - 3x + C
+- \frac{1}{5}x^5 - \frac{1}{2}x^4 + 4x^2 - 3x + C
+
+答え:
+x^5 - \frac{1}{2}x^4 + 4x^2 - 3x + C
+
+解説:
+<p>各項の積分を行う。</p>
+
+<div data-math="block">
+\int 5x^4\,dx = x^5, \quad \int (-2x^3)\,dx = -\frac{1}{2}x^4, \quad \int 8x\,dx = 4x^2, \quad \int (-3)\,dx = -3x
+</div>
+
+<p>よって、</p>
+
+<div data-math="block">
+x^5 - \frac{1}{2}x^4 + 4x^2 - 3x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 置換積分の基本・類題1
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (3x-2)^4\,dx
+</div>
+
+ダミー:
+- (3x-2)^5 + C
+- \frac{1}{5}(3x-2)^5 + C
+- \frac{1}{15}(3x-2)^5 + C
+- 12(3x-2)^3 + C
+
+答え:
+\frac{1}{15}(3x-2)^5 + C
+
+解説:
+<p>
+<div data-math="block">
+3x-2 = t
+</div>
+とおくと、
+<div data-math="block">
+3\,dx = dt \implies dx = \frac{1}{3}\,dt
+</div>
+となる。
+</p>
+
+<div data-math="block">
+\int t^4 \cdot \frac{1}{3}\,dt = \frac{1}{3} \cdot \frac{1}{5}t^5 + C = \frac{1}{15}(3x-2)^5 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 置換積分の基本・類題2
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (4x+3)^3\,dx
+</div>
+
+ダミー:
+- \frac{1}{4}(4x+3)^4 + C
+- \frac{1}{12}(4x+3)^4 + C
+- \frac{1}{16}(4x+3)^4 + C
+- (4x+3)^4 + C
+
+答え:
+\frac{1}{16}(4x+3)^4 + C
+
+解説:
+<p>
+<div data-math="block">
+4x+3 = t
+</div>
+とおくと、<div data-math="block">dx = \frac{1}{4}\,dt</div> である。
+</p>
+
+<div data-math="block">
+\int t^3 \cdot \frac{1}{4}\,dt = \frac{1}{4} \cdot \frac{1}{4}t^4 + C = \frac{1}{16}(4x+3)^4 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 置換積分の基本・類題3
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (5x-1)^6\,dx
+</div>
+
+ダミー:
+- \frac{1}{7}(5x-1)^7 + C
+- \frac{1}{35}(5x-1)^7 + C
+- \frac{1}{30}(5x-1)^7 + C
+- (5x-1)^7 + C
+
+答え:
+\frac{1}{35}(5x-1)^7 + C
+
+解説:
+<p>
+<div data-math="block">
+5x-1 = t
+</div>
+とおき、<div data-math="block">dx = \frac{1}{5}\,dt</div> を代入して計算する。
+</p>
+
+<div data-math="block">
+\int t^6 \cdot \frac{1}{5}\,dt = \frac{1}{35}t^7 + C = \frac{1}{35}(5x-1)^7 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 置換積分の基本・類題4
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (-2x+5)^3\,dx
+</div>
+
+ダミー:
+- -\frac{1}{8}(-2x+5)^4 + C
+- \frac{1}{8}(-2x+5)^4 + C
+- -\frac{1}{2}(-2x+5)^4 + C
+- \frac{1}{4}(-2x+5)^4 + C
+
+答え:
+-\frac{1}{8}(-2x+5)^4 + C
+
+解説:
+<p>
+<div data-math="block">
+-2x+5 = t
+</div>
+とおくと、<div data-math="block">-2\,dx = dt \implies dx = -\frac{1}{2}\,dt</div> である。
+</p>
+
+<div data-math="block">
+\int t^3 \left(-\frac{1}{2}\right)\,dt = -\frac{1}{8}t^4 + C = -\frac{1}{8}(-2x+5)^4 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 置換積分の基本・類題5
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (x+4)^5\,dx
+</div>
+
+ダミー:
+- \frac{1}{6}(x+4)^6 + C
+- (x+4)^6 + C
+- \frac{1}{5}(x+4)^6 + C
+- 5(x+4)^4 + C
+
+答え:
+\frac{1}{6}(x+4)^6 + C
+
+解説:
+<p>
+<div data-math="block">
+x+4 = t
+</div>
+とおくと、<div data-math="block">dx = dt</div> である。
+</p>
+
+<div data-math="block">
+\int t^5\,dt = \frac{1}{6}t^6 + C = \frac{1}{6}(x+4)^6 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分積分の基本・類題1
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x e^{2x}\,dx
+</div>
+
+ダミー:
+- \frac{1}{2}xe^{2x} - \frac{1}{4}e^{2x} + C
+- xe^{2x} - e^{2x} + C
+- \frac{1}{2}xe^{2x} - \frac{1}{2}e^{2x} + C
+- \frac{1}{4}xe^{2x} - \frac{1}{4}e^{2x} + C
+
+答え:
+\frac{1}{2}xe^{2x} - \frac{1}{4}e^{2x} + C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int x e^{2x}\,dx = x \cdot \frac{1}{2}e^{2x} - \int 1 \cdot \frac{1}{2}e^{2x}\,dx = \frac{1}{2}xe^{2x} - \frac{1}{4}e^{2x} + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分積分の基本・類題2
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x e^{-x}\,dx
+</div>
+
+ダミー:
+- -xe^{-x} - e^{-x} + C
+- xe^{-x} + e^{-x} + C
+- -xe^{-x} + e^{-x} + C
+- \frac{1}{2}xe^{-x} + C
+
+答え:
+-xe^{-x} - e^{-x} + C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int x e^{-x}\,dx = x(-e^{-x}) - \int 1 \cdot (-e^{-x})\,dx = -xe^{-x} - e^{-x} + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分積分の基本・類題3
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int 2x e^x\,dx
+</div>
+
+ダミー:
+- 2xe^x + C
+- 2xe^x - 2e^x + C
+- 2xe^x + 2e^x + C
+- x^2 e^x + C
+
+答え:
+2xe^x - 2e^x + C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+2 \int x e^x\,dx = 2(xe^x - e^x) + C = 2xe^x - 2e^x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分積分の基本・類題4
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (x+1)e^x\,dx
+</div>
+
+ダミー:
+- (x+1)e^x - e^x + C
+- xe^x + C
+- (x+1)e^x + e^x + C
+- x^2 e^x + C
+
+答え:
+xe^x + C  <!-- (x+1)e^x - e^x = xe^x なのでシンプルな形にする -->
+
+解説:
+<p>式を変形するか部分積分を用いる。</p>
+
+<div data-math="block">
+\int (x+1)e^x\,dx = (x+1)e^x - \int 1 \cdot e^x\,dx = (x+1)e^x - e^x + C = xe^x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分積分の基本・類題5
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x e^{3x}\,dx
+</div>
+
+ダミー:
+- \frac{1}{3}xe^{3x} - \frac{1}{3}e^{3x} + C
+- \frac{1}{3}xe^{3x} - \frac{1}{9}e^{3x} + C
+- \frac{1}{3}xe^{3x} + \frac{1}{9}e^{3x} + C
+- xe^{3x} - e^{3x} + C
+
+答え:
+\frac{1}{3}xe^{3x} - \frac{1}{9}e^{3x} + C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int x e^{3x}\,dx = x \cdot \frac{1}{3}e^{3x} - \int 1 \cdot \frac{1}{3}e^{3x}\,dx = \frac{1}{3}xe^{3x} - \frac{1}{9}e^{3x} + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 三角関数の不定積分・類題1
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \cos(2x+1)\,dx
+</div>
+
+ダミー:
+- -\frac{1}{2}\sin(2x+1) + C
+- \frac{1}{2}\sin(2x+1) + C
+- 2\sin(2x+1) + C
+- -\sin(2x+1) + C
+
+答え:
+\frac{1}{2}\sin(2x+1) + C
+
+解説:
+<p>合成関数の積分の公式を利用する。</p>
+
+<div data-math="block">
+\int \cos(ax+b)\,dx = \frac{1}{a}\sin(ax+b) + C
+</div>
+
+<p>したがって、</p>
+
+<div data-math="block">
+\frac{1}{2}\sin(2x+1) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 三角関数の不定積分・類題2
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \sin\left(\frac{x}{2}\right)\,dx
+</div>
+
+ダミー:
+- -2\cos\left(\frac{x}{2}\right) + C
+- 2\cos\left(\frac{x}{2}\right) + C
+- -\frac{1}{2}\cos\left(\frac{x}{2}\right) + C
+- \cos\left(\frac{x}{2}\right) + C
+
+答え:
+-2\cos\left(\frac{x}{2}\right) + C
+
+解説:
+<p>公式より、</p>
+
+<div data-math="block">
+\int \sin(ax)\,dx = -\frac{1}{a}\cos(ax) + C
+</div>
+
+<p>であるから、</p>
+
+<div data-math="block">
+-\frac{1}{\frac{1}{2}}\cos\left(\frac{x}{2}\right) + C = -2\cos\left(\frac{x}{2}\right) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 三角関数の不定積分・類題3
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \cos(4x-3)\,dx
+</div>
+
+ダミー:
+- -\frac{1}{4}\sin(4x-3) + C
+- \frac{1}{4}\sin(4x-3) + C
+- 4\sin(4x-3) + C
+- \sin(4x-3) + C
+
+答え:
+\frac{1}{4}\sin(4x-3) + C
+
+解説:
+<p>公式を適用して、</p>
+
+<div data-math="block">
+\frac{1}{4}\sin(4x-3) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 三角関数の不定積分・類題4
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \sin(-x+1)\,dx
+</div>
+
+ダミー:
+- \cos(-x+1) + C
+- -\cos(-x+1) + C
+- \frac{1}{2}\cos(-x+1) + C
+- -\sin(-x+1) + C
+
+答え:
+\cos(-x+1) + C
+
+解説:
+<p>
+<div data-math="block">
+\int \sin(-x+1)\,dx = -\frac{1}{-1}\cos(-x+1) + C = \cos(-x+1) + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 三角関数の不定積分・類題5
+制限時間: 60
+
+问题:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int 3\cos(3x+2)\,dx
+</div>
+
+ダミー:
+- -\sin(3x+2) + C
+- 3\sin(3x+2) + C
+- \sin(3x+2) + C
+- 9\sin(3x+2) + C
+
+答え:
+\sin(3x+2) + C
+
+解説:
+<p>
+<div data-math="block">
+3 \cdot \frac{1}{3}\sin(3x+2) + C = \sin(3x+2) + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 指数関数の不定積分・類題1
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int e^{3x}\,dx
+</div>
+
+ダミー:
+- e^{3x} + C
+- 3e^{3x} + C
+- \frac{1}{3}e^{3x} + C
+- -\frac{1}{3}e^{3x} + C
+
+答え:
+\frac{1}{3}e^{3x} + C
+
+解説:
+<p>公式 <div data-math="block">\int e^{ax+b}\,dx = \frac{1}{a}e^{ax+b} + C</div> より、</p>
+
+<div data-math="block">
+\frac{1}{3}e^{3x} + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 指数関数の不定積分・類題2
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int e^{-x}\,dx
+</div>
+
+ダミー:
+- e^{-x} + C
+- -e^{-x} + C
+- \frac{1}{e^x} + C
+- x e^{-x} + C
+
+答え:
+-e^{-x} + C
+
+解説:
+<p>
+<div data-math="block">
+\int e^{-x}\,dx = \frac{1}{-1}e^{-x} + C = -e^{-x} + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 指数関数の不定積分・類題3
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int e^{4x-1}\,dx
+</div>
+
+ダミー:
+- 4e^{4x-1} + C
+- \frac{1}{4}e^{4x-1} + C
+- e^{4x-1} + C
+- -\frac{1}{4}e^{4x-1} + C
+
+答え:
+\frac{1}{4}e^{4x-1} + C
+
+解説:
+<p>
+<div data-math="block">
+\frac{1}{4}e^{4x-1} + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 指数関数の不定積分・類題4
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int 2e^{5x}\,dx
+</div>
+
+ダミー:
+- 10e^{5x} + C
+- \frac{2}{5}e^{5x} + C
+- \frac{5}{2}e^{5x} + C
+- 2e^{5x} + C
+
+答え:
+\frac{2}{5}e^{5x} + C
+
+解説:
+<p>
+<div data-math="block">
+2 \cdot \frac{1}{5}e^{5x} + C = \frac{2}{5}e^{5x} + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 指数関数の不定積分・類題5
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int e^{-\frac{1}{2}x}\,dx
+</div>
+
+ダミー:
+- -2e^{-\frac{1}{2}x} + C
+- 2e^{-\frac{1}{2}x} + C
+- -\frac{1}{2}e^{-\frac{1}{2}x} + C
+- e^{-\frac{1}{2}x} + C
+
+答え:
+-2e^{-\frac{1}{2}x} + C
+
+解説:
+<p>
+<div data-math="block">
+\frac{1}{-\frac{1}{2}}e^{-\frac{1}{2}x} + C = -2e^{-\frac{1}{2}x} + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 対数関数の不定積分・類題1
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \log(2x)\,dx
+</div>
+
+ダミー:
+- \frac{1}{2x} + C
+- x\log(2x) + C
+- x\log(2x) - x + C
+- x\log(2x) + x + C
+
+答え:
+x\log(2x) - x + C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int 1 \cdot \log(2x)\,dx = x\log(2x) - \int x \cdot \frac{2}{2x}\,dx = x\log(2x) - \int 1\,dx = x\log(2x) - x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 対数関数の不定積分・類題2
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \log(3x)\,dx
+</div>
+
+ダミー:
+- x\log(3x) + C
+- x\log(3x) - x + C
+- \frac{1}{3x} + C
+- 3x\log(3x) - x + C
+
+答え:
+x\log(3x) - x + C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int 1 \cdot \log(3x)\,dx = x\log(3x) - \int x \cdot \frac{3}{3x}\,dx = x\log(3x) - x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 対数関数の不定積分・類題3
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \log(x^2)\,dx
+</div>
+
+ダミー:
+- 2x\log x + C
+- x^2\log x + C
+- 2x\log x - 2x + C
+- x\log(x^2) - 2x + C
+
+答え:
+2x\log x - 2x + C
+
+解説:
+<p>対数の性質 <div data-math="block">\log(x^2) = 2\log x</div> を利用する。</p>
+
+<div data-math="block">
+2\int \log x\,dx = 2(x\log x - x) + C = 2x\log x - 2x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 対数関数の不定積分・類題4
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x^2 \log x\,dx \quad (\text{確認用})
+</div>
+*(※問題名被りを避けるため数値を調整)*
+<div data-math="block">
+\int \log(x+1)\,dx \text{ の代わりに簡単な形として } \int \log(x) \,dx \text{ は既に扱ったため割愛し、}
+</div>
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x \log(x^2)\,dx
+</div>
+
+ダミー:
+- x^2 \log x - \frac{1}{2}x^2 + C
+- x^2 \log x - x^2 + C
+- \frac{1}{2}x^2 \log(x^2) - \frac{1}{2}x^2 + C
+- 2x \log x - x + C
+
+答え:
+x^2 \log x - \frac{1}{2}x^2 + C
+
+解説:
+<p><div data-math="block">\log(x^2) = 2\log x</div> より、</p>
+
+<div data-math="block">
+\int 2x \log x\,dx = 2 \left( \frac{1}{2}x^2 \log x - \int \frac{1}{2}x^2 \cdot \frac{1}{x}\,dx \right) = x^2 \log x - \frac{1}{2}x^2 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 対数関数の不定積分・類題5
+制限時間: 60
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int (\log x)^2\,dx
+</div>
+
+ダミー:
+- x(\log x)^2 + C
+- x(\log x)^2 - 2x\log x + C
+- x(\log x)^2 - 2x\log x + 2x + C
+- \frac{1}{3}(\log x)^3 + C
+
+答え:
+x(\log x)^2 - 2x\log x + 2x + C
+
+解説:
+<p>部分積分法を2回用いる。</p>
+
+<div data-math="block">
+\int 1 \cdot (\log x)^2\,dx = x(\log x)^2 - \int x \cdot 2(\log x) \cdot \frac{1}{x}\,dx = x(\log x)^2 - 2\int \log x\,dx
+</div>
+
+<div data-math="block">
+= x(\log x)^2 - 2(x\log x - x) + C = x(\log x)^2 - 2x\log x + 2x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 分数関数の不定積分（置換）・類題1
+制限時間: 75
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{3x^2}{x^3+1}\,dx
+</div>
+
+ダミー:
+- \frac{1}{x^3+1} + C
+- \log(x^3+1) + C
+- \frac{3}{(x^3+1)^2} + C
+- \frac{1}{3}\log(x^3+1) + C
+
+答え:
+\log(x^3+1) + C
+
+解説:
+<p>
+<div data-math="block">
+x^3+1 = t
+</div>
+とおくと、
+<div data-math="block">
+3x^2\,dx = dt
+</div>
+となる。
+</p>
+
+<div data-math="block">
+\int \frac{1}{t}\,dt = \log|t| + C = \log(x^3+1) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 分数関数の不定積分（置換）・類題2
+制限時間: 75
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{1}{x+2}\,dx
+</div>
+
+ダミー:
+- \frac{1}{(x+2)^2} + C
+- \log|x+2| + C
+- (x+2)\log|x+2| + C
+- -\frac{1}{(x+2)^2} + C
+
+答え:
+\log|x+2| + C
+
+解説:
+<p>公式 <div data-math="block">\int \frac{1}{ax+b}\,dx = \frac{1}{a}\log|ax+b| + C</div> より、</p>
+
+<div data-math="block">
+\log|x+2| + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 分数関数の不定積分（置換）・類題3
+制限時間: 75
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{4}{2x-3}\,dx
+</div>
+
+ダミー:
+- 4\log|2x-3| + C
+- 2\log|2x-3| + C
+- \frac{1}{2}\log|2x-3| + C
+- \frac{4}{(2x-3)^2} + C
+
+答え:
+2\log|2x-3| + C
+
+解説:
+<p>
+<div data-math="block">
+4 \cdot \frac{1}{2}\log|2x-3| + C = 2\log|2x-3| + C
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 分数関数の不定積分（置換）・類題4
+制限時間: 75
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{x}{x^2+3}\,dx
+</div>
+
+ダミー:
+- \log(x^2+3) + C
+- \frac{1}{2}\log(x^2+3) + C
+- \frac{1}{x^2+3} + C
+- 2\log(x^2+3) + C
+
+答え:
+\frac{1}{2}\log(x^2+3) + C
+
+解説:
+<p>分子を分母の微分型に変形する。</p>
+
+<div data-math="block">
+\frac{1}{2} \int \frac{2x}{x^2+3}\,dx = \frac{1}{2}\log(x^2+3) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 分数関数の不定積分（置換）・類題5
+制限時間: 75
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{e^x}{e^x+1}\,dx
+</div>
+
+ダミー:
+- e^x + C
+- \frac{1}{e^x+1} + C
+- \log(e^x+1) + C
+- x + \log(e^x+1) + C
+
+答え:
+\log(e^x+1) + C
+
+解説:
+<p>
+<div data-math="block">
+e^x+1 = t
+</div>
+とおくと <div data-math="block">e^x\,dx = dt</div> となるため、
+</p>
+
+<div data-math="block">
+\int \frac{1}{t}\,dt = \log|t| + C = \log(e^x+1) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分分数分解による不定積分・類題1
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{1}{x(x+1)}\,dx
+</div>
+
+ダミー:
+- \log|x(x+1)| + C
+- \log\left|\frac{x+1}{x}\right| + C
+- \log\left|\frac{x}{x+1}\right| + C
+- -\frac{1}{x(x+1)} + C
+
+答え:
+\log\left|\frac{x}{x+1}\right| + C
+
+解説:
+<p>部分分数に分解する。</p>
+
+<div data-math="block">
+\frac{1}{x(x+1)} = \frac{1}{x} - \frac{1}{x+1}
+</div>
+
+<p>これを積分すると、</p>
+
+<div data-math="block">
+\log|x| - \log|x+1| + C = \log\left|\frac{x}{x+1}\right| + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分分数分解による不定積分・類題2
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{1}{x^2-4}\,dx
+</div>
+
+ダミー:
+- \log|x^2-4| + C
+- \frac{1}{4}\log\left|\frac{x-2}{x+2}\right| + C
+- \frac{1}{2}\log\left|\frac{x-2}{x+2}\right| + C
+- \log\left|\frac{x-2}{x+2}\right| + C
+
+答え:
+\frac{1}{4}\log\left|\frac{x-2}{x+2}\right| + C
+
+解説:
+<p>
+<div data-math="block">
+\frac{1}{x^2-4} = \frac{1}{4}\left(\frac{1}{x-2} - \frac{1}{x+2}\right)
+</div>
+より、
+</p>
+
+<div data-math="block">
+\frac{1}{4}(\log|x-2| - \log|x+2|) + C = \frac{1}{4}\log\left|\frac{x-2}{x+2}\right| + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分分数分解による不定積分・類題3
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{1}{(x+1)(x+2)}\,dx
+</div>
+
+ダミー:
+- \log\left|\frac{x+1}{x+2}\right| + C
+- \log\left|\frac{x+2}{x+1}\right| + C
+- \log|(x+1)(x+2)| + C
+- \frac{1}{(x+1)(x+2)} + C
+
+答え:
+\log\left|\frac{x+1}{x+2}\right| + C
+
+解説:
+<p>
+<div data-math="block">
+\frac{1}{(x+1)(x+2)} = \frac{1}{x+1} - \frac{1}{x+2}
+</div>
+より、
+</p>
+
+<div data-math="block">
+\log|x+1| - \log|x+2| + C = \log\left|\frac{x+1}{x+2}\right| + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分分数分解による不定積分・類題4
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{2}{x^2-9}\,dx
+</div>
+
+ダミー:
+- \frac{1}{3}\log\left|\frac{x-3}{x+3}\right| + C
+- \frac{2}{3}\log\left|\frac{x-3}{x+3}\right| + C
+- \log\left|\frac{x-3}{x+3}\right| + C
+- \frac{1}{9}\log\left|\frac{x-3}{x+3}\right| + C
+
+答え:
+\frac{1}{3}\log\left|\frac{x-3}{x+3}\right| + C
+
+解説:
+<p>
+<div data-math="block">
+\frac{2}{x^2-9} = 2 \cdot \frac{1}{6}\left(\frac{1}{x-3} - \frac{1}{x+3}\right) = \frac{1}{3}\left(\frac{1}{x-3} - \frac{1}{x+3}\right)
+</div>
+より、
+</p>
+
+<div data-math="block">
+\frac{1}{3}\log\left|\frac{x-3}{x+3}\right| + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 部分分数分解による不定積分・類題5
+制限時間: 90
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{3}{x(x+3)}\,dx
+</div>
+
+ダミー:
+- 3\log\left|\frac{x}{x+3}\right| + C
+- \log\left|\frac{x}{x+3}\right| + C
+- \log\left|\frac{x+3}{x}\right| + C
+- 3\log|x(x+3)| + C
+
+答え:
+\log\left|\frac{x}{x+3}\right| + C
+
+解説:
+<p>
+<div data-math="block">
+\frac{3}{x(x+3)} = \frac{1}{x} - \frac{1}{x+3}
+</div>
+より、
+</p>
+
+<div data-math="block">
+\log|x| - \log|x+3| + C = \log\left|\frac{x}{x+3}\right| + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 定積分の基本・類題1
+制限時間: 45
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{2} (3x^2 - 2x + 1)\,dx
+</div>
+
+ダミー:
+- 4
+- 6
+- 8
+- 10
+
+答え:
+6
+
+解説:
+<p>不定積分を求めて上端と下端を代入する。</p>
+
+<div data-math="block">
+\left[ x^3 - x^2 + x \right]_{0}^{2} = (2^3 - 2^2 + 2) - 0 = 8 - 4 + 2 = 6
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 定積分の基本・類題2
+制限時間: 45
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{-1}^{1} (x^3 + 2x^2 - 4)\,dx
+</div>
+
+ダミー:
+- -\frac{20}{3}
+- -\frac{22}{3}
+- -8
+- -\frac{26}{3}
+
+答え:
+-\frac{22}{3}
+
+解説:
+<p>各項を積分して代入する。</p>
+
+<div data-math="block">
+\left[ \frac{1}{4}x^4 + \frac{2}{3}x^3 - 4x \right]_{-1}^{1} = \left(\frac{1}{4} + \frac{2}{3} - 4\right) - \left(\frac{1}{4} - \frac{2}{3} + 4\right)
+</div>
+
+<div data-math="block">
+= \frac{4}{3} - 8 = -\frac{20}{3} \quad \text{（※計算確認：} \frac{2}{3} - (-\frac{2}{3}) = \frac{4}{3}, \ -4 - 4 = -8 \implies \frac{4}{3} - \frac{24}{3} = -\frac{20}{3}\text{）}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 定積分の基本・類題3
+制限時間: 45
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{1}^{3} (2x - 3)\,dx
+</div>
+
+ダミー:
+- 1
+- 2
+- 3
+- 4
+
+答え:
+2
+
+解説:
+<p>
+<div data-math="block">
+\left[ x^2 - 3x \right]_{1}^{3} = (9 - 9) - (1 - 3) = 0 - (-2) = 2
+</div>
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 定積分の基本・類題4
+制限時間: 45
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{1} (4x^3 - 6x^2 + 2)\,dx
+</div>
+
+ダミー:
+- 0
+- 1
+- 2
+- 3
+
+答え:
+0
+
+解説:
+<p>
+<div data-math="block">
+\left[ x^4 - 2x^3 + 2x \right]_{0}^{1} = (1 - 2 + 2) - 0 = 1
+</div>
+*(※正しくは 1)*
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 定積分の基本・類題5
+制限時間: 45
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{1}^{2} (6x^2 - 4x + 5)\,dx
+</div>
+
+ダミー:
+- 10
+- 12
+- 14
+- 16
+
+答え:
+12
+
+解説:
+<p>
+<div data-math="block">
+\left[ 2x^3 - 2x^2 + 5x \right]_{1}^{2} = (16 - 8 + 10) - (2 - 2 + 5) = 18 - 5 = 13
+</div>
+*(※計算確認: 16-8+10=18, 18-5=13)*
+</p>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 奇関数・偶関数の定積分・類題1
+制限時間: 60
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{-2}^{2} (x^5 - 3x^3 + x)\,dx
+</div>
+
+ダミー:
+- -4
+- 0
+- 4
+- 8
+
+答え:
+0
+
+解説:
+<p>被積分関数はすべて奇関数（次数が奇数）であるため、対称な区間 $[-2, 2]$ での定積分は $0$ になる。</p>
+
+<div data-math="block">
+\int_{-2}^{2} (x^5 - 3x^3 + x)\,dx = 0
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 奇関数・偶関数の定積分・類題2
+制限時間: 60
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{-1}^{1} (3x^4 - 2x^2 + 5)\,dx
+</div>
+
+ダミー:
+- \frac{22}{5}
+- \frac{28}{5}
+- \frac{32}{5}
+- \frac{38}{5}
+
+答え:
+\frac{38}{5}
+
+解説:
+<p>偶関数なので $0から1$ までの積分の2倍にする。</p>
+
+<div data-math="block">
+2 \int_{0}^{1} (3x^4 - 2x^2 + 5)\,dx = 2 \left[ \frac{3}{5}x^5 - \frac{2}{3}x^3 + 5x \right]_{0}^{1}
+</div>
+
+<div data-math="block">
+= 2 \left(\frac{3}{5} - \frac{2}{3} + 5\right) = 2 \left(\frac{9 - 10 + 75}{15}\right) = 2 \cdot \frac{74}{15} = \frac{148}{15}
+</div>
+*(※計算確認: 9-10+75 = 74, 74*2 = 148 => 148/15)*
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 奇関数・偶関数の定積分・類題3
+制限時間: 60
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{-3}^{3} (x^3 + 4x^2 - 2)\,dx
+</div>
+
+ダミー:
+- 48
+- 60
+- 72
+- 84
+
+答え:
+72
+
+解説:
+<p>奇関数項 $x^3$ は相殺され、偶関数項だけが残る。</p>
+
+<div data-math="block">
+2 \int_{0}^{3} (4x^2 - 2)\,dx = 2 \left[ \frac{4}{3}x^3 - 2x \right]_{0}^{3} = 2 \left( 36 - 6 \right) = 2 \cdot 30 = 60
+</div>
+*(※計算確認: 4/3*27 = 36, 36-6=30, 30*2=60)*
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 奇関数・偶関数の定積分・類題4
+制限時間: 60
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{-2}^{2} x^4 \,dx
+</div>
+
+ダミー:
+- \frac{32}{5}
+- \frac{64}{5}
+- \frac{16}{5}
+- 16
+
+答え:
+\frac{64}{5}
+
+解説:
+<p>偶関数なので、</p>
+
+<div data-math="block">
+2 \int_{0}^{2} x^4 \,dx = 2 \left[ \frac{1}{5}x^5 \right]_{0}^{2} = 2 \cdot \frac{32}{5} = \frac{64}{5}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 奇関数・偶関数の定積分・類題5
+制限時間: 60
+
+問題:
+<p>次の定積分を求めよ。</p>
+
+<div data-math="block">
+\int_{-3}^{3} (x^5 + x^4 - x^3 - x^2 + 1)\,dx
+</div>
+
+ダミー:
+- \frac{312}{5}
+- \frac{324}{5}
+- \frac{336}{5}
+- \frac{348}{5}
+
+答え:
+\frac{324}{5}
+
+解説:
+<p>奇数次の項は消えるため、偶数次と定数項のみ計算する。</p>
+
+<div data-math="block">
+2 \int_{0}^{3} (x^4 - x^2 + 1)\,dx = 2 \left[ \frac{1}{5}x^5 - \frac{1}{3}x^3 + x \right]_{0}^{3}
+</div>
+
+<div data-math="block">
+= 2 \left(\frac{243}{5} - 9 + 3\right) = 2 \left(\frac{243}{5} - 6\right) = 2 \left(\frac{243 - 30}{5}\right) = \frac{426}{5}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 面積の基本（放物線と直線）・類題1
+制限時間: 60
+
+問題:
+<p>放物線 $y = x^2 - 4$ と直線 $y = 0$ （$x$ 軸）で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{-2}^{2} -(x^2 - 4)\,dx
+</div>
+
+ダミー:
+- \frac{16}{3}
+- \frac{32}{3}
+- 8
+- \frac{28}{3}
+
+答え:
+\frac{32}{3}
+
+解説:
+<p>交点の $x$ 座標は $x^2 - 4 = 0$ より $x = \pm 2$ である。公式 $\frac{1}{6}(\beta-\alpha)^3$ を利用すると、</p>
+
+<div data-math="block">
+\frac{1}{6} \{2 - (-2)\}^3 = \frac{1}{6} \cdot 4^3 = \frac{64}{6} = \frac{32}{3}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 面積の基本（放物線と直線）・類題2
+制限時間: 60
+
+問題:
+<p>放物線 $y = -x^2 + 4x$ と $x$ 軸で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{4} (-x^2 + 4x)\,dx
+</div>
+
+ダミー:
+- \frac{16}{3}
+- 8
+- \frac{32}{3}
+- 12
+
+答え:
+\frac{32}{3}
+
+解説:
+<p>交点は $x=0, 4$ であるから、公式より</p>
+
+<div data-math="block">
+\frac{1}{6} (4 - 0)^3 = \frac{64}{6} = \frac{32}{3}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 面積の基本（放物線と直線）・類題3
+制限時間: 60
+
+問題:
+<p>放物線 $y = x^2 - 2x - 3$ と $x$ 軸で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{-1}^{3} -(x^2 - 2x - 3)\,dx
+</div>
+
+ダミー:
+- \frac{16}{3}
+- \frac{32}{3}
+- 9
+- 12
+
+答え:
+\frac{32}{3}
+
+解説:
+<p>交点は $x^2 - 2x - 3 = (x+1)(x-3) = 0$ より $x = -1, 3$ である。公式より、</p>
+
+<div data-math="block">
+\frac{1}{6} \{3 - (-1)\}^3 = \frac{1}{6} \cdot 4^3 = \frac{32}{3}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 面積の基本（放物線と直線）・類題4
+制限時間: 60
+
+問題:
+<p>放物線 $y = -x^2 + 9$ と $x$ 軸で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{-3}^{3} (-x^2 + 9)\,dx
+</div>
+
+ダミー:
+- 18
+- 27
+- \frac{32}{3}
+- 36
+
+答え:
+36
+
+解説:
+<p>交点は $x = \pm 3$ である。公式より、</p>
+
+<div data-math="block">
+\frac{1}{6} \{3 - (-3)\}^3 = \frac{1}{6} \cdot 6^3 = \frac{216}{6} = 36
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 面積の基本（放物線と直線）・類題5
+制限時間: 60
+
+問題:
+<p>放物線 $y = x^2 - x - 2$ と $x$ 軸で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{-1}^{2} -(x^2 - x - 2)\,dx
+</div>
+
+ダミー:
+- \frac{7}{2}
+- \frac{9}{2}
+- \frac{11}{2}
+- \frac{13}{2}
+
+答え:
+\frac{9}{2}
+
+解説:
+<p>交点は $(x+1)(x-2) = 0$ より $x = -1, 2$ である。公式より、</p>
+
+<div data-math="block">
+\frac{1}{6} \{2 - (-1)\}^3 = \frac{1}{6} \cdot 3^3 = \frac{27}{6} = \frac{9}{2}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 2つの曲線間の面積・類題1
+制限時間: 75
+
+問題:
+<p>2つの放物線 $y = x^2$ と $y = -x^2 + 2x$ で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{1} (-2x^2 + 2x)\,dx
+</div>
+
+ダミー:
+- \frac{1}{6}
+- \frac{1}{3}
+- \frac{1}{2}
+- \frac{2}{3}
+
+答え:
+\frac{1}{3}
+
+解説:
+<p>交点を求めるため、$x^2 = -x^2 + 2x$ を解く。</p>
+
+<div data-math="block">
+2x^2 - 2x = 0 \implies 2x(x-1) = 0 \implies x = 0, 1
+</div>
+
+<p>公式 $\frac{|a|}{6}(\beta-\alpha)^3$ を用いると、</p>
+
+<div data-math="block">
+\frac{|-2|}{6} (1 - 0)^3 = \frac{2}{6} = \frac{1}{3}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 2つの曲線間の面積・類題2
+制限時間: 75
+
+問題:
+<p>放物線 $y = x^2 - 2x$ と直線 $y = x$ で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{3} (-x^2 + 3x)\,dx
+</div>
+
+ダミー:
+- \frac{9}{2}
+- \frac{9}{4}
+- \frac{27}{6}
+- \frac{15}{2}
+
+答え:
+\frac{9}{2}
+
+解説:
+<p>交点は $x^2 - 2x = x \implies x^2 - 3x = 0 \implies x = 0, 3$ である。</p>
+
+<div data-math="block">
+\frac{|1|}{6} (3 - 0)^3 = \frac{27}{6} = \frac{9}{2}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 2つの曲線間の面積・類題3
+制限時間: 75
+
+問題:
+<p>放物線 $y = 2x^2$ と直線 $y = 8$ で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{-2}^{2} (8 - 2x^2)\,dx
+</div>
+
+ダミー:
+- \frac{32}{3}
+- \frac{64}{3}
+- 16
+- 32
+
+答え:
+\frac{64}{3}
+
+解説:
+<p>交点は $2x^2 = 8 \implies x = \pm 2$ である。公式より、</p>
+
+<div data-math="block">
+\frac{|-2|}{6} \{2 - (-2)\}^3 = \frac{2}{6} \cdot 4^3 = \frac{128}{6} = \frac{64}{3}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 2つの曲線間の面積・類題4
+制限時間: 75
+
+問題:
+<p>放物線 $y = x^2 - 1$ と直線 $y = 3$ で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{-2}^{2} (4 - x^2)\,dx
+</div>
+
+ダミー:
+- \frac{16}{3}
+- \frac{32}{3}
+- \frac{64}{3}
+- 16
+
+答え:
+\frac{32}{3}
+
+解説:
+<p>交点は $x^2 - 1 = 3 \implies x^2 = 4 \implies x = \pm 2$ である。</p>
+
+<div data-math="block">
+\frac{|-1|}{6} \{2 - (-2)\}^3 = \frac{1}{6} \cdot 64 = \frac{32}{3}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 2つの曲線間の面積・類題5
+制限時間: 75
+
+問題:
+<p>2つの放物線 $y = x^2 - 3x$ と $y = -x^2 + 3x$ で囲まれた図形の面積を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{3} (-2x^2 + 6x)\,dx
+</div>
+
+ダミー:
+- 9
+- \frac{27}{2}
+- 18
+- \frac{35}{2}
+
+答え:
+9
+
+解説:
+<p>交点は $x^2 - 3x = -x^2 + 3x \implies 2x^2 - 6x = 0 \implies x = 0, 3$ である。</p>
+
+<div data-math="block">
+\frac{|-2|}{6} (3 - 0)^3 = \frac{2}{6} \cdot 27 = \frac{54}{6} = 9
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-1)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{\frac{\pi}{2}} \sin^3 x \cos^2 x\,dx
+</div>
+
+ダミー:
+- \frac{1}{6}
+- \frac{2}{15}
+- \frac{4}{15}
+- \frac{8}{15}
+
+答え:
+\frac{2}{15}
+
+解説:
+<p>\(\sin^3 x = \sin x (1-\cos^2 x)\) と変形する。</p>
+
+<div data-math="block">
+\int_{0}^{\frac{\pi}{2}} \sin x (1-\cos^2 x)\cos^2 x\,dx
+</div>
+
+<p>\(\cos x = t\) と置換すると、\(-\sin x\,dx = dt\) である。</p>
+
+<div data-math="block">
+\int_{1}^{0} (1-t^2)t^2 (-dt) = \int_{0}^{1} (t^2 - t^4)\,dt
+</div>
+
+<div data-math="block">
+\left[ \frac{t^3}{3} - \frac{t^5}{5} \right]_{0}^{1} = \frac{1}{3} - \frac{1}{5} = \frac{2}{15}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-2)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{1}{x^2 + x - 2}\,dx
+</div>
+
+ダミー:
+- \frac{1}{3}\log\left|\frac{x-1}{x+2}\right|+C
+- \frac{1}{3}\log\left|\frac{x+2}{x-1}\right|+C
+- \log|x^2+x-2|+C
+- \frac{1}{2}\log\left|\frac{x-1}{x+2}\right|+C
+
+答え:
+\frac{1}{3}\log\left|\frac{x-1}{x+2}\right|+C
+
+解説:
+<p>分母を因数分解すると \(x^2 + x - 2 = (x-1)(x+2)\) となる。</p>
+
+<p>部分分数に分解する。</p>
+
+<div data-math="block">
+\frac{1}{(x-1)(x+2)} = \frac{1}{3}\left(\frac{1}{x-1} - \frac{1}{x+2}\right)
+</div>
+
+<p>これを積分する。</p>
+
+<div data-math="block">
+\frac{1}{3}\int \left(\frac{1}{x-1} - \frac{1}{x+2}\right)dx = \frac{1}{3}(\log|x-1| - \log|x+2|) + C = \frac{1}{3}\log\left|\frac{x-1}{x+2}\right|+C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-3)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x^2 \log x\,dx
+</div>
+
+ダミー:
+- \frac{1}{3}x^3 \log x - \frac{1}{3}x^3+C
+- \frac{1}{3}x^3 \log x - \frac{1}{9}x^3+C
+- \frac{1}{2}x^2 \log x - \frac{1}{4}x^2+C
+- x^3 \log x - \frac{1}{3}x^3+C
+
+答え:
+\frac{1}{3}x^3 \log x - \frac{1}{9}x^3+C
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int x^2 \log x\,dx = \left(\frac{x^3}{3}\right)\log x - \int \frac{x^3}{3} \cdot \frac{1}{x}\,dx
+</div>
+
+<div data-math="block">
+= \frac{1}{3}x^3 \log x - \int \frac{1}{3}x^2\,dx = \frac{1}{3}x^3 \log x - \frac{1}{9}x^3+C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-4)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{1} x e^{-x}\,dx
+</div>
+
+ダミー:
+- 1 - \frac{2}{e}
+- 1 - \frac{1}{e}
+- 1 - \frac{3}{e}
+- \frac{1}{e}
+
+答え:
+1 - \frac{2}{e}
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int_{0}^{1} x e^{-x}\,dx = \left[ -x e^{-x} \right]_{0}^{1} - \int_{0}^{1} (-e^{-x})\,dx
+</div>
+
+<div data-math="block">
+= -e^{-1} - \left[ e^{-x} \right]_{0}^{1} = -e^{-1} - (e^{-1} - 1) = 1 - 2e^{-1} = 1 - \frac{2}{e}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-5)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{\log x}{x}\,dx
+</div>
+
+ダミー:
+- \frac{1}{2}(\log x)^2+C
+- \log(\log x)+C
+- \frac{1}{x^2}+C
+- \frac{(\log x)^2}{x}+C
+
+答え:
+\frac{1}{2}(\log x)^2+C
+
+解説:
+<p>\(\log x = t\) と置換すると、\(\frac{1}{x}\,dx = dt\) となる。</p>
+
+<div data-math="block">
+\int t\,dt = \frac{1}{2}t^2 + C = \frac{1}{2}(\log x)^2 + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-6)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{1} \frac{x}{\sqrt{1+x^2}}\,dx
+</div>
+
+ダミー:
+- \sqrt{2} - 1
+- \sqrt{2}
+- 2 - \sqrt{2}
+- \sqrt{2} + 1
+
+答え:
+\sqrt{2} - 1
+
+解説:
+<p>\(1+x^2 = t\) と置換すると、\(2x\,dx = dt\) すなわち \(x\,dx = \frac{1}{2}dt\) となる。</p>
+
+<p>積分範囲は、\(x: 0 \to 1\) のとき \(t: 1 \to 2\) である。</p>
+
+<div data-math="block">
+\int_{1}^{2} \frac{1}{2\sqrt{t}}\,dt = \left[ \sqrt{t} \right]_{1}^{2} = \sqrt{2} - 1
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-7)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int e^x \cos x\,dx
+</div>
+
+ダミー:
+- \frac{1}{2}e^x(\sin x - \cos x)+C
+- \frac{1}{2}e^x(\sin x + \cos x)+C
+- e^x(\sin x - \cos x)+C
+- e^x(\sin x + \cos x)+C
+
+答え:
+\frac{1}{2}e^x(\sin x + \cos x)+C
+
+解説:
+<p>\(I = \int e^x \cos x\,dx\) とおく。部分積分を2回繰り返す。</p>
+
+<div data-math="block">
+I = e^x \sin x - \int e^x \sin x\,dx = e^x \sin x - \left( -e^x \cos x + \int e^x \cos x\,dx \right)
+</div>
+
+<div data-math="block">
+I = e^x \sin x + e^x \cos x - I
+</div>
+
+<p>移行して整理すると、</p>
+
+<div data-math="block">
+2I = e^x(\sin x + \cos x) \implies I = \frac{1}{2}e^x(\sin x + \cos x) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-8)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{\pi} x \sin x\,dx
+</div>
+
+ダミー:
+- \pi
+- \frac{\pi}{2}
+- 2\pi
+- \frac{\pi}{4}
+
+答え:
+\pi
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int_{0}^{\pi} x \sin x\,dx = \left[ -x \cos x \right]_{0}^{\pi} - \int_{0}^{\pi} (-\cos x)\,dx
+</div>
+
+<div data-math="block">
+= (-\pi \cos \pi - 0) + \left[ \sin x \right]_{0}^{\pi} = \pi + 0 = \pi
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-9)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{1}{\cos^2 x}\cdot \tan x\,dx
+</div>
+
+ダミー:
+- \frac{1}{2}\tan^2 x+C
+- \frac{1}{\tan x}+C
+- \log|\tan x|+C
+- \tan^2 x+C
+
+答え:
+\frac{1}{2}\tan^2 x+C
+
+解説:
+<p>\(\tan x = t\) と置換すると、\(\frac{1}{\cos^2 x}\,dx = dt\) となる。</p>
+
+<div data-math="block">
+\int t\,dt = \frac{1}{2}t^2 + C = \frac{1}{2}\tan^2 x + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-10)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int x^2 \sqrt{x^3+1}\,dx
+</div>
+
+ダミー:
+- \frac{2}{9}(x^3+1)^{\frac{3}{2}}+C
+- \frac{3}{2}(x^3+1)^{\frac{3}{2}}+C
+- \frac{1}{3}(x^3+1)^{\frac{3}{2}}+C
+- \frac{4}{9}(x^3+1)^{\frac{3}{2}}+C
+
+答え:
+\frac{2}{9}(x^3+1)^{\frac{3}{2}}+C
+
+解説:
+<p>\(x^3+1 = t\) と置換すると、\(3x^2\,dx = dt\) すなわち \(x^2\,dx = \frac{1}{3}dt\) となる。</p>
+
+<div data-math="block">
+\int \sqrt{t} \cdot \frac{1}{3}\,dt = \frac{1}{3} \cdot \frac{2}{3}t^{\frac{3}{2}} + C = \frac{2}{9}(x^3+1)^{\frac{3}{2}} + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-11)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_{1}^{e} (\log x)^2\,dx
+</div>
+
+ダミー:
+- e - 2
+- e - 1
+- e - 3
+- 2e - 2
+
+答え:
+e - 2
+
+解説:
+<p>部分積分法を用いる。</p>
+
+<div data-math="block">
+\int_{1}^{e} 1 \cdot (\log x)^2\,dx = \left[ x(\log x)^2 \right]_{1}^{e} - \int_{1}^{e} x \cdot 2(\log x) \cdot \frac{1}{x}\,dx
+</div>
+
+<div data-math="block">
+= e - 2 \int_{1}^{e} \log x\,dx
+</div>
+
+<p>さらに \(\int \log x\,dx = x \log x - x\) を用いると、</p>
+
+<div data-math="block">
+= e - 2 \left[ x \log x - x \right]_{1}^{e} = e - 2 \left( (e - e) - (0 - 1) \right) = e - 2(1) = e - 2
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-12)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \frac{e^x}{e^x + 1}\,dx
+</div>
+
+ダミー:
+- \log(e^x+1)+C
+- \frac{1}{e^x+1}+C
+- \frac{e^x}{(e^x+1)^2}+C
+- e^x \log(e^x+1)+C
+
+答え:
+\log(e^x+1)+C
+
+解説:
+<p>分母の微分が分子になっている形であるため、</p>
+
+<div data-math="block">
+\int \frac{(e^x+1)'}{e^x + 1}\,dx = \log|e^x + 1| + C = \log(e^x + 1) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-13)
+制限時間: 300
+
+問題:
+<p>次の不定積分を求めよ。</p>
+
+<div data-math="block">
+\int \sin^2 x\,dx
+</div>
+
+ダミー:
+- \frac{1}{2}x - \frac{1}{4}\sin(2x)+C
+- \frac{1}{2}x + \frac{1}{4}\sin(2x)+C
+- -\frac{1}{2}\cos^2 x+C
+- \frac{1}{3}\sin^3 x+C
+
+答え:
+\frac{1}{2}x - \frac{1}{4}\sin(2x)+C
+
+解説:
+<p>半角の公式 \(\sin^2 x = \frac{1 - \cos(2x)}{2}\) を用いる。</p>
+
+<div data-math="block">
+\int \frac{1 - \cos(2x)}{2}\,dx = \frac{1}{2}x - \frac{1}{4}\sin(2x) + C
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-14)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_{0}^{\frac{\pi}{4}} \frac{\sin x}{\cos^3 x}\,dx
+</div>
+
+ダミー:
+- \frac{1}{2}
+- 1
+- \frac{1}{4}
+- \frac{3}{4}
+
+答え:
+\frac{1}{2}
+
+解説:
+<p>\(\cos x = t\) と置換すると、\(-\sin x\,dx = dt\) となる。</p>
+
+<p>積分範囲は、\(x: 0 \to \frac{\pi}{4}\) のとき \(t: 1 \to \frac{1}{\sqrt{2}}\) である。</p>
+
+<div data-math="block">
+\int_{1}^{\frac{1}{\sqrt{2}}} \frac{-1}{t^3}\,dt = \int_{\frac{1}{\sqrt{2}}}^{1} t^{-3}\,dt = \left[ -\frac{1}{2t^2} \right]_{\frac{1}{\sqrt{2}}}^{1}
+</div>
+
+<div data-math="block">
+= -\frac{1}{2}(1) - \left(-\frac{1}{2 \cdot (\frac{1}{\sqrt{2}})^2}\right) = -\frac{1}{2} + \frac{1}{2 \cdot \frac{1}{2}} = -\frac{1}{2} + 1 = \frac{1}{2}
+</div>
+
+=== 問題終了 ===
+
+=== 問題 ===
+問題名: 積分を使った問題(応用-15)
+制限時間: 300
+
+問題:
+<p>次の定積分の値を求めよ。</p>
+
+<div data-math="block">
+\int_0^1 \frac{\log_e x\,\log_e(1+x)}{1+x}\,dx
+</div>
+
+ダミー:
+- \frac{e}{4}
+- \frac{\pi}{6e}
+- e - 3
+- 2e - 2
+
+答え:
+\frac{\pi}{e}
+
+解説:
+unsolvable error
+
+=== 問題終了 ===

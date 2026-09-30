@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>積分演習</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.js"></script>
+<style>
+:root{--ink:#222;--sub:#666;--line:#c9c9c9;--paper:#fff;--bg:#ededeb;--navy:#17324d;--red:#962f32;--green:#276749;--bad:#9b3033;--orange:#9a5a16}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+header{background:var(--navy);color:#fff;border-bottom:4px solid #102638}
+.header-inner{max-width:1000px;margin:auto;padding:13px 20px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:bold;letter-spacing:.08em}.brand small{display:block;font-size:10px;opacity:.7;letter-spacing:.12em}
+.stats{font-size:12px;text-align:right;line-height:1.7}
+nav{background:#fff;border-bottom:1px solid var(--line)}
+.nav-inner{max-width:1000px;margin:auto;padding:8px 20px;display:flex;gap:7px;flex-wrap:wrap}
+button{font:inherit;background:#fff;border:1px solid #aaa;border-radius:2px;padding:7px 12px;cursor:pointer}
+button:hover{background:#f5f5f5}
+main{max-width:1000px;margin:20px auto;padding:0 14px}
+.panel,.paper{background:var(--paper);border:1px solid var(--line);box-shadow:0 2px 7px #0001}
+.panel{padding:22px}.panel h2{font-size:18px;margin:0 0 14px}
+.setting{border:1px solid #ddd;padding:14px;margin-bottom:18px;background:#fafafa}
+.setting label{display:block;font-weight:bold;margin-bottom:8px}.setting small{display:block;color:#666;margin-top:6px}
+#homeList{display:grid;gap:8px}
+.file-card{padding:12px;border:1px solid #ddd;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.file-card:hover{background:#fafafa}.file-card .title{font-weight:bold}.file-card .meta{font-size:12px;color:#777}
+.paper-head{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.paper-head h1{font-size:17px;margin:0}.badge{font-size:11px;border:1px solid #aaa;padding:3px 8px;color:#555}
+.timer{font-variant-numeric:tabular-nums;font-weight:bold;font-size:15px;color:var(--navy)}
+.timer.limit{color:var(--red)}
+.progress{height:4px;background:#ddd}.progress i{display:block;height:100%;background:var(--red);width:0}
+.question{padding:25px 28px 20px}
+.qmeta{font-size:13px;color:#666;margin-bottom:14px}.qmeta strong{color:#222;font-size:15px}
+.problem{font-size:16px;line-height:2;overflow-wrap:anywhere}
+.problem img{max-width:100%;height:auto}
+.math-block{margin:17px 0;text-align:center;font-size:1.2em}
+.answers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:18px}
+.answer{display:grid;grid-template-columns:48px 1fr;min-height:62px;align-items:center;border-bottom:1px solid #ddd;cursor:pointer}
+.answer:last-child{border-bottom:0}.answer:hover{background:#fafafa}.answer.selected{background:#f1f5f9}
+.answer.correct{background:#eef7f1}.answer.wrong{background:#fbefef}
+.bubble{width:29px;height:29px;border:2px solid #555;border-radius:50%;display:grid;place-items:center;margin-left:9px;font-weight:bold;background:#fff}
+.answer.selected .bubble{background:var(--navy);border-color:var(--navy);color:#fff}
+.choice{padding:10px 8px;font-size:1.06em;overflow-x:auto}
+.feedback{display:none;margin:0 28px 20px;padding:14px 17px;background:#f7f7f7;border-left:4px solid #aaa}
+.feedback.show{display:block}.feedback.good{border-color:var(--green)}.feedback.bad{border-color:var(--bad)}
+.feedback.timeout{border-color:var(--orange)}
+.feedback-result{font-weight:bold;margin-bottom:8px}.time-result{font-size:13px;color:#555;margin-bottom:9px}
+.explanation{font-size:14px;line-height:1.8}
+.actions{padding:16px 20px;display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.primary{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:bold}.primary:disabled{opacity:.45;cursor:not-allowed}
+.hidden{display:none!important}.empty{color:#777;padding:15px 0}
+#status{position:fixed;right:14px;bottom:14px;background:#222;color:#fff;padding:9px 12px;font-size:12px;border-radius:3px;display:none;z-index:5}
+select{font:inherit;padding:6px 9px;border:1px solid #aaa;background:#fff}
+@media(max-width:600px){.header-inner{padding:11px 14px}.nav-inner{padding:7px 14px}main{margin-top:12px}.question{padding:19px 15px}.paper-head{padding:12px 15px}.feedback{margin-left:15px;margin-right:15px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="header-inner">
+  <div class="brand">積分演習 <small>INTEGRAL DRILL</small></div>
+  <div class="stats"><span id="stat">0問 / 正答率 --%</span></div>
+ </div>
+</header>
+<nav>
+ <div class="nav-inner">
+  <button id="homeBtn">⌂ ホーム</button>
+  <button id="openBtn">問題ファイルを開く</button>
+  <button id="folderBtn">問題フォルダを選ぶ</button>
+  <button id="reloadBtn">保存したファイルを再読込</button>
+ </div>
+</nav>
+<main>
+ <section id="home" class="panel">
+  <h2>問題一覧</h2>
+  <div class="setting">
+   <label for="timeoutMode">時間制限到達時の動作</label>
+   <select id="timeoutMode">
+    <option value="show">正答を表示して終了する</option>
+    <option value="continue">そのまま解答を続ける</option>
+   </select>
+   <small>「そのまま解答を続ける」を選ぶと、時間切れ後も解答できます。実際の解答時間は制限時間を超えた時間まで計測されます。</small>
+  </div>
+  <div id="sourceInfo" class="meta"></div>
+  <div id="homeList"></div>
+ </section>
+
+ <section id="quiz" class="paper hidden">
+  <div class="paper-head">
+   <h1 id="paperTitle">数学Ⅱ　積分法</h1>
+   <div>
+    <span id="timer" class="timer">00:00</span>
+    <span class="badge" id="limitBadge">時間制限なし</span>
+   </div>
+  </div>
+  <div class="progress"><i id="progress"></i></div>
+  <div class="question">
+   <div class="qmeta"><strong id="qnum"></strong>　<span id="qname"></span></div>
+   <div id="problem" class="problem"></div>
+   <div id="answers" class="answers"></div>
+  </div>
+  <div id="feedback" class="feedback">
+   <div id="feedbackResult" class="feedback-result"></div>
+   <div id="timeResult" class="time-result"></div>
+   <div id="explanation" class="explanation"></div>
+  </div>
+  <div class="actions">
+   <div>
+    <button id="checkBtn" class="primary" disabled>解答を確定</button>
+    <button id="nextBtn" class="hidden">次の問題 →</button>
+   </div>
+   <button id="backBtn">問題一覧へ</button>
+  </div>
+ </section>
+</main>
+<div id="status"></div>
+
+<script>
+const DELIM="=== 問題 ===";
+const END="=== 問題終了 ===";
+let problems=[], currentIndex=-1, selected=-1, locked=false;
+let startTime=0, timerId=null, elapsedAtAnswer=0, timedOut=false;
+let stats=JSON.parse(localStorage.getItem("integralStatsV3")||'{"total":0,"correct":0}');
+const $=id=>document.getElementById(id);
+
+function status(s){$("status").textContent=s;$("status").style.display="block";setTimeout(()=>$("status").style.display="none",2200)}
+function updateStats(){let r=stats.total?Math.round(stats.correct/stats.total*100):"--";$("stat").textContent=`${stats.total}問 / 正答率 ${r}%`}
+function formatTime(ms){
+ const sec=Math.floor(ms/1000),m=Math.floor(sec/60),s=sec%60;
+ const tenth=Math.floor((ms%1000)/100);
+ return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${tenth}`;
+}
+function formatLimit(sec){
+ if(!sec || sec<=0)return "時間制限なし";
+ const m=Math.floor(sec/60),s=sec%60;
+ return m?`${m}分${s?` ${s}秒`:""}`:`${s}秒`;
+}
+function renderMath(root){
+ root.querySelectorAll("[data-math]").forEach(e=>katex.render(e.textContent,e,{throwOnError:false,displayMode:e.dataset.math==="block"}));
+}
+function escapeText(s){return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
+
+function parseFile(text){
+ const blocks=text.split(DELIM).slice(1),out=[];
+ for(const raw of blocks){
+  const body=raw.split(END)[0].trim();if(!body)continue;
+  const fields={name:"",problem:"",dummy:[],answer:"",explanation:"",timeLimit:0};
+  let mode="";
+  for(const line of body.split(/\r?\n/)){
+   const t=line.trim();
+   if(/^問題名\s*:/.test(t)){mode="name";fields.name=t.replace(/^問題名\s*:/,"").trim();continue}
+   if(/^制限時間\s*:/.test(t)){mode="";fields.timeLimit=Math.max(0,Number(t.replace(/^制限時間\s*:/,"").trim())||0);continue}
+   if(/^問題\s*:/.test(t)){mode="problem";const x=t.replace(/^問題\s*:/,"").trim();if(x)fields.problem+=x+"\n";continue}
+   if(/^ダミー\s*:/.test(t)){mode="dummy";const x=t.replace(/^ダミー\s*:/,"").trim();if(x)fields.dummy.push(x);continue}
+   if(/^答え\s*:/.test(t)){mode="answer";fields.answer=t.replace(/^答え\s*:/,"").trim();continue}
+   if(/^解説\s*:/.test(t)){mode="explanation";const x=t.replace(/^解説\s*:/,"").trim();if(x)fields.explanation+=x+"\n";continue}
+   if(mode==="problem")fields.problem+=line+"\n";
+   else if(mode==="dummy"&&t)fields.dummy.push(t.replace(/^[-*]\s*/,""));
+   else if(mode==="answer"&&t&&!fields.answer)fields.answer=t;
+   else if(mode==="explanation")fields.explanation+=line+"\n";
+  }
+  fields.problem=fields.problem.trim();fields.explanation=fields.explanation.trim();
+  if(!fields.problem||!fields.answer)continue;
+  fields.choices=[...new Set([...fields.dummy,fields.answer])];
+  out.push(fields);
+ }
+ if(!out.length)throw new Error("問題を1問も読み込めませんでした。テンプレートを確認してください。");
+ return out;
+}
+function validate(p){
+ const errors=[];
+ p.forEach((q,i)=>{
+  if(q.choices.length<2)errors.push(`${i+1}問目: 選択肢が2個未満です`);
+  if(!q.choices.includes(q.answer))errors.push(`${i+1}問目: 答えが選択肢にありません`);
+  if(q.timeLimit<0)errors.push(`${i+1}問目: 制限時間が不正です`);
+ });
+ if(errors.length)throw new Error(errors.join("\n"));
+}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+
+function showHome(){
+ stopTimer();
+ $("home").classList.remove("hidden");$("quiz").classList.add("hidden");
+ $("sourceInfo").textContent=problems.length?`${problems.length}問を読み込み済み`:"問題ファイルがありません";
+ const list=$("homeList");list.innerHTML="";
+ if(!problems.length){list.innerHTML='<div class="empty">「問題ファイルを開く」から問題ファイルを読み込んでください。</div>';return}
+ problems.forEach((p,i)=>{
+  const card=document.createElement("div");card.className="file-card";
+  const info=document.createElement("div");
+  info.innerHTML=`<div class="title">${escapeText(p.name||`第${i+1}問`)}</div><div class="meta">第${i+1}問 / 選択肢 ${p.choices.length}個 / 制限時間 ${formatLimit(p.timeLimit)}</div>`;
+  const b=document.createElement("button");b.textContent="解く →";b.onclick=()=>start(i);
+  card.append(info,b);list.appendChild(card);
+ });
+}
+function start(i){
+ stopTimer();currentIndex=i;selected=-1;locked=false;timedOut=false;elapsedAtAnswer=0;
+ const p=problems[i];
+ $("home").classList.add("hidden");$("quiz").classList.remove("hidden");
+ $("qnum").textContent=`第${i+1}問`;$("qname").textContent=p.name||"";
+ $("problem").innerHTML=p.problem;renderMath($("problem"));
+ $("limitBadge").textContent=p.timeLimit>0?`制限 ${formatLimit(p.timeLimit)}`:"時間制限なし";
+ $("timer").textContent="00:00.0";$("timer").classList.remove("limit");
+ const box=$("answers");box.innerHTML="";
+ shuffle(p.choices).forEach((c,n)=>{
+  const row=document.createElement("div");row.className="answer";row.dataset.value=c;
+  const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=n+1;
+  const choice=document.createElement("div");choice.className="choice";
+  katex.render(c,choice,{throwOnError:false,displayMode:false});
+  row.append(bubble,choice);row.onclick=()=>select(row,c);box.append(row);
+ });
+ $("checkBtn").disabled=true;$("checkBtn").classList.remove("hidden");$("nextBtn").classList.add("hidden");
+ $("feedback").className="feedback";
+ $("progress").style.width=((i+1)/problems.length*100)+"%";
+ startTime=performance.now();timerId=setInterval(tick,100);
+}
+function tick(){
+ if(locked)return;
+ const elapsed=performance.now()-startTime;
+ $("timer").textContent=formatTime(elapsed);
+ const p=problems[currentIndex];
+ if(p.timeLimit>0){
+  const remaining=p.timeLimit*1000-elapsed;
+  if(remaining<=0){
+   $("timer").classList.add("limit");
+   if(!timedOut){
+    timedOut=true;
+    if($("timeoutMode").value==="show")timeOutFinish();
+   }
+  }else if(remaining<=10000)$("timer").classList.add("limit");
+ }
+}
+function stopTimer(){if(timerId!==null){clearInterval(timerId);timerId=null}}
+function select(row,value){
+ if(locked)return;
+ selected=value;document.querySelectorAll(".answer").forEach(x=>x.classList.remove("selected"));
+ row.classList.add("selected");$("checkBtn").disabled=false;
+}
+function timeOutFinish(){
+ if(locked)return;
+ elapsedAtAnswer=performance.now()-startTime;locked=true;stopTimer();
+ $("checkBtn").disabled=true;
+ showResult(true,false);
+}
+function check(){
+ if(selected<0||locked)return;
+ elapsedAtAnswer=performance.now()-startTime;
+ locked=true;stopTimer();
+ const p=problems[currentIndex],ok=selected===p.answer;
+ stats.total++;if(ok)stats.correct++;
+ localStorage.setItem("integralStatsV3",JSON.stringify(stats));updateStats();
+ showResult(false,ok);
+}
+function showResult(timeout,ok){
+ const p=problems[currentIndex];
+ document.querySelectorAll(".answer").forEach(r=>{if(r.dataset.value===p.answer)r.classList.add("correct")});
+ if(!timeout){
+  const selectedRow=document.querySelector(".answer.selected");
+  if(!ok&&selectedRow)selectedRow.classList.add("wrong");
+ }
+ $("feedback").className="feedback show "+(timeout?"timeout":(ok?"good":"bad"));
+ $("feedbackResult").textContent=timeout?"時間制限に達しました。":(ok?"正解です。":"不正解です。");
+ $("timeResult").textContent=`解答までの時間：${formatTime(elapsedAtAnswer)}`;
+ $("explanation").innerHTML="";
+ const label=document.createElement("div");label.textContent="正答：";$("explanation").append(label);
+ const ans=document.createElement("div");katex.render(p.answer,ans,{throwOnError:false,displayMode:true});$("explanation").append(ans);
+ if(p.explanation){const e=document.createElement("div");e.innerHTML=p.explanation;$("explanation").append(e);renderMath($("explanation"))}
+ $("checkBtn").classList.add("hidden");
+ if(currentIndex<problems.length-1)$("nextBtn").classList.remove("hidden");
+}
+$("timeoutMode").value=localStorage.getItem("timeoutModeV3")||"show";
+$("timeoutMode").onchange=()=>localStorage.setItem("timeoutModeV3",$("timeoutMode").value);
+$("checkBtn").onclick=check;
+$("nextBtn").onclick=()=>start(currentIndex+1);
+$("homeBtn").onclick=showHome;$("backBtn").onclick=showHome;
+
+$("openBtn").onclick=async()=>{
+ if(!window.showOpenFilePicker){alert("このブラウザではファイル選択機能を利用できません。Chrome / Edge の最新版を推奨します。");return}
+ try{
+  const [handle]=await showOpenFilePicker({types:[{description:"問題ファイル",accept:{"text/plain":[".txt",".md"],"text/html":[".html"]}}],multiple:false});
+  const file=await handle.getFile();problems=parseFile(await file.text());validate(problems);
+  await saveHandle(handle);showHome();status(`${problems.length}問を読み込みました`);
+ }catch(e){if(e.name!=="AbortError")alert("読み込みに失敗しました。\n"+e.message)}
+};
+$("folderBtn").onclick=async()=>{
+ if(!window.showDirectoryPicker){alert("このブラウザではフォルダ選択機能を利用できません。Chrome / Edge の最新版を推奨します。");return}
+ try{
+  const dir=await showDirectoryPicker();const handle=await dir.getFileHandle("problems.txt");
+  const file=await handle.getFile();problems=parseFile(await file.text());validate(problems);
+  await saveHandle(handle);showHome();status(`${problems.length}問を読み込みました`);
+ }catch(e){if(e.name!=="AbortError")alert("フォルダ内の problems.txt を読み込めませんでした。\n"+e.message)}
+};
+async function saveHandle(handle){
+ const db=await openDB();return new Promise((resolve,reject)=>{
+  const tx=db.transaction("handles","readwrite");tx.objectStore("handles").put(handle,"problemFile");
+  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+ });
+}
+async function getHandle(){
+ const db=await openDB();return new Promise((resolve,reject)=>{
+  const tx=db.transaction("handles","readonly"),req=tx.objectStore("handles").get("problemFile");
+  req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+ });
+}
+function openDB(){
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open("IntegralDrillDB",1);
+  req.onupgradeneeded=()=>req.result.createObjectStore("handles");
+  req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+ });
+}
+$("reloadBtn").onclick=async()=>{
+ try{
+  const h=await getHandle();if(!h){alert("保存された問題ファイルがありません。");return}
+  const perm=await h.queryPermission({mode:"read"});
+  if(perm!=="granted"){const p=await h.requestPermission({mode:"read"});if(p!=="granted")return}
+  const file=await h.getFile();problems=parseFile(await file.text());validate(problems);
+  showHome();status(`${problems.length}問を再読み込みしました`);
+ }catch(e){alert("再読み込みに失敗しました。\n"+e.message)}
+};
+async function autoLoad(){
+ if(location.protocol==="http:"||location.protocol==="https:"){
+  try{const r=await fetch("problems.txt",{cache:"no-store"});if(r.ok){problems=parseFile(await r.text());validate(problems);showHome();return}}catch{}
+ }
+ try{
+  const h=await getHandle();if(!h)return;const perm=await h.queryPermission({mode:"read"});
+  if(perm==="granted"){const file=await h.getFile();problems=parseFile(await file.text());validate(problems);showHome()}
+ }catch{}
+}
+updateStats();showHome();autoLoad();
+</script>
+</body>
+</html>
