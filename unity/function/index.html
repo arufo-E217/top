@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C#のvoidって何？</title>
+
+    <style>
+        /* ================================
+           基本設定
+        ================================= */
+
+        :root {
+            --bg-color: #f9f9f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+
+            --accent-color: #0078d4;
+            --border-color: #e0e0e0;
+            --code-bg: #f0f0f0;
+
+            --note-color: #666666;
+
+            --hover-color: #fffae6;
+            --highlight-text: #d32f2f;
+
+            --info-bg: #f0f7ff;
+            --info-border: #b3d4fc;
+
+            --good-bg: #f1f8e9;
+            --good-border: #8bc34a;
+
+            --bad-bg: #ffebee;
+            --bad-border: #e53935;
+
+            --point-bg: #fff8e1;
+            --point-border: #ffc107;
+        }
+
+        body {
+            font-family:
+                "Helvetica Neue",
+                Arial,
+                "Hiragino Kaku Gothic ProN",
+                "Hiragino Sans",
+                Meiryo,
+                sans-serif;
+
+            background-color: var(--bg-color);
+            color: var(--text-color);
+
+            line-height: 1.7;
+
+            margin: 0;
+            padding: 20px;
+
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+
+            background-color: var(--container-bg);
+
+            padding: 40px;
+
+            border-radius: 8px;
+
+            box-shadow:
+                0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ================================
+           見出し
+        ================================= */
+
+        h1 {
+            border-left: 5px solid var(--accent-color);
+
+            padding-left: 15px;
+
+            font-size: 1.6rem;
+
+            margin-bottom: 30px;
+
+            word-break: break-all;
+        }
+
+        h3 {
+            border-bottom: 2px solid var(--border-color);
+
+            padding-bottom: 5px;
+
+            margin-top: 40px;
+
+            color: var(--accent-color);
+        }
+
+        p {
+            margin: 15px 0;
+        }
+
+        strong,
+        b {
+            color: var(--highlight-text);
+        }
+
+        /* ================================
+           コード
+        ================================= */
+
+        code {
+            background-color: var(--code-bg);
+
+            padding: 2px 6px;
+
+            border-radius: 4px;
+
+            font-family:
+                Consolas,
+                Monaco,
+                monospace;
+
+            font-size: 0.95em;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+
+            padding: 15px;
+
+            border-radius: 6px;
+
+            overflow-x: auto;
+
+            font-family:
+                Consolas,
+                Monaco,
+                monospace;
+
+            line-height: 1.5;
+        }
+
+        /* ================================
+           注釈リンク
+        ================================= */
+
+        sup {
+            font-size: 0.7em;
+            line-height: 0;
+            vertical-align: super;
+        }
+
+        .note-link {
+            text-decoration: none;
+
+            color: var(--accent-color);
+
+            font-weight: bold;
+
+            padding: 0 1px;
+
+            cursor: pointer;
+
+            transition:
+                background-color 0.15s,
+                color 0.15s;
+        }
+
+        .note-link:hover {
+            background-color: #e6f2ff;
+
+            border-radius: 3px;
+        }
+
+        /* ================================
+           説明ボックス
+        ================================= */
+
+        .translation-box {
+            background-color: var(--info-bg);
+
+            border-left: 4px solid var(--info-border);
+
+            padding: 15px;
+
+            margin: 20px 0;
+
+            font-style: italic;
+        }
+
+        .point-box {
+            background-color: var(--point-bg);
+
+            border-left: 4px solid var(--point-border);
+
+            padding: 15px;
+
+            margin: 20px 0;
+        }
+
+        .good-box {
+            background-color: var(--good-bg);
+
+            border-left: 4px solid var(--good-border);
+
+            padding: 15px;
+
+            margin: 20px 0;
+        }
+
+        .bad-box {
+            background-color: var(--bad-bg);
+
+            border-left: 4px solid var(--bad-border);
+
+            padding: 15px;
+
+            margin: 20px 0;
+        }
+
+        /* ================================
+           フッター・注釈
+        ================================= */
+
+        footer {
+            margin-top: 50px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid var(--border-color);
+
+            font-size: 0.9rem;
+
+            color: var(--note-color);
+        }
+
+        .footnote {
+            margin-bottom: 12px;
+
+            padding: 8px;
+
+            border-radius: 4px;
+
+            scroll-margin-top: 20px;
+
+            transition:
+                background-color 0.3s,
+                box-shadow 0.3s;
+        }
+
+        /*
+         * 注釈へジャンプしたときにハイライト
+         */
+        .footnote:target {
+            background-color: var(--hover-color);
+
+            box-shadow:
+                0 0 0 2px #ffe082;
+        }
+
+        .back-link {
+            text-decoration: none;
+
+            color: var(--accent-color);
+
+            font-weight: bold;
+
+            margin-left: 5px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* ================================
+           スマホ対応
+        ================================= */
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 25px 20px;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>C#の <code>void</code> って何？</h1>
+
+
+    <!-- ==================================
+         まず結論
+    =================================== -->
+
+    <section>
+
+        <h3>まず結論</h3>
+
+        <p>
+            <code>void</code>
+            は、
+        </p>
+
+        <div class="translation-box">
+            <strong>
+                「このメソッド<sup><a href="#note1" class="note-link">*1</a></sup>は値を返しません」
+            </strong>
+        </div>
+
+        <p>
+            という意味。
+        </p>
+
+        <div class="good-box">
+
+            <strong>正しい理解</strong>
+
+            <br><br>
+
+            <code>void</code>
+            →
+            戻り値<sup><a href="#note2" class="note-link">*2</a></sup> がない
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================
+         実際に見てみる
+    =================================== -->
+
+    <section>
+
+        <h3>実際に見てみる</h3>
+
+        <pre><code>void Attack()
+{
+    Console.WriteLine("攻撃！");
+}</code></pre>
+
+        <p>
+            このメソッドには、
+            ちゃんと処理が入っている。
+        </p>
+
+        <pre><code>Console.WriteLine("攻撃！");</code></pre>
+
+        <p>
+            この場合は、
+            <strong>
+                「攻撃！と表示する」という処理をしたあと、
+                何も値を返さない
+            </strong>
+            という意味。
+        </p>
+
+    </section>
+
+
+    <!-- ==================================
+         値を返すとは
+    =================================== -->
+
+    <section>
+
+        <h3>じゃあ「値を返す」って何？</h3>
+
+        <p>
+            例えばこんなメソッド。
+        </p>
+
+        <pre><code>int Add(int a, int b)
+{
+    return a + b;
+}</code></pre>
+
+        <p>
+            これは、
+            <code>a</code>
+            と
+            <code>b</code>
+            を足した結果を返している。
+        </p>
+
+        <pre><code>int result = Add(3, 5);</code></pre>
+
+        <p>
+            とすると、
+        </p>
+
+        <pre><code>result = 8;</code></pre>
+
+        <p>
+            となる。
+        </p>
+
+        <p>
+            つまり
+            <code>int</code>
+            は、
+            <strong>
+                「このメソッドは int 型の値を返します」
+            </strong>
+            という意味。
+        </p>
+
+    </section>
+
+
+    <!-- ==================================
+         voidとint比較
+    =================================== -->
+
+    <section>
+
+        <h3><code>void</code> と <code>int</code> を比べてみる</h3>
+
+
+        <p>
+            <strong>値を返すメソッド</strong>
+        </p>
+
+        <pre><code>int Add(int a, int b)
+{
+    return a + b;
+}</code></pre>
+
+        <div class="point-box">
+
+            <code>Add(3, 5)</code>
+            を実行すると、
+
+            <strong>
+                8という値が返ってくる。
+            </strong>
+
+        </div>
+
+
+        <p>
+            <strong>値を返さないメソッド</strong>
+        </p>
+
+        <pre><code>void Attack()
+{
+    Console.WriteLine("攻撃！");
+}</code></pre>
+
+        <div class="point-box">
+
+            <code>Attack()</code>
+            を実行すると、
+
+            <strong>
+                処理は行われるが、値は返ってこない。
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================
+         ()について
+    =================================== -->
+
+    <section>
+
+        <h3>じゃあ <code>()</code> は何？</h3>
+
+        <p>
+            正確には、
+            <strong>
+                メソッドが受け取る引数<sup><a href="#note3" class="note-link">*3</a></sup>を書く場所
+            </strong>
+        </p>
+
+        <pre><code>void Attack()
+{
+    Console.WriteLine("攻撃！");
+}</code></pre>
+
+        <p>
+            この場合は何も受け取らないので、
+            <code>()</code>
+            の中が空になっている。
+        </p>
+
+        <p>
+            例えば敵にダメージを与えるメソッドなら、
+        </p>
+
+        <pre><code>void Attack(int damage)
+{
+    Console.WriteLine(damage + "ダメージ！");
+}</code></pre>
+
+        <p>
+            となる。
+        </p>
+
+        <p>
+            この場合、
+            <code>int damage</code>
+            が
+            <strong>
+                「受け取るデータ」
+            </strong>
+            。
+        </p>
+
+        <pre><code>Attack(100);</code></pre>
+
+        <p>
+            とすれば、
+            <code>damage</code>
+            に
+            <code>100</code>
+            が渡される。
+        </p>
+
+    </section>
+
+
+    <!-- ==================================
+         入力・処理・出力
+    =================================== -->
+
+    <section>
+
+        <h3>メソッドを「入力 → 処理 → 出力」で考える</h3>
+
+        <p>
+            メソッドを理解するときは、
+            <strong>
+                入力 → 処理 → 出力
+            </strong>
+            と考えるとかなり分かりやすい。
+        </p>
+
+        <pre><code>int Add(int a, int b)
+{
+    return a + b;
+}</code></pre>
+
+        <p>
+            これを図にすると、
+        </p>
+
+        <div class="translation-box">
+
+            <strong>
+
+                入力：3、5
+
+                <br>
+                ↓
+
+                <br>
+
+                処理：3 + 5
+
+                <br>
+                ↓
+
+                <br>
+
+                出力：8
+
+            </strong>
+
+        </div>
+
+
+        <p>
+            という感じ。
+        </p>
+
+        <p>
+            一方、
+        </p>
+
+        <pre><code>void Attack(int damage)
+{
+    Console.WriteLine(damage + "ダメージ！");
+}</code></pre>
+
+        <p>
+            なら、
+        </p>
+
+        <div class="translation-box">
+
+            <strong>
+
+                入力：100
+
+                <br>
+                ↓
+
+                <br>
+
+                処理：「100ダメージ！」と表示
+
+                <br>
+                ↓
+
+                <br>
+
+                出力：なし
+
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================
+         宣言の分解
+    =================================== -->
+
+    <section>
+
+        <h3>メソッド宣言を分解すると</h3>
+
+        <pre><code>void Attack(int damage)
+{
+    Console.WriteLine(damage + "ダメージ！");
+}</code></pre>
+
+
+        <p>
+            それぞれの部分には、
+            ちゃんと意味がある。
+        </p>
+
+
+        <div class="point-box">
+
+            <code>void</code>
+
+            <br>
+            ↓
+            <br>
+
+            <strong>戻り値の型</strong>
+
+            <br>
+
+            「値を返しません」
+
+        </div>
+
+
+        <div class="point-box">
+
+            <code>Attack</code>
+
+            <br>
+            ↓
+            <br>
+
+            <strong>メソッド名</strong>
+
+        </div>
+
+
+        <div class="point-box">
+
+            <code>(int damage)</code>
+
+            <br>
+            ↓
+            <br>
+
+            <strong>引数のリスト</strong>
+
+            <br>
+
+            「int型のdamageを受け取ります」
+
+        </div>
+
+
+        <div class="point-box">
+
+            <code>{ ... }</code>
+
+            <br>
+            ↓
+            <br>
+
+            <strong>メソッド本体</strong>
+
+            <br>
+
+            「実際に何をするか」
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================
+         まとめ
+    =================================== -->
+
+    <section>
+
+        <h3>まとめ</h3>
+
+        <p>
+            <code>void</code>
+            は、
+            <strong>
+                「このメソッドは値を返さない」
+            </strong>
+            という意味。
+        </p>
+
+        <p>
+            <code>()</code>
+            は
+            <strong>
+                「関数の入口」ではなく、
+                引数を書く場所。
+            </strong>
+        </p>
+
+        <p>
+            なので、
+        </p>
+
+        <pre><code>void Attack(int damage)
+{
+    Console.WriteLine(damage + "ダメージ！");
+}</code></pre>
+
+
+        <p>
+            は、
+        </p>
+
+
+        <div class="good-box">
+
+            <strong>
+
+                「Attackという名前のメソッドを作る。
+
+                <br>
+
+                int型のdamageを受け取り、
+
+                <br>
+
+                何らかの処理をする。
+
+                <br>
+
+                ただし、処理結果として値は返さない。」
+
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================
+         注釈
+    =================================== -->
+
+    <footer>
+
+        <div id="note1" class="footnote">
+
+            <strong>
+                <sup>*1</sup> メソッド（method）
+            </strong>
+
+            <br>
+
+            C#で「処理をまとめたもの」のこと。
+            他のプログラミング言語では
+            「関数（function）」と呼ばれるものに近い。
+
+            <a href="#top" class="back-link">↑ 本文へ</a>
+
+        </div>
+
+
+        <div id="note2" class="footnote">
+
+            <strong>
+                <sup>*2</sup> 戻り値（return value）
+            </strong>
+
+            <br>
+
+            メソッドを呼び出した側に返される値のこと。
+            <code>return</code>
+            を使って返す。
+
+            <br><br>
+
+            例えば、
+
+            <code>return 8;</code>
+
+            なら、
+
+            「8という値を呼び出した側に返す」
+
+            という意味。
+
+            <a href="#top" class="back-link">↑ 本文へ</a>
+
+        </div>
+
+
+        <div id="note3" class="footnote">
+
+            <strong>
+                <sup>*3</sup> 引数（argument）
+            </strong>
+
+            <br>
+
+            メソッドを呼び出すときに、
+            メソッドへ渡すデータのこと。
+
+            <br><br>
+
+            例えば、
+
+            <code>Attack(100);</code>
+
+            なら、
+
+            <code>100</code>
+
+            が引数。
+
+            <br><br>
+
+            なお、
+
+            <code>int damage</code>
+
+            のように
+            「受け取るデータを宣言したもの」は
+            正確には「仮引数（parameter）」と呼ぶ。
+
+            初心者のうちは、
+            「メソッドに渡すデータ」
+            と考えておけばOK。
+
+            <a href="#top" class="back-link">↑ 本文へ</a>
+
+        </div>
+
+    </footer>
+
+</div>
+
+
+<script>
+
+    /*
+     * container に id="top" を付ける。
+     * 「↑ 本文へ」を押したときに
+     * ページ上部へ戻れるようにする。
+     */
+
+    document
+        .querySelector(".container")
+        .id = "top";
+
+</script>
+
+</body>
+</html>
